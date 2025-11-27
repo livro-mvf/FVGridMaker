@@ -31,12 +31,12 @@ endif()
 # Set build type options
 set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build: Debug Release RelWithDebInfo MinSizeRel")
 
-# Project layout (Adaptado para FVMGridMaker)
-set(FVMG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/FVMGridMakerLib)
-set(FVMG_INCLUDE_DIR ${FVMG_LIB_DIR}/include)
-set(FVMG_SRC_DIR ${FVMG_LIB_DIR}/src)
+# Project layout (Adaptado para FVGridMaker)
+set(FVG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/FVGridMakerLib)
+set(FVG_INCLUDE_DIR ${FVG_LIB_DIR}/include)
+set(FVG_SRC_DIR ${FVG_LIB_DIR}/src)
 # Saída para DENTRO do diretório de build
-set(FVMG_OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin)
+set(FVG_OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin)
 
 # Compiler-specific settings
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")

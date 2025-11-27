@@ -59,7 +59,7 @@ foreach(test_main IN LISTS TEST_MAIN_SOURCES)
 
     # Linkagem
     target_link_libraries(${test_name} PRIVATE
-        FVMGridMaker
+        FVGridMaker
         gtest_main
     )
 
@@ -67,7 +67,7 @@ foreach(test_main IN LISTS TEST_MAIN_SOURCES)
     target_include_directories(${test_name} PRIVATE
         SYSTEM "${googletest_SOURCE_DIR}/googletest/include"
         SYSTEM "${googletest_SOURCE_DIR}/googlemock/include"
-        "${FVMG_INCLUDE_DIR}"
+        "${FVG_INCLUDE_DIR}"
     )
 
     # Caminho absoluto do executável para ctest e alvos run_*

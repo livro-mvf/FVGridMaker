@@ -2,8 +2,6 @@
 # Compiler settings and optimizations
 # ------------------------------------------------------------
 
-# NOTA: include_directories() global removido.
-#       Usamos target_include_directories() por alvo.
 
 # Adiciona flags específicas para C++20 Concepts em GCC < 10
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10.0)

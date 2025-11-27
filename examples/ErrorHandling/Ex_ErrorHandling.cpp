@@ -1,186 +1,190 @@
-// ============================================================================
-// File: Ex_ErrorHandling.cpp
-// Project: FVMGridMaker
-// Author: FVMGridMaker Team
-// Version: 1.1  
-// Description: Exemplo de uso do módulo ErrorHandling.
+// ----------------------------------------------------------------------------
+// File: Ex_ErrorHandling_Full.cpp
+// Project: FVGridMaker
+// Version: 1.2
+// Description: Exemplo COMPLETO do sistema de erros.
+//              Demonstra:
+//              1. Macros e Exceções (FVG_ERROR).
+//              2. Padrão Funcional (Status / StatusOr).
+//              3. Domínios de Erro customizados (GridErrors).
+//              4. Injeção de Logger Customizado (IErrorLogger).
+// Last modified: 2025-11-25
+// Author: FVGridMaker Team
 // License: GNU GPL v3
-// ============================================================================
-
-
 // ----------------------------------------------------------------------------
-// includes c++
-// ----------------------------------------------------------------------------
+
 #include <iostream>
 #include <vector>
 #include <string>
-#include <iomanip>  
-#include <stdexcept>  
+#include <cmath>
 
-// ----------------------------------------------------------------------------
-// includes FVMGridMaker
-// ----------------------------------------------------------------------------
-#include <FVMGridMaker/ErrorHandling/ErrorHandling.h> 
+// Inclui o cabeçalho principal e os extras necessários
+#include <FVGridMaker/ErrorHandling/ErrorHandling.h>
+#include <FVGridMaker/ErrorHandling/Status.h>     // Para Status/StatusOr
+#include <FVGridMaker/ErrorHandling/GridErrors.h> // Para erros de Malha
 
-// Define o namespace para facilitar
-using namespace FVMGridMaker::error;
+using namespace FVGridMaker::error;
 
-// Função auxiliar para imprimir os erros logados
-void printErrorLog(const std::vector<ErrorRecord>& errors) {
-    if (errors.empty()) {
-        std::cout << "  (Log vazio)\n";
-        return;
-    }
-    std::cout << "  --- Log de Erros ---\n";
-    for (const auto& rec : errors) {
-        std::cout << "  [Code: 0x" << std::hex << std::setw(8) << std::setfill('0') << rec.code << std::dec << "]";
-        std::cout << " [Sev: " << static_cast<int>(rec.severity) << "]";
-        std::cout << " Msg: " << rec.message << "\n";
-    }
-    std::cout << "  --------------------\n";
+// ============================================================================
+// PART 1: Helpers para Demonstração
+// ============================================================================
+
+// Helper simples para criar um Status de erro a partir de um Enum
+// (Em produção, isso poderia ser uma função utilitária na lib)
+template <ErrorEnum E>
+Status MakeErrorStatus(E code, std::string_view extra_msg = "") {
+    ErrorRecord rec;
+    rec.code = FVGridMaker::error::code(code);
+    rec.severity = ErrorTraits<E>::default_severity(code);
+    
+    // Pega a mensagem traduzida bruta (sem placeholders complexos aqui para simplificar)
+    // Para suporte completo, usaríamos a lógica do Detail::log_error
+    auto cfg = Config::get();
+    std::string_view tmpl = (cfg->language == Language::PtBR) 
+                          ? ErrorTraits<E>::ptBR(code) 
+                          : ErrorTraits<E>::enUS(code);
+    
+    rec.message = std::string(tmpl) + (extra_msg.empty() ? "" : " [Details: " + std::string(extra_msg) + "]");
+    return Status(std::move(rec));
 }
+
+// Logger Customizado que imprime direto no Console (sem buffer)
+class ConsoleLogger : public IErrorLogger {
+public:
+    void log(const ErrorRecord& rec) override {
+        // Simplesmente imprime na tela imediatamente
+        std::cerr << ">>> [CUSTOM LOG] " << rec.message 
+                  << " (Code: " << rec.code << ")\n";
+    }
+};
+
+// ============================================================================
+// PART 2: Funções de Exemplo (Business Logic)
+// ============================================================================
+
+// Exemplo A: Função Clássica (Lança Exceção em erro)
+void gerarMalha(int n) {
+    if (n <= 0) {
+        // Macro padrão: Loga e Lança (se Policy::Throw)
+        FVG_ERROR(GridErr::InvalidN, {{"N", std::to_string(n)}});
+    }
+    std::cout << "   -> Malha gerada com " << n << " volumes.\n";
+}
+
+// Exemplo B: Função Funcional (Retorna Status, SEM Exceção)
+// Ideal para loops internos onde try-catch seria lento.
+Status validarGeometria(double area) {
+    if (area <= 0.0) {
+        // Retorna um objeto de erro
+        return MakeErrorStatus(GridErr::DegenerateMesh, "Area=" + std::to_string(area));
+    }
+    return Status::OK();
+}
+
+// Exemplo C: Função que retorna Valor OU Erro (StatusOr)
+StatusOr<double> calcularVolume(double raio) {
+    if (raio < 0) {
+        // Retorna erro (conversão implícita de Status para StatusOr)
+        return MakeErrorStatus(GridErr::OptionsOutOfRange, "Raio negativo");
+    }
+    if (std::isnan(raio)) {
+        return MakeErrorStatus(GridErr::NaNCoordinate);
+    }
+    
+    // Retorna valor (double)
+    return (4.0/3.0) * 3.14159 * std::pow(raio, 3);
+}
+
+// ============================================================================
+// MAIN
+// ============================================================================
 
 int main() {
-    std::cout << "--- Exemplo do Módulo de ErrorHandling ---\n\n";
+    std::cout << "=== DEMONSTRAÇÃO COMPLETA: ERROR HANDLING ===\n\n";
 
-    // Guarda a config original para restaurar no final
-    auto original_cfg_ptr = Config::get();
-    if (!original_cfg_ptr) {
-         std::cerr << "ERRO FATAL: Não foi possível obter a configuração inicial.\n";
-         return 1;
-    }
+    // Salva config original
+    auto original_cfg = Config::get();
 
-    // --- 1. Configuração Inicial (Padrão: PtBR, Throw, Warning) ---
-    std::cout << "1. Configuração Padrão:\n";
-    auto cfg_padrao = Config::get(); // Re-obtém (embora seja o mesmo que original_cfg_ptr)
-    std::cout << "   Idioma: " << (cfg_padrao->language == Language::PtBR ? "PtBR" : "EnUS") << "\n";
-    std::cout << "   Política: " << (cfg_padrao->policy == Policy::Throw ? "Throw" : "Status") << "\n";
-    std::cout << "   Severidade Mínima: " << static_cast<int>(cfg_padrao->min_severity) << " (Warning=" << static_cast<int>(Severity::Warning) << ")\n";
-
-    // --- 2. Logando Erros (Acima da Severidade Mínima) ---
-    std::cout << "\n2. Logando Erros (Severidade >= Warning):\n";
-
-    // Muda temporariamente para Policy::Status para esta seção
-    std::cout << "   (Mudando temporariamente para Policy::Status para evitar throws)\n";
-    ErrorConfig cfg_temp_log = *Config::get();
-    cfg_temp_log.policy = Policy::Status;
-    Config::set(cfg_temp_log);
-
-    // Loga um Warning (deve aparecer)
-    FVMG_ERROR(CoreErr::NotImplemented);
-    // Loga um Error com argumento (deve aparecer)
-    FVMG_ERROR(CoreErr::InvalidArgument, {{"name", "parametro_X"}});
-
-    std::cout << "   Verificando o log (espera 2 mensagens em PtBR):\n";
-    printErrorLog(ErrorManager::flush()); // Esvazia e imprime o log
-
-    // Restaura a política original (Throw)
-    std::cout << "   (Restaurando política original: Throw)\n";
-    Config::set(*original_cfg_ptr);
-
-
-    // --- 3. Demonstração da Localização (RNF08) ---
-    std::cout << "\n3. Mudando Idioma para Inglês (EnUS):\n";
-    ErrorConfig cfg_en = *Config::get(); // Copia a config atual (Throw)
-    cfg_en.language = Language::EnUS;
-    // Muda temporariamente para Policy::Status para logar sem throw
-    cfg_en.policy = Policy::Status;
-    Config::set(cfg_en);
-    std::cout << "   (Política mudada para Status para logar em Inglês sem throw)\n";
-
-
-    std::cout << "   Logando o mesmo erro 'InvalidArgument' em Inglês:\n";
-    FVMG_ERROR(CoreErr::InvalidArgument, {{"name", "parameter_Y"}}); // Não vai lançar
-
-    std::cout << "   Verificando o log (espera 1 mensagem em EnUS):\n";
-    printErrorLog(ErrorManager::flush());
-
-    // Restaura configuração original completa (PtBR, Throw)
-    std::cout << "   (Restaurando configuração original: PtBR, Throw)\n";
-    Config::set(*original_cfg_ptr);
-
-
-    // --- 4. Demonstração da Política "Throw" ---
-    // A configuração já foi restaurada para Throw
-    std::cout << "\n4. Testando Política 'Throw' (Restaurada):\n";
-    std::string arquivo_inexistente = "dados.bin";
+    // ------------------------------------------------------------------------
+    // CENÁRIO 1: Tratamento Clássico (Exceptions & GridErrors)
+    // ------------------------------------------------------------------------
+    std::cout << "--- 1. Exceções com GridErrors ---\n";
     try {
-        std::cout << "   Tentando logar um erro 'FileNotFound' (Severidade Error)...\n";
-        FVMG_ERROR(FileErr::FileNotFound, {{"path", arquivo_inexistente}}); // Deve lançar
-        std::cerr << "   ERRO: Exceção FVMGException não foi lançada!\n";
-    }
-    catch (const FVMGException& e) {
-        std::cout << "   Exceção FVMGException capturada com sucesso!\n";
-        std::cout << "     what(): " << e.what() << "\n";
-        std::cout << "     code(): 0x" << std::hex << e.code() << std::dec << "\n";
-        std::cout << "     severity(): " << static_cast<int>(e.severity()) << "\n";
-        if (e.code() != code(FileErr::FileNotFound)) {
-             std::cerr << "     ALERTA: Código da exceção inesperado!\n";
+        std::cout << "Tentando gerar malha invalida...\n";
+        gerarMalha(-5); // Isso vai lançar
+    } catch (const FVGException& e) {
+        std::cout << "[CATCH] Exceção capturada!\n";
+        std::cout << "  Msg: " << e.what() << "\n";
+        
+        // Verifica se é um erro de Grid
+        if ((e.code() >> 16) == ErrorTraits<GridErr>::domain_id()) {
+            std::cout << "  Dominio detectado: Grid\n";
         }
     }
-    catch (const std::exception& e) {
-        std::cerr << "   ERRO: Capturou exceção inesperada: " << e.what() << "\n";
+    ErrorManager::flush(); // Limpa logs residuais
+
+    // ------------------------------------------------------------------------
+    // CENÁRIO 2: Padrão Funcional (Status / StatusOr)
+    // ------------------------------------------------------------------------
+    std::cout << "\n--- 2. Padrão Funcional (No Exceptions) ---\n";
+    
+    // 2.1 Testando Status simples
+    Status st = validarGeometria(-10.0);
+    if (!st.ok()) {
+        std::cout << "[STATUS ERROR] Validação falhou de forma controlada.\n";
+        std::cout << "  Erro: " << st.message() << "\n";
+    } else {
+        std::cout << "  Validação OK.\n";
     }
 
-    std::cout << "   Verificando o log após exceção (deve estar vazio):\n";
-    printErrorLog(ErrorManager::flush());
-
-
-    // --- 5. Demonstração da Política "Status" ---
-    std::cout << "\n5. Mudando Política para 'Status':\n";
-    ErrorConfig cfg_status = *Config::get();
-    cfg_status.policy = Policy::Status;
-    Config::set(cfg_status);
-
-    std::cout << "   Tentando logar 'FileNotFound' novamente (NÃO deve lançar):\n";
-    FVMG_ERROR(FileErr::FileNotFound, {{"path", "outro_arquivo.txt"}});
-    std::cout << "   (Nenhuma exceção lançada, como esperado)\n";
-
-    std::cout << "   Verificando o log (deve conter o erro 'FileNotFound'):\n";
-    printErrorLog(ErrorManager::flush());
-
-
-    // --- 6. Demonstração do FVMG_ASSERT ---
-    std::cout << "\n6. Testando FVMG_ASSERT:\n";
-    // Volta para Policy::Throw para que o Assert lance exceção
-    cfg_status.policy = Policy::Throw; // Modifica a cópia local
-    Config::set(cfg_status); // Define globalmente
-
-    int valor_ok = 10;
-    std::cout << "   Assert OK (valor_ok > 0): ";
-    try {
-        FVMG_ASSERT(valor_ok > 0);
-        std::cout << "Passou.\n";
-    } catch (const FVMGException& e) {
-         std::cerr << "ERRO: Assert OK lançou exceção inesperadamente: " << e.what() << "\n";
+    // 2.2 Testando StatusOr<double>
+    std::vector<double> raios = { 2.0, -1.0, 3.0 };
+    std::cout << "\nCalculando volumes em lote:\n";
+    
+    for (double r : raios) {
+        StatusOr<double> resultado = calcularVolume(r);
+        
+        if (resultado.ok()) {
+            // Acesso seguro ao valor com .value()
+            std::cout << "  Raio " << r << ": Vol = " << resultado.value() << "\n";
+        } else {
+            // Acesso ao erro com .status()
+            std::cout << "  Raio " << r << ": FALHA -> " << resultado.status().message() << "\n";
+        }
     }
 
+    // ------------------------------------------------------------------------
+    // CENÁRIO 3: Logger Customizado
+    // ------------------------------------------------------------------------
+    std::cout << "\n--- 3. Injeção de Logger Customizado ---\n";
+    
+    // Cria e configura o novo logger
+    ErrorConfig custom_cfg = *original_cfg;
+    custom_cfg.logger = std::make_shared<ConsoleLogger>();
+    Config::set(custom_cfg);
 
-    int valor_ruim = -5;
-    try {
-        std::cout << "   Assert Falha (valor_ruim > 0): ";
-        FVMG_ASSERT(valor_ruim > 0, {{"valor", std::to_string(valor_ruim)}});
-        std::cerr << "ERRO: Assert não lançou exceção!\n";
-    } catch (const FVMGException& e) {
-        std::cout << "Exceção de Assert capturada!\n";
-        std::cout << "     what(): " << e.what() << "\n";
-        std::cout << "     code(): 0x" << std::hex << e.code() << std::dec << " (Esperado: 0x" << code(CoreErr::AssertFailed) << ")\n";
-        std::cout << "     severity(): " << static_cast<int>(e.severity()) << " (Esperado: " << static_cast<int>(Severity::Fatal) << ")\n";
-    } catch (const std::exception& e) {
-         std::cerr << "ERRO: Capturou exceção inesperada no Assert: " << e.what() << "\n";
-    }
+    std::cout << "Logando erro via ConsoleLogger (deve aparecer com prefixo >>>):\n";
+    
+    // Usamos Policy::Status para não abortar o main com exceptions, apenas logar
+    ErrorConfig no_throw_cfg = *Config::get();
+    no_throw_cfg.policy = Policy::Status;
+    Config::set(no_throw_cfg);
 
-    std::cout << "   Verificando o log após Assert (deve estar vazio):\n";
-    printErrorLog(ErrorManager::flush());
+    FVG_ERROR(GridErr::ParallelBackendMissing);
+    FVG_ERROR(FileErr::AccessDenied, {{"path", "/root/secret.txt"}});
 
+    // ------------------------------------------------------------------------
+    // CENÁRIO 4: i18n Dinâmico
+    // ------------------------------------------------------------------------
+    std::cout << "\n--- 4. Troca de Idioma em Runtime ---\n";
+    ErrorConfig en_cfg = *Config::get();
+    en_cfg.language = Language::EnUS;
+    Config::set(en_cfg);
 
-    // Restaura a configuração original salva no início
-    std::cout << "\nRestaurando configuração original...\n";
-    Config::set(*original_cfg_ptr);
+    FVG_ERROR(GridErr::ParallelBackendMissing); // Deve aparecer em Inglês
 
-
-    std::cout << "\n--- Fim do Exemplo ---\n";
+    // Restaura tudo
+    Config::set(*original_cfg);
+    std::cout << "\n=== FIM DA DEMONSTRAÇÃO ===\n";
     return 0;
 }
-
-

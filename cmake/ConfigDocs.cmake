@@ -156,7 +156,7 @@ if(BUILD_DOCS)
             COMMAND ${CMAKE_COMMAND} -E make_directory "${SPHINX_BUILD}/html"
          
             # 2. Executar Sphinx (gera HTML) - NOME DA VAR ATUALIZADO
-            COMMAND ${CMAKE_COMMAND} -E env FVMG_DOXY_XML=${DOXYGEN_OUTPUT_DIR}/xml
+            COMMAND ${CMAKE_COMMAND} -E env FVG_DOXY_XML=${DOXYGEN_OUTPUT_DIR}/xml
                     ${_SPHINX_CMD} -b html
                     "${SPHINX_SRC}" "${SPHINX_BUILD}/html"
             
@@ -190,7 +190,7 @@ if(BUILD_DOCS)
         COMMAND ${CMAKE_COMMAND} -E echo "SPHINX_BUILD: ${SPHINX_BUILD}"
         COMMAND ${CMAKE_COMMAND} -E echo "DOCS_PUBLISH_DIR: ${DOCS_PUBLISH_DIR}"
         COMMAND ${CMAKE_COMMAND} -E echo "DOXYGEN_OUTPUT_DIR: ${DOXYGEN_OUTPUT_DIR}"
-        COMMAND ${CMAKE_COMMAND} -E echo "FVMG_DOXY_XML: ${DOXYGEN_OUTPUT_DIR}/xml"
+        COMMAND ${CMAKE_COMMAND} -E echo "FVG_DOXY_XML: ${DOXYGEN_OUTPUT_DIR}/xml"
         COMMENT "Print documentation configuration for debugging"
         VERBATIM)
 

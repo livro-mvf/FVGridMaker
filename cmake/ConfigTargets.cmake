@@ -4,46 +4,45 @@
 
 # Find sources
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
-     "${FVMG_SRC_DIR}/*.cpp")
+     "${FVG_SRC_DIR}/*.cpp")
 
 # Create library
-add_library(FVMGridMaker SHARED ${SOURCES})
+add_library(FVGridMaker SHARED ${SOURCES})
 
 # Adiciona diretórios de include (Modo Moderno)
-target_include_directories(FVMGridMaker
+target_include_directories(FVGridMaker
     PUBLIC
-        ${FVMG_INCLUDE_DIR}
+        ${FVG_INCLUDE_DIR}
 )
 
-# Link dependencies (RNF06: Nenhuma)
-target_link_libraries(FVMGridMaker
-    PUBLIC
-        # Vazio (CGAL Removido)
-)
+## Link dependencies (RNF06: Nenhuma)
+#target_link_libraries(FVGridMaker
+#    PUBLIC
+#)
 
 # Set optimizations
-set_target_optimizations(FVMGridMaker)
+set_target_optimizations(FVGridMaker)
 
 # Output directories (usa variável adaptada)
-set_target_properties(FVMGridMaker PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${FVMG_OUTPUT_BIN_DIR}
-    LIBRARY_OUTPUT_DIRECTORY ${FVMG_OUTPUT_BIN_DIR}
-    RUNTIME_OUTPUT_DIRECTORY ${FVMG_OUTPUT_BIN_DIR}
+set_target_properties(FVGridMaker PROPERTIES
+    ARCHIVE_OUTPUT_DIRECTORY ${FVG_OUTPUT_BIN_DIR}
+    LIBRARY_OUTPUT_DIRECTORY ${FVG_OUTPUT_BIN_DIR}
+    RUNTIME_OUTPUT_DIRECTORY ${FVG_OUTPUT_BIN_DIR}
 )
 
 # Install rules
-install(TARGETS FVMGridMaker
-    EXPORT FVMGridMakerTargets
-    LIBRARY DESTINATION ${FVMG_OUTPUT_BIN_DIR}
-    ARCHIVE DESTINATION ${FVMG_OUTPUT_BIN_DIR}
-    RUNTIME DESTINATION ${FVMG_OUTPUT_BIN_DIR})
+install(TARGETS FVGridMaker
+    EXPORT FVGridMakerTargets
+    LIBRARY DESTINATION ${FVG_OUTPUT_BIN_DIR}
+    ARCHIVE DESTINATION ${FVG_OUTPUT_BIN_DIR}
+    RUNTIME DESTINATION ${FVG_OUTPUT_BIN_DIR})
 
-# Instala o header namespaced (FVMGridMakerLib/include/FVMGridMaker)
-install(DIRECTORY ${FVMG_INCLUDE_DIR}/FVMGridMaker
+# Instala o header namespaced (FVGridMakerLib/include/FVGridMaker)
+install(DIRECTORY ${FVG_INCLUDE_DIR}/FVGridMaker
     DESTINATION include
     FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.tpp")
 
 # Instala arquivos .tpp (template implementations) do src/
-install(DIRECTORY ${FVMG_SRC_DIR}
+install(DIRECTORY ${FVG_SRC_DIR}
     DESTINATION include
     FILES_MATCHING PATTERN "*.tpp")

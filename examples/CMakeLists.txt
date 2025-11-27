@@ -20,18 +20,18 @@ endif()
 
 # Standalone (se rodar cmake direto nesta pasta)
 if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
-  project(FVMGridMakerExamples LANGUAGES CXX)
+  project(FVGridMakerExamples LANGUAGES CXX)
   set(CMAKE_CXX_STANDARD 20)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
-  set(FVMG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../FVMGridMakerLib/include")
+  set(FVG_INCLUDE_DIR "${CMAKE_SOURCE_DIR}/../FVGridMakerLib/include")
   # Fallback para onde a .so fica quando standalone
-  set(FVMG_OUTPUT_BIN_DIR "${CMAKE_BINARY_DIR}/../bin")
+  set(FVG_OUTPUT_BIN_DIR "${CMAKE_BINARY_DIR}/../bin")
 endif()
 
 set(PROJECT_ROOT  "${CMAKE_SOURCE_DIR}")
 set(EXAMPLES_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
-if(NOT DEFINED FVMG_INCLUDE_DIR)
-  set(FVMG_INCLUDE_DIR "${PROJECT_ROOT}/FVMGridMakerLib/include")
+if(NOT DEFINED FVG_INCLUDE_DIR)
+  set(FVG_INCLUDE_DIR "${PROJECT_ROOT}/FVGridMakerLib/include")
 endif()
 
 # ------------------------------------------------------------
@@ -43,7 +43,7 @@ set(CMAKE_REQUIRED_QUIET TRUE)
 check_cxx_source_compiles("
   #include <execution>
   int main(){ auto p = std::execution::par; (void)p; return 0; }
-" FVMG_HAVE_PSTL_EXEC)
+" FVG_HAVE_PSTL_EXEC)
 
 find_package(TBB QUIET) # não falha se não houver TBB
 
@@ -124,13 +124,13 @@ foreach(dir_abs IN LISTS EXAMPLE_DIRS_ABS)
   set(SRCS_FOR_TARGET ${EX_SOURCES_THIS_DIR} ${EXTRA_CPP_THIS_DIR})
 
   add_executable(${target_name} ${SRCS_FOR_TARGET})
-  target_link_libraries(${target_name} PRIVATE FVMGridMaker)
-  target_include_directories(${target_name} PRIVATE "${FVMG_INCLUDE_DIR}")
+  target_link_libraries(${target_name} PRIVATE FVGridMaker)
+  target_include_directories(${target_name} PRIVATE "${FVG_INCLUDE_DIR}")
 
-  # Corrige 'libFVMGridMaker.so not found' ao executar direto
+  # Corrige 'libFVGridMaker.so not found' ao executar direto
   set_target_properties(${target_name} PROPERTIES
     INSTALL_RPATH "$ORIGIN"
-    BUILD_RPATH   "${FVMG_OUTPUT_BIN_DIR}"
+    BUILD_RPATH   "${FVG_OUTPUT_BIN_DIR}"
   )
 
   # Nome/local de saída
@@ -153,17 +153,17 @@ foreach(dir_abs IN LISTS EXAMPLE_DIRS_ABS)
   # Apenas sinaliza disponibilidade e faz link SE existir TBB.
   # (O programa decide usar ou não a via paralela.)
   # ----------------------------------------------------------
-  if(FVMG_HAVE_PSTL_EXEC)
-    target_compile_definitions(${target_name} PRIVATE FVMG_HAVE_PSTL_EXEC=1)
+  if(FVG_HAVE_PSTL_EXEC)
+    target_compile_definitions(${target_name} PRIVATE FVG_HAVE_PSTL_EXEC=1)
   else()
-    target_compile_definitions(${target_name} PRIVATE FVMG_HAVE_PSTL_EXEC=0)
+    target_compile_definitions(${target_name} PRIVATE FVG_HAVE_PSTL_EXEC=0)
   endif()
 
   if(TBB_FOUND)
-    target_compile_definitions(${target_name} PRIVATE FVMG_HAVE_TBB=1)
+    target_compile_definitions(${target_name} PRIVATE FVG_HAVE_TBB=1)
     target_link_libraries(${target_name} PRIVATE TBB::tbb)
   else()
-    target_compile_definitions(${target_name} PRIVATE FVMG_HAVE_TBB=0)
+    target_compile_definitions(${target_name} PRIVATE FVG_HAVE_TBB=0)
   endif()
 
   # Agrega em 'examples'
@@ -184,4 +184,4 @@ endforeach()
 # ------------------------------------------------------------
 message(STATUS "Resumo (detecção para TODOS os exemplos):")
 message(STATUS "  TBB_FOUND           = ${TBB_FOUND}")
-message(STATUS "  FVMG_HAVE_PSTL_EXEC = ${FVMG_HAVE_PSTL_EXEC}")
+message(STATUS "  FVG_HAVE_PSTL_EXEC = ${FVG_HAVE_PSTL_EXEC}")

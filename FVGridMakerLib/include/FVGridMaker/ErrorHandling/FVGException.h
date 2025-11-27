@@ -1,0 +1,74 @@
+// ----------------------------------------------------------------------------
+// File: FVGException.h
+// Author: FVGridMaker Team
+// Version: 1.0  
+// Description: Classe de exceção base para a biblioteca.
+// License: GNU GPL v3
+// ----------------------------------------------------------------------------
+
+#pragma once
+
+
+// ----------------------------------------------------------------------------
+// includes c++
+// ----------------------------------------------------------------------------
+// #include <stdexcept>
+// #include <string>
+
+// ----------------------------------------------------------------------------
+// includes FVGridMaker
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/ErrorHandling/ErrorRecord.h>  
+
+/**
+ * @file FVGException.h
+ * @brief Classe de exceção base (RNF08).
+ * @ingroup error
+ */
+FVGRIDMAKER_NAMESPACE_OPEN
+ERROR_NAMESPACE_OPEN
+
+/**
+ * @brief Classe de exceção base para FVGridMaker.
+ *
+ * Carrega um ErrorRecord contendo a mensagem formatada e localizada (RNF08).
+ */
+class FVGException : public std::exception {
+public:
+    /** @brief Constrói a exceção a partir de um registro de erro. */
+    explicit FVGException(ErrorRecord record)
+        : record_(std::move(record)) {}
+
+    /** @brief Retorna a mensagem de erro formatada. */
+    const char* what() const noexcept override {
+        // Garante que a string interna não seja invalidada
+        // (embora std::string::c_str() geralmente seja estável)
+        try {
+             // Atualiza uma cópia interna caso a string original seja movida
+             // (improvável aqui, mas mais seguro em geral)
+             what_cache_ = record_.message;
+             return what_cache_.c_str();
+        } catch (...) {
+            return "Falha ao obter mensagem da exceção.";
+        }
+    }
+    /** @brief Retorna o registro de erro completo associado à exceção. */
+    const ErrorRecord& record() const noexcept {
+        return record_;
+    }
+    /** @brief Retorna o código de erro numérico de 32 bits. */
+    std::uint32_t code() const noexcept {
+        return record_.code;
+    }
+    /** @brief Retorna a severidade do erro. */
+    Severity severity() const noexcept {
+         return record_.severity;
+    }
+
+private:
+    ErrorRecord record_;
+    mutable std::string what_cache_;
+};
+
+ERROR_NAMESPACE_CLOSE
+FVGRIDMAKER_NAMESPACE_CLOSE
