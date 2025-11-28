@@ -107,8 +107,6 @@
 // Macros Compostas (Atalhos para Implementação)
 // ----------------------------------------------------------------------------
 
-// --- ADIÇÕES SOLICITADAS (SEM ALTERAR O RESTO) ---
-
 /**
  * @brief Abre a hierarquia para o namespace base do Grid1D.
  * Escopo: `FVGridMaker::grid::grid1d`
@@ -138,8 +136,6 @@
     GRID1D_NAMESPACE_CLOSE \
     GRID_NAMESPACE_CLOSE \
     FVGRIDMAKER_NAMESPACE_CLOSE
-
-// --- FIM DAS ADIÇÕES ---
 
 /**
  * @brief Abre a hierarquia completa para Builders de Grid1D.
