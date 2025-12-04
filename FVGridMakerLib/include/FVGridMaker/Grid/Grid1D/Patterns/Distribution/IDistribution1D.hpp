@@ -1,52 +1,64 @@
 // ----------------------------------------------------------------------------
 /* File: IDistribution1D.hpp
- * Author: FVMGridMaker Team
+ * Project: FVGridMaker
  * Version: 1.0
- * Date: 2025-10-26
- * Description: Interface (Strategy) para gerar sequências 1D de faces/centros.
- *              Permite plugar novas distribuições sem alterar o núcleo.
+ * Description: Traits and helpers for 1D grid distributions.
  * License: GNU GPL v3
  */
 // ----------------------------------------------------------------------------
+
 #pragma once
 
 // ----------------------------------------------------------------------------
-// includes C++
+// includes FVGridMaker (ordem alfabética por caminho)
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/Common/namespace.hpp>
+#include <FVGridMaker/Core/Common/types.hpp>
+#include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/ConceptsDistribution.hpp>
+
+// ----------------------------------------------------------------------------
+// includes C++ (ordem alfabética)
 // ----------------------------------------------------------------------------
 #include <cstddef>
-#include <string>
-#include <vector>
-
-// ----------------------------------------------------------------------------
-// includes FVMGridMaker
-// ----------------------------------------------------------------------------
-#include <FVMGridMaker/Core/type.h>
-
-namespace FVMGridMaker::grid::grid1d::patterns::distribution {
 
 /**
- * @brief Interface para distribuições 1D (Strategy).
- *
- * Contrato:
- *  - faces(N,A,B)  → retorna N+1 pontos estritamente crescentes em [A,B]
- *  - centers(N,A,B)→ retorna N   pontos estritamente crescentes em (A,B)
- *  - N > 0 e B > A devem ser respeitados pelo chamador; a implementação pode
- *    validar e lançar exceções (GridErr) se desejar.
+ * @file IDistribution1D.hpp
+ * @brief Traits and helpers for 1D grid distributions.
+ * @ingroup Grid1D
  */
-struct IDistribution1D {
-    using Real  = FVMGridMaker::core::Real;
-    using Index = FVMGridMaker::core::Index;
 
-    virtual ~IDistribution1D() = default;
+FVGRIDMAKER_NAMESPACE_OPEN
+GRID_NAMESPACE_OPEN
+GRID1D_NAMESPACE_OPEN
+PATTERNS_NAMESPACE_OPEN
+DISTRIBUTION_NAMESPACE_OPEN
 
-    /// Nome amigável para logs/diagnósticos (ex.: "Uniform1D", "Random1D").
-    virtual std::string name() const = 0;
-
-    /// Gera faces (N+1) estritamente crescentes em [A,B].
-    virtual std::vector<Real> faces(Index N, Real A, Real B) const = 0;
-
-    /// Gera centros (N) estritamente crescentes em (A,B).
-    virtual std::vector<Real> centers(Index N, Real A, Real B) const = 0;
+/**
+ * @brief Compile-time traits for 1D distributions.
+ */
+template <typename D>
+struct Distribution1DTraits {
+    static constexpr bool is_valid = Distribution1D<D>;
+    using distribution_type = D;
+    using real_type = core::Real;
+    using size_type = std::size_t;
 };
 
-} // namespace FVMGridMaker::grid::grid1d::patterns::distribution
+/**
+ * @brief Convenience variable template to check Distribution1D.
+ */
+template <typename D>
+inline constexpr bool is_distribution_1d_v =
+    Distribution1DTraits<D>::is_valid;
+
+/**
+ * @brief Helper alias for explicit implementation types.
+ */
+template <Distribution1D D>
+using Distribution1DImpl = D;
+
+DISTRIBUTION_NAMESPACE_CLOSE
+PATTERNS_NAMESPACE_CLOSE
+GRID1D_NAMESPACE_CLOSE
+GRID_NAMESPACE_CLOSE
+FVGRIDMAKER_NAMESPACE_CLOSE

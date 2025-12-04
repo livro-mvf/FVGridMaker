@@ -24,7 +24,7 @@
 #include <FVGridMaker/Core/Common/types.hpp>
 
 /**
- * @file Constants.hpp
+ * @file constants.hpp
  * @brief Constantes globais (Matemática, Física, Tolerâncias).
  * @ingroup Core
  */

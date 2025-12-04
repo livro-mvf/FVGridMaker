@@ -21,7 +21,7 @@
 // ----------------------------------------------------------------------------
 // includes FVMGridMaker
 // ----------------------------------------------------------------------------
-#include <FVMGridMaker/Core/Common/Namespace.hpp>
+#include <FVGridMaker/Core/Common/namespace.hpp>
 
 /**
  * @file Tags1D.hpp

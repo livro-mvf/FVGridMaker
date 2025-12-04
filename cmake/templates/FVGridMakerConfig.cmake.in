@@ -1,0 +1,30 @@
+# ==============================================================================
+# FVGridMakerConfig.cmake - Configuração do pacote para find_package()
+# ==============================================================================
+
+@PACKAGE_INIT@
+
+# Verifica dependências
+include(CMakeFindDependencyMacro)
+
+# Adiciona targets da biblioteca
+include("${CMAKE_CURRENT_LIST_DIR}/FVGridMakerTargets.cmake")
+
+# Validação da versão
+set(FVGRIDMAKER_VERSION @PROJECT_VERSION@)
+
+# Função para obter informações da versão
+function(fvg_get_version)
+    set(FVGRIDMAKER_VERSION_MAJOR @PROJECT_VERSION_MAJOR@ PARENT_SCOPE)
+    set(FVGRIDMAKER_VERSION_MINOR @PROJECT_VERSION_MINOR@ PARENT_SCOPE)
+    set(FVGRIDMAKER_VERSION_PATCH @PROJECT_VERSION_PATCH@ PARENT_SCOPE)
+    set(FVGRIDMAKER_VERSION_FULL "@FVG_VERSION_FULL@" PARENT_SCOPE)
+endfunction()
+
+# Mensagem de sucesso
+if(NOT FVGridMaker_FIND_QUIETLY)
+    message(STATUS "Found FVGridMaker @PROJECT_VERSION@")
+    message(STATUS "  - Full version: @FVG_VERSION_FULL@")
+    message(STATUS "  - Build type: @CMAKE_BUILD_TYPE@")
+    message(STATUS "  - Install prefix: @CMAKE_INSTALL_PREFIX@")
+endif()

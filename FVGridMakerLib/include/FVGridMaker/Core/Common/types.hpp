@@ -23,10 +23,16 @@
 #include <FVGridMaker/Core/Common/namespace.hpp>
 
 /**
- * @file Types.hpp
+ * @file types.hpp
  * @brief Tipos primitivos fundamentais configuráveis da biblioteca.
  * @ingroup Core
  */
+
+
+
+// ----------------------------------------------------------------------------
+// Tipo de Ponto Flutuante (Real)
+// ----------------------------------------------------------------------------
 
 FVGRIDMAKER_NAMESPACE_OPEN
 CORE_NAMESPACE_OPEN
@@ -35,17 +41,13 @@ CORE_NAMESPACE_OPEN
 // Tipo de Ponto Flutuante (Real)
 // ----------------------------------------------------------------------------
 
-/**
- * @typedef Real
- * @brief Tipo de ponto flutuante padrão da biblioteca.
- *
- * A precisão pode ser alterada definindo macros antes de incluir este arquivo
- * (geralmente via CMake `-DFVG_REAL_IS_FLOAT=ON`).
- *
- * - Padrão: `double` (64-bit) - Recomendado para CFD.
- * - Opção 1: `float` (32-bit) - Menor uso de memória, menor precisão.
- * - Opção 2: `long double` - Maior precisão (dependente da arquitetura).
- */
+/// @brief Tipo de ponto flutuante padrão da biblioteca.
+/// @details A precisão pode ser alterada definindo macros antes de incluir
+///          este arquivo (geralmente via CMake `-DFVG_REAL_IS_FLOAT=ON`).
+///
+/// - Padrão: `double` (64-bit) – recomendado para CFD.
+/// - Opção 1: `float` (32-bit) – menor uso de memória, menor precisão.
+/// - Opção 2: `long double` – maior precisão (dependente da arquitetura).
 #if defined(FVG_REAL_IS_FLOAT)
     using Real = float;
 #elif defined(FVG_REAL_IS_LONG_DOUBLE)

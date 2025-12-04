@@ -20,7 +20,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Project options (RNF07)
 option(BUILD_EXAMPLES "Build examples" ON)
-option(BUILD_TESTS "Build tests" ON)
+option(BUILD_TESTS "Build tests" OFF)
 option(BUILD_DOCS "Build docs (Doxygen + Sphinx)" OFF)
 
 # Default build type

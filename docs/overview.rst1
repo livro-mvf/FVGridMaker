@@ -1,0 +1,33 @@
+Visão geral
+===========
+
+Esta seção apresenta uma visão geral da biblioteca **FVGridMaker**.
+
+Objetivos
+---------
+
+- Fornecer uma infraestrutura moderna, em C++20, para geração de malhas
+  estruturadas voltadas ao método de volumes finitos.
+- Manter a biblioteca independente de bibliotecas externas, utilizando
+  exclusivamente a STL.
+- Oferecer uma API clara e extensível, adequada tanto para pesquisa
+  quanto para ensino.
+
+Requisitos mínimos
+------------------
+
+- Compilador C++ com suporte completo a C++20.
+- CMake (versão compatível com o projeto).
+- Ambiente de desenvolvimento compatível com Linux/WSL (configuração
+  principal utilizada nos testes).
+
+Estado atual
+------------
+
+- Malha 1D estruturada implementada.
+- Exportação básica para formatos compatíveis com ferramentas como VTK.
+- Sistema de tratamento de erros próprio (ErrorHandling), com integração
+  planejada à documentação.
+
+As próximas etapas incluem a extensão para malhas 2D e recursos adicionais
+de análise e pós-processamento.

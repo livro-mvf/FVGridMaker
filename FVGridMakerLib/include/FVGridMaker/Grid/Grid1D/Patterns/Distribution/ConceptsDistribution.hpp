@@ -1,52 +1,67 @@
 // ----------------------------------------------------------------------------
 // File: ConceptsDistribution.hpp
-// Author: FVMGridMaker Team
+// Project: FVGridMaker
 // Version: 1.0
-// Date: 2025-10-25
-// Description: Concept para validar functors de distribuição 1D.
+// Description: C++20 concept for 1D grid distribution functors.
 // License: GNU GPL v3
 // ----------------------------------------------------------------------------
+
 #pragma once
+
+// ----------------------------------------------------------------------------
+// includes FVGridMaker (ordem alfabética por caminho)
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/Common/namespace.hpp>
+#include <FVGridMaker/Core/Common/types.hpp>
 
 // ----------------------------------------------------------------------------
 // includes C++ 
 // ----------------------------------------------------------------------------
 #include <concepts>
+#include <cstddef>
 #include <cstdint>
 #include <span>
+#include <type_traits>
 
-// ----------------------------------------------------------------------------
-// includes FVMGridMaker  
-// ----------------------------------------------------------------------------
-#include <FVMGridMaker/Core/namespace.h>
-#include <FVMGridMaker/Core/type.h>
+/**
+ * @file ConceptsDistribution.hpp
+ * @brief Concept for 1D grid distributions (functor-based).
+ * @ingroup Grid1D
+ */
 
-FVMGRIDMAKER_NAMESPACE_OPEN
+FVGRIDMAKER_NAMESPACE_OPEN
 GRID_NAMESPACE_OPEN
 GRID1D_NAMESPACE_OPEN
 PATTERNS_NAMESPACE_OPEN
 DISTRIBUTION_NAMESPACE_OPEN
 
-using Real  = FVMGridMaker::core::Real;
-using Index = FVMGridMaker::core::Index;
+using Real  = core::Real;
+using Index = core::Index;
 
 /**
- * @brief Um functor de distribuição 1D deve prover:
- *  void makeFaces(Index, Real, Real, std::span<Real>, std::uint64_t, Real);
- *  void makeCenters(Index, Real, Real, std::span<Real>, std::uint64_t, Real);
- * Assinaturas exatas; não há verificação de índice no hot-path.
+ * @brief Concept for 1D grid distribution functors.
+ *
+ * A valid 1D distribution must:
+ *  - be default-constructible;
+ *  - implement makeFaces and makeCenters with the given signature;
+ *  - operate on spans (SoA-friendly, no ownership of storage).
  */
-template<class D>
+template <typename D>
 concept Distribution1D =
-    requires(D d, Index N, Real A, Real B,
-             std::span<Real> v, std::uint64_t seed, Real dx)
-{
-    { d.makeFaces(N, A, B, v, seed, dx) }   -> std::same_as<void>;
-    { d.makeCenters(N, A, B, v, seed, dx) } -> std::same_as<void>;
-};
+    std::is_default_constructible_v<D> &&
+    requires(D d,
+             Index n,
+             Real a,
+             Real b,
+             std::span<Real> v,
+             std::uint64_t seed,
+             Real dx_min) {
+        { d.makeFaces(n, a, b, v, seed, dx_min) } -> std::same_as<void>;
+        { d.makeCenters(n, a, b, v, seed, dx_min) } -> std::same_as<void>;
+    };
 
 DISTRIBUTION_NAMESPACE_CLOSE
 PATTERNS_NAMESPACE_CLOSE
 GRID1D_NAMESPACE_CLOSE
 GRID_NAMESPACE_CLOSE
-FVMGRIDMAKER_NAMESPACE_CLOSE
+FVGRIDMAKER_NAMESPACE_CLOSE

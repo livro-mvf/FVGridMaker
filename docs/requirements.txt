@@ -1,0 +1,5 @@
+sphinx
+breathe
+myst-parser
+sphinx-design
+pydata-sphinx-theme

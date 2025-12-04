@@ -1,0 +1,14 @@
+API do Núcleo (Core)
+====================
+
+Módulos fundamentais e utilitários do sistema.
+
+.. doxygenclass:: FVMGridMaker::Core::ID
+   :members:
+   :protected-members:
+   :private-members:
+
+.. doxygenclass:: FVMGridMaker::Core::Storage
+   :members:
+   :protected-members:
+   :private-members:

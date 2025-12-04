@@ -1,0 +1,15 @@
+
+Referência da API C++
+=====================
+
+Esta seção apresenta a documentação automática da API C++ do
+**FVGridMaker**, gerada a partir dos arquivos de cabeçalho com
+Doxygen e integrada ao Sphinx via Breathe.
+
+As principais classes da biblioteca são listadas abaixo. A
+documentação detalhada de cada elemento (métodos, tipos, etc.)
+é extraída diretamente dos comentários do código-fonte.
+
+.. doxygenindex::
+   :project: FVGridMaker
+

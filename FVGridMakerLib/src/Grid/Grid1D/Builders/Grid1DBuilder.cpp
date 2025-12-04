@@ -1,172 +1,192 @@
-// // ----------------------------------------------------------------------------
-// /* File: Grid1DBuilder.cpp
-//  * Author: FVMGridMaker Team
-//  * Version: 2.4
-//  * Date: 2025-10-26
-//  * Description: Implementação do Grid1DBuilder.
-//  *   - Obtém geradores via Grid1DDistributionRegistry (faces/centers)
-//  *   - Fecha a malha conforme o centering (Face/Cell)
-//  *   - Validações integram com ErrorHandling (FVMGException)
-//  * License: GNU GPL v3
-//  */
-// // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// File: Grid1DBuilder.cpp
+// Project: FVGridMaker
+// Version: 3.0
+// Description:
+//   Backend implementation for Grid1DBuilder.
+//
+//   - Uses 1D distribution functors (Uniform1D, Random1D, ...)
+//   - Generates faces and centres on [a, b]
+//   - Computes face and cell sizes (dF, dC) in a data-oriented layout
+//   - No registry, no std::any; selection by std::type_index.
+// License: GNU GPL v3
+// ----------------------------------------------------------------------------
 
-// #include <FVMGridMaker/Grid/Grid1D/Builders/Grid1DBuilder.hpp>
+// ----------------------------------------------------------------------------
+// includes FVMGridMaker (ordem alfabética por caminho)
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/Common/namespace.hpp>
+#include <FVGridMaker/Core/Common/types.hpp>
 
-// // Registro de distribuições
-// #include <FVMGridMaker/Grid/Grid1D/Builders/Grid1DDistributionRegistry.hpp>
+#include <FVGridMaker/Grid/Grid1D/API/Grid1D.h>
+#include <FVGridMaker/Grid/Grid1D/Builders/Grid1DBuilder.hpp>
+#include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/ConceptsDistribution.hpp>
+#include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/Random1D.hpp>
+#include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/Uniform1D.hpp>
 
-// // API/Tags
-// #include <FVMGridMaker/Grid/Common/Tags1D.hpp>
-// #include <FVMGridMaker/Grid/Grid1D/API/Grid1D.h>
+// ----------------------------------------------------------------------------
+// includes C++ (alphabetical)
+// ----------------------------------------------------------------------------
+#include <algorithm>
+#include <cassert>
+#include <cstddef>
+#include <span>
+#include <stdexcept>
+#include <typeindex>
+#include <vector>
 
-// // *** Error handling (umbrella) ***
-// #include <FVMGridMaker/ErrorHandling/ErrorHandling.h>
+FVGRIDMAKER_NAMESPACE_OPEN
+GRID_NAMESPACE_OPEN
+GRID1D_NAMESPACE_OPEN
+BUILDERS_NAMESPACE_OPEN
+DETAIL_NAMESPACE_OPEN
 
-// // C++
-// #include <algorithm>
-// #include <any>
-// #include <iterator>
-// #include <numeric>
-// #include <stdexcept>
-// #include <string>
-// #include <utility>
-// #include <vector>
+using core::Index;
+using core::Real;
 
-// FVMG_GRID1D_BUILDERS_OPEN
+using api::Grid1D;
+using patterns::distribution::Distribution1D;
+using patterns::distribution::Random1D;
+using patterns::distribution::Uniform1D;
 
-// using core::Index;
-// using core::Real;
-// using grid::DistributionTag;
-// using grid::CenteringTag;
-// using api::Grid1D;
+// -----------------------------------------------------------------------------
+// Helper: builds a Grid1D for a given distribution functor
+// -----------------------------------------------------------------------------
 
-// // ----------------------------------------------------------------------------
-// // Setters (fluent API)
-// // ----------------------------------------------------------------------------
-// Grid1DBuilder& Grid1DBuilder::setN(Index n) {
-//     this->n_ = n;
-//     return *this;
-// }
+/**
+ * @brief Build a Grid1D using a specific 1D distribution functor.
+ *
+ * This function assumes that Grid1DBuilderConfig provides at least:
+ *   - Index n;        // number of physical cells
+ *   - Real  a;        // left domain boundary
+ *   - Real  b;        // right domain boundary
+ *
+ * Ghost cells (cfg.nGhost) and centering (cfg.centering) are currently not
+ * used in this backend; they can be incorporated later via policies sem
+ * quebrar a interface do builder.
+ */
+template <Distribution1D Dist>
+static Grid1D build_with_distribution(const Grid1DBuilderConfig& cfg) {
+    // -------------------------------------------------------------------------
+    // 1. Extract basic configuration
+    // -------------------------------------------------------------------------
+    const Index n = cfg.n;
+    const Real  a = cfg.a;
+    const Real  b = cfg.b;
 
-// Grid1DBuilder& Grid1DBuilder::setDomain(Real a, Real b) {
-//     this->a_ = a;
-//     this->b_ = b;
-//     return *this;
-// }
+    if (n <= Index{0}) {
+        throw std::invalid_argument("[Grid1DBuilder] n must be > 0.");
+    }
+    if (!(b > a)) {
+        throw std::invalid_argument("[Grid1DBuilder] Domain must satisfy b > a.");
+    }
 
-// Grid1DBuilder& Grid1DBuilder::setDistribution(DistributionTag tag) {
-//     this->dist_ = tag;
-//     return *this;
-// }
+    const std::size_t n_cells = static_cast<std::size_t>(n);
+    const std::size_t n_faces = n_cells + 1u;
 
-// Grid1DBuilder& Grid1DBuilder::setCentering(CenteringTag centering) {
-//     this->cent_ = centering;
-//     return *this;
-// }
+    // -------------------------------------------------------------------------
+    // 2. Allocate SoA arrays: faces, centres, face sizes, cell "spacings"
+    // -------------------------------------------------------------------------
+    std::vector<Real> xf(n_faces);       // faces: x_{1/2}, ..., x_{N+1/2}
+    std::vector<Real> xc(n_cells);       // centres: x_1, ..., x_N
+    std::vector<Real> dF(n_cells);       // Δx_F: face-to-face distances (N)
+    std::vector<Real> dC(n_cells + 1u);  // Δx_C: (N+1) entries:
+                                         //   [0]     : x_1   - x_{1/2}
+                                         //   [1..N-1]: x_i   - x_{i-1}
+                                         //   [N]     : x_{N+1/2} - x_N
 
-// Grid1DBuilder& Grid1DBuilder::setOption(
-//     const FVMGridMaker::grid::grid1d::patterns::distribution::Random1D::Options& opt) {
-//     this->random1d_options_ = opt;
-//     return *this;
-// }
+    // -------------------------------------------------------------------------
+    // 3. Run the distribution functor on the physical domain [a, b]
+    // -------------------------------------------------------------------------
+    Dist dist{};
 
-// // ----------------------------------------------------------------------------
-// // build()
-// // ----------------------------------------------------------------------------
-// Grid1D Grid1DBuilder::build() const {
-//     // Validações que o teste espera lançar FVMGException:
-//     if (this->n_ == 0) {
-//         FVMG_ERROR(error::CoreErr::InvalidArgument, {
-//             {"where", "Grid1DBuilder::build"},
-//             {"what",  "N must be > 0"}
-//         });
-//     }
-//     if (!(this->b_ > this->a_)) {
-//         FVMG_ERROR(error::CoreErr::InvalidArgument, {
-//             {"where", "Grid1DBuilder::build"},
-//             {"what",  "requires B > A"}
-//         });
-//     }
+    std::span<Real> xf_span{xf.data(), xf.size()};
+    std::span<Real> xc_span{xc.data(), xc.size()};
 
-//     // Resolve geradores no registro
-//     auto& reg = Grid1DDistributionRegistry::instance();
+    using Size = typename Dist::Size;
 
-//     auto nameOpt = reg.nameForTag(this->dist_);
-//     if (!nameOpt.has_value()) {
-//         // não é verificado em teste; manter std::runtime_error está OK
-//         throw std::runtime_error("Grid1DBuilder::build(): distribuição não registrada para o tag.");
-//     }
+    // Se Dist::Size for unsigned (size_t), o cast explícito evita warnings
+    // de conversão de sinal sem alterar o comportamento.
+    dist.makeFaces(static_cast<Size>(n), a, b, xf_span);
+    dist.makeCenters(static_cast<Size>(n), a, b, xc_span);
 
-//     auto entryOpt = reg.find(*nameOpt);
-//     if (!entryOpt.has_value()) {
-//         throw std::runtime_error("Grid1DBuilder::build(): gerador ausente no registro.");
-//     }
-//     const auto& entry = *entryOpt;
+    // -------------------------------------------------------------------------
+    // 4. Compute face distances dF
+    // -------------------------------------------------------------------------
+    for (std::size_t i = 0; i < n_cells; ++i) {
+        dF[i] = xf[i + 1] - xf[i];
+    }
 
-//     // Empacota Options específicas (quando Random1D)
-//     const std::any* options_any = nullptr;
-//     std::any holder;
-//     if (this->dist_ == DistributionTag::Random1D && this->random1d_options_.has_value()) {
-//         holder      = *this->random1d_options_;
-//         options_any = &holder;
-//     }
+    // -------------------------------------------------------------------------
+    // 5. Compute cell "spacings" dC (mesma convenção do código antigo)
+    // -------------------------------------------------------------------------
+    dC.front() = xc.front() - xf.front();
+    if (n_cells >= 2) {
+        for (std::size_t i = 1; i < n_cells; ++i) {
+            dC[i] = xc[i] - xc[i - 1];
+        }
+    }
+    dC.back() = xf.back() - xc.back();
 
-//     std::vector<Real> xf; // faces (N+1)
-//     std::vector<Real> xc; // centros (N)
+    // -------------------------------------------------------------------------
+    // 6. Build the Grid1D object
+    //
+    // Mantém a mesma chamada usada anteriormente:
+    //   Grid1D{faces, centres, dF, dC}
+    // Se a assinatura de Grid1D mudar no futuro (ex.: suportar ghosts
+    // explicitamente), basta ajustar esta linha, sem alterar o builder.
+    // -------------------------------------------------------------------------
+    return Grid1D{std::move(xf), std::move(xc),
+                  std::move(dF), std::move(dC)};
+}
 
-//     // 1) Gera sequência base
-//     if (this->cent_ == CenteringTag::FaceCentered) {
-//         // Base: faces
-//         xf = entry.faces_fn(this->n_, this->a_, this->b_, options_any);
-//         if (xf.size() != static_cast<std::size_t>(this->n_) + 1u) {
-//             throw std::runtime_error("Distribuição gerou faces com tamanho inválido.");
-//         }
+// -----------------------------------------------------------------------------
+// Public backend: dispatch by distribution type
+// -----------------------------------------------------------------------------
 
-//         // Deriva centros: média entre faces adjacentes
-//         xc.resize(static_cast<std::size_t>(this->n_));
-//         auto itR = std::next(xf.begin());
-//         std::transform(
-//             xf.begin(), std::prev(xf.end()), xc.begin(),
-//             [&](Real xL) { Real xR = *itR++; return Real(0.5) * (xL + xR); }
-//         );
-//     } else {
-//         // Base: centros
-//         xc = entry.centers_fn(this->n_, this->a_, this->b_, options_any);
-//         if (xc.size() != static_cast<std::size_t>(this->n_)) {
-//             throw std::runtime_error("Distribuição gerou centros com tamanho inválido.");
-//         }
+/**
+ * @brief Backend for Grid1DBuilder::build().
+ *
+ * @param cfg               Aggregated builder configuration.
+ * @param distribution_type std::type_index of the selected distribution functor.
+ * @param centering_type    std::type_index of centering policy (currently
+ *                          unused here; centering is encoded via distributions
+ *                          or can be handled by a future policy layer).
+ *
+ * This function replaces the old registry-based implementation:
+ *   - No singletons
+ *   - No std::any
+ *   - Selection by typeid(Dist) + concepts (Distribution1D)
+ */
+Grid1D build_grid1d(const Grid1DBuilderConfig& cfg,
+                    const std::type_index& distribution_type,
+                    const std::type_index& /*centering_type*/) {
+    // NOTE:
+    // Para adicionar novas distribuições, basta:
+    //   1) Incluir o header correspondente;
+    //   2) Acrescentar mais um "if" abaixo.
+    //
+    // Exemplo:
+    //   if (distribution_type == typeid(LogStretch1D)) {
+    //       return build_with_distribution<LogStretch1D>(cfg);
+    //   }
 
-//         // Fecha faces
-//         xf.resize(static_cast<std::size_t>(this->n_) + 1u);
-//         xf.front() = this->a_;
-//         xf.back()  = this->b_;
-//         if (this->n_ >= 2) {
-//             for (std::size_t i = 1; i < static_cast<std::size_t>(this->n_); ++i) {
-//                 xf[i] = Real(0.5) * (xc[i - 1] + xc[i]);
-//             }
-//         }
-//     }
+    if (distribution_type == typeid(Uniform1D)) {
+        return build_with_distribution<Uniform1D>(cfg);
+    }
 
-//     // 2) dF (N) = dif entre faces adjacentes
-//     std::vector<Real> dF(static_cast<std::size_t>(this->n_));
-//     std::transform(
-//         std::next(xf.begin()), xf.end(), xf.begin(), dF.begin(),
-//         [](Real xr, Real xl){ return xr - xl; }
-//     );
+    if (distribution_type == typeid(Random1D)) {
+        return build_with_distribution<Random1D>(cfg);
+    }
 
-//     // 3) dC (N+1): convenção do projeto
-//     std::vector<Real> dC(static_cast<std::size_t>(this->n_) + 1u);
-//     dC.front() = xc.front() - xf.front();
-//     if (this->n_ >= 2) {
-//         std::transform(
-//             std::next(xc.begin()), xc.end(), xc.begin(), std::next(dC.begin()),
-//             [](Real c, Real p){ return c - p; }
-//         );
-//     }
-//     dC.back() = xf.back() - xc.back();
+    // Se você preferir, isto pode ser substituído pelo sistema de erros
+    // personalizado da biblioteca.
+    throw std::invalid_argument(
+        "[Grid1DBuilder] Unknown distribution type in build_grid1d().");
+}
 
-//     return Grid1D{std::move(xf), std::move(xc), std::move(dF), std::move(dC)};
-// }
-
-// FVMG_GRID1D_BUILDERS_CLOSE
+DETAIL_NAMESPACE_CLOSE
+BUILDERS_NAMESPACE_CLOSE
+GRID1D_NAMESPACE_CLOSE
+GRID_NAMESPACE_CLOSE
+FVGRIDMAKER_NAMESPACE_CLOSE

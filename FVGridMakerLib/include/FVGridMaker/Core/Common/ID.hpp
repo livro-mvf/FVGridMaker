@@ -18,6 +18,12 @@
 #include <FVGridMaker/Core/Common/namespace.hpp>
 
 
+// ----------------------------------------------------------------------------
+// includes da biblioteca padrão
+// ----------------------------------------------------------------------------
+#include <atomic>
+#include <string>
+
 /**
  * @file ID.hpp
  * @brief Classe base para identificação e rastreamento de objetos.
@@ -133,7 +139,7 @@ private:
     }
 
     Index uid_;         ///< Identificador único.
-    std::string name_;  ///< Tag legível para humanos.
+    std::string name_;  ///< Tag legível.
 };
 
 COMMON_NAMESPACE_CLOSE

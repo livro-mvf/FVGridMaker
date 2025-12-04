@@ -1,0 +1,84 @@
+# Doxyfile.in - configuração do Doxygen para o FVGridMaker
+# -----------------------------------------------------------------
+# Este arquivo é processado pelo CMake (configure_file) para gerar
+# o Doxyfile final usado na etapa "doxygen_xml".
+# -----------------------------------------------------------------
+
+# Nome do projeto (aparece na documentação gerada)
+PROJECT_NAME           = "FVGridMaker"
+
+# Diretório raiz do código a ser documentado
+INPUT                  = @PROJECT_SOURCE_DIR@/FVGridMakerLib/include
+
+# Onde o Doxygen deve gravar a saída (XML será usado pelo Breathe)
+OUTPUT_DIRECTORY       = @DOXYGEN_OUTPUT_DIR@  # CORRIGIDO: usa a variável do CMake
+
+# Geração de XML para integração com o Breathe/Sphinx
+GENERATE_XML           = YES
+XML_OUTPUT             = xml
+
+# Não gerar HTML direto (vamos usar Sphinx para isso)
+GENERATE_HTML          = NO
+
+# Idioma da documentação
+OUTPUT_LANGUAGE        = Portuguese
+
+# -----------------------------------------------------------------
+# Opções gerais de extração
+# -----------------------------------------------------------------
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_ANON_NSPACES   = YES
+
+# -----------------------------------------------------------------
+# Pré-processamento de código C++ (importante por causa das macros
+# de namespace e helpers usados na biblioteca)
+# -----------------------------------------------------------------
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+
+# Aqui dizemos ao Doxygen como tratar as macros de namespace usadas
+# na biblioteca. A ideia é que, para fins de documentação, essas
+# macros sejam "removidas" (substituídas por vazio), evitando que
+# o parser C++ do Sphinx veja tokens estranhos.
+PREDEFINED             = \
+  FVGRIDMAKER_NAMESPACE_OPEN= \
+  FVGRIDMAKER_NAMESPACE_CLOSE= \
+  CORE_NAMESPACE_OPEN= \
+  CORE_NAMESPACE_CLOSE= \
+  COMMON_NAMESPACE_OPEN= \
+  COMMON_NAMESPACE_CLOSE= \
+  ERROR_NAMESPACE_OPEN= \
+  ERROR_NAMESPACE_CLOSE= \
+  DETAIL_NAMESPACE_OPEN= \
+  DETAIL_NAMESPACE_CLOSE= \
+  FVMG_ENUM_ELEM(name)=name \
+  FVMG_NAME_ELEM(name)=name
+
+# Opcionalmente, podemos garantir que macros auxiliares não sejam
+# tratadas como entidades "principais" de documentação.
+EXCLUDE_SYMBOLS        = \
+  FVMG_ENUM_ELEM \
+  FVMG_NAME_ELEM
+
+# -----------------------------------------------------------------
+# Aparência e detalhes da documentação
+# -----------------------------------------------------------------
+SOURCE_BROWSER         = YES
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+
+# -----------------------------------------------------------------
+# Outras opções padrão (podem ser ajustadas depois conforme o
+# crescimento do projeto)
+# -----------------------------------------------------------------
+RECURSIVE              = YES
+QUIET                  = NO
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_AS_ERROR          = NO

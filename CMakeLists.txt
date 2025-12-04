@@ -10,6 +10,7 @@ project(FVGridMaker VERSION 1.0 LANGUAGES CXX)
 # Incluir todos os módulos
 include(cmake/ConfigUtils.cmake)          # Utilitários (bloqueio de in-source build)
 include(cmake/ConfigOptions.cmake)        # Opções (C++20, BUILD_TESTS, etc)
+include(cmake/ConfigVersion.cmake)        # Versionamento da biblioteca
 include(cmake/ConfigCompiler.cmake)       # Configurações do compilador
 include(cmake/ConfigTargets.cmake)        # Alvo principal da biblioteca
 include(cmake/ConfigExamples.cmake)       # Exemplos (chama add_subdirectory)

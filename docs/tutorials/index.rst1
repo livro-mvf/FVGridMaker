@@ -1,0 +1,13 @@
+Tutoriais
+=========
+
+Esta seção reúne exemplos comentados, em espírito semelhante aos
+*tutorials* do PETSc. Cada tutorial é um programa completo, com código
+disponível no repositório, acompanhado de explicações passo a passo.
+
+.. toctree::
+   :maxdepth: 1
+
+   tutorial_uniform_1d      # futuro: criação da malha 1D e exportação
+   tutorial_uniform_2d      # futuro: malha 2D e iteração em fronteiras
+   tutorial_coupling_petsc  # futuro: acoplamento com PETSc (se aplicável)
