@@ -21,8 +21,9 @@
 // includes FVGridMaker
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/Language.h>
+#include <FVGridMaker/ErrorHandling/CoreErrors.h>
 #include <FVGridMaker/ErrorHandling/ErrorTraits.h>
 #include <FVGridMaker/ErrorHandling/IErrorLogger.h>    
 #include <FVGridMaker/ErrorHandling/ErrorManager.h>
-#include <FVGridMaker/ErrorHandling/Macros.h>          
+#include <FVGridMaker/ErrorHandling/Throw.h>
 #include <FVGridMaker/ErrorHandling/FileErrors.h>     

@@ -68,11 +68,6 @@
 /// Fecha o namespace `grid1d`.
 #define GRID1D_NAMESPACE_CLOSE }
 
-/// Abre o namespace `api`.
-#define API_NAMESPACE_OPEN namespace api {
-/// Fecha o namespace `api`.
-#define API_NAMESPACE_CLOSE }
-
 /// Abre o namespace `builders`.
 #define BUILDERS_NAMESPACE_OPEN namespace builders {
 /// Fecha o namespace `builders`.
@@ -121,21 +116,6 @@
     GRID_NAMESPACE_CLOSE   \
     FVGRIDMAKER_NAMESPACE_CLOSE
 
-/**
- * @brief Abre a hierarquia completa para a API do Grid1D (Classes de Dados).
- * Escopo: `FVGridMaker::grid::grid1d::api`
- */
-#define FVG_GRID1D_API_OPEN \
-    FVGRIDMAKER_NAMESPACE_OPEN \
-    GRID_NAMESPACE_OPEN        \
-    GRID1D_NAMESPACE_OPEN      \
-    API_NAMESPACE_OPEN
-
-#define FVG_GRID1D_API_CLOSE \
-    API_NAMESPACE_CLOSE     \
-    GRID1D_NAMESPACE_CLOSE  \
-    GRID_NAMESPACE_CLOSE    \
-    FVGRIDMAKER_NAMESPACE_CLOSE
 
 /**
  * @brief Abre a hierarquia completa para Builders de Grid1D.

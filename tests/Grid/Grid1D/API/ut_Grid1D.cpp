@@ -1,6 +1,6 @@
 // ----------------------------------------------------------------------------
 // File: ut_Grid1D.cpp
-// Description: Testes unitários para a classe de dados Grid1D (API).
+// Description: Testes unitários para a classe de dados Grid1D.
 //              Verifica armazenamento, acesso via spans e semântica de movimento.
 // ----------------------------------------------------------------------------
 
@@ -9,9 +9,9 @@
 #include <numeric> // std::iota
 
 // Include da classe a ser testada
-#include <FVGridMaker/Grid/Grid1D/API/Grid1D.h>
+#include <FVGridMaker/Grid/Grid1D/Grid1D.h>
 
-using namespace FVGridMaker::grid::grid1d::api;
+using namespace FVGridMaker::grid::grid1d;
 using FVGridMaker::core::Real;
 using FVGridMaker::core::Index;
 

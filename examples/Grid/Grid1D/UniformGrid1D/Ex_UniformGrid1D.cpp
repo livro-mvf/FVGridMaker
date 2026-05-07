@@ -1,66 +1,90 @@
 // ----------------------------------------------------------------------------
 // File: Ex_UniformGrid1D.cpp
-// Purpose: Example of building a 1D uniform grid using Grid1DBuilder.
+// Author: FVMGridMaker Team
+// Version: 2.3
+// Date: 2025-10-26
+// Description: Criação de uma malha uniforme
+// License: GNU GPL v3
 // ----------------------------------------------------------------------------
 
+
 // ----------------------------------------------------------------------------
-// includes FVMGridMaker (alphabetical by path)
+// includes FVMGridMaker 
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/Core/Common/namespace.hpp>
-#include <FVGridMaker/Core/Common/types.hpp>
-#include <FVGridMaker/Grid/Common/Tags1D.hpp>
-#include <FVGridMaker/Grid/Grid1D/API/Grid1D.h>
 #include <FVGridMaker/Grid/Grid1D/Builders/Grid1DBuilder.hpp>
 #include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/Uniform1D.hpp>
+#include <FVGridMaker/Grid/Grid1D/Grid1D.h>
 
 // ----------------------------------------------------------------------------
-// includes C++ (alphabetical)
+// includes C++ 
 // ----------------------------------------------------------------------------
+#include <iomanip>
 #include <iostream>
 
+// ----------------------------------------------------------------------------
+// Definição dos using 
+// ----------------------------------------------------------------------------
+
+using FVGridMaker::core::Index;
+using FVGridMaker::core::Real;
+using FVGridMaker::grid::CenteringTag;
+using FVGridMaker::grid::DistributionTag;
+using FVGridMaker::grid::grid1d::Grid1D;
+using FVGridMaker::grid::grid1d::builders::Grid1DBuilder;
+using FVGridMaker::grid::grid1d::patterns::distribution::Uniform1D;
+
 int main() {
-    using FVGridMaker::core::Index;
-    using FVGridMaker::core::Real;
 
-    using FVGridMaker::grid::CenteringTag;
-    using FVGridMaker::grid::DistributionTag;
-    using FVGridMaker::grid::grid1d::api::Grid1D;
-    using FVGridMaker::grid::grid1d::builders::Grid1DBuilder;
-    using FVGridMaker::grid::grid1d::patterns::distribution::Uniform1D;
 
-    // ------------------------------------------------------------------------
-    // 1. Basic configuration
-    // ------------------------------------------------------------------------
-    const Index N      = 20;   // number of physical control volumes
-    const Real  A      = 0.0;  // left physical limit
-    const Real  B      = 1.0;  // right physical limit
-    const Index NGhost = 1;    // number of ghost cells at each side (0, 1, 2, ...)
+// ------------------------------------------------------------------------
+// 1. Dados básicos
+// ------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-    // 2. Build a uniform, cell-centred grid with optional ghost cells
-    // ------------------------------------------------------------------------
-    Grid1D grid = Grid1DBuilder{}
-        .setN(N)
-        .setDomain(A, B)
-        .setNGhost(NGhost)
-        .setDistribution<Uniform1D>()
-        .build();
+const Index N      = 20;   // número de volumes na malha
+const Real  A      = 0.0;  // coordenada inicial do domínio
+const Real  B      = 1.0;  // coordenada final do domínio
+const Index NGhost = 0;    // número de volumes fictícios (por lado)
 
-    // Avoid unused-variable warnings if Grid1D does not yet expose accessors.
-    (void)grid;
+// ------------------------------------------------------------------------
+// 2. Construção da malha
+// ------------------------------------------------------------------------
 
-    // ------------------------------------------------------------------------
-    // 3. Basic output (only using local configuration parameters)
-    // ------------------------------------------------------------------------
-    std::cout << "=== Grid1D basic info ===\n";
-    std::cout << "Physical cells (N)      : " << N << '\n';
-    std::cout << "Ghost cells per side    : " << NGhost << '\n';
-    std::cout << "Physical domain         : [" << A << ", " << B << "]\n";
-    std::cout << "Physical length         : " << (B - A) << "\n\n";
+    Grid1D grid =   Grid1DBuilder{}
+                    .setN(N)
+                    .setDomain(A, B)
+                    .setNGhost(NGhost)
+                    .setDistribution<Uniform1D>()
+                    .build();
 
-    std::cout << "Grid1D object successfully built.\n";
+// ------------------------------------------------------------------------
+// 3. Impressão das coordenadas e distâncias da malha
+// ------------------------------------------------------------------------
+
+auto coutFlags = std::cout.flags();
+
+    std::cout << "---- Informações sobre a malha 1D (uniforme) -----\n";
+    std::cout << "Número de volumes                           : " << N << '\n';
+    if(NGhost > 0) std::cout << "Número de volumes fictícios                 : " << NGhost << '\n';
+
+    std::cout << std::setprecision(4) << std::fixed;
+
+    std::cout << "Coordenadas inicial e final do domínio      : [" << A << ", " << B << "]\n";
+    std::cout << "Comprimento do domínio                      : " << (B - A) << "\n\n";
+
+    std::cout.flags(coutFlags);
+
 
     std::cout << grid << '\n';
 
+    std::cout << "\n\nMalha1D uniforme foi criada corretamente.\n\n";
+
+// ------------------------------------------------------------------------
+// 4. Acesso as coordenadas e distâncias da malha
+// ------------------------------------------------------------------------
+
+auto    Delta_x  = grid.deltasFaces();      // Vetor com as distancias entre faces consecutivas
+auto    delta_x  = grid.deltasCenters();    // Vetor com as distancias entre centros consecutivos
+auto    xc       = grid.centers();          // Vetor com as coordenadas dos centros dos volumes
+auto    xf       = grid.faces();            // Vetir com as coordenadas das faces dos volumes  
     return 0;
 }

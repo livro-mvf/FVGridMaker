@@ -16,7 +16,7 @@
 // includes FVMGridMaker
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/Common/namespace.hpp>
-
+#include <FVGridMaker/Core/Common/constants.hpp>
 
 // ----------------------------------------------------------------------------
 // includes da biblioteca padrão

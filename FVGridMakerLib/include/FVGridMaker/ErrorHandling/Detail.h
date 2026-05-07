@@ -24,7 +24,7 @@
  *
  * @warning Este arquivo contém detalhes de implementação e não deve ser
  * incluído ou utilizado diretamente pelo usuário final da biblioteca.
- * O uso deve ser feito através das macros `FVG_ERROR` e `FVG_ASSERT`.
+ * O uso público deve ser feito através das funções tipadas em `Throw.h`.
  *
  * @ingroup ErrorHandling
  */
@@ -36,7 +36,7 @@ DETAIL_NAMESPACE_OPEN
 /**
  * @brief Função interna para processar e logar um erro.
  *
- * Esta função atua como o "motor" por trás das macros de erro. Ela realiza
+ * Esta função atua como o "motor" por trás das funções de erro. Ela realiza
  * a filtragem por severidade, a seleção do idioma correto, a interpolação
  * de strings (substituição de `{key}` por `value`) e o envio para o gerenciador.
  *

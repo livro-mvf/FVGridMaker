@@ -15,10 +15,8 @@
 // ----------------------------------------------------------------------------
 // includes FVMGridMaker (ordem alfabética por caminho)
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/Core/Common/namespace.hpp>
-#include <FVGridMaker/Core/Common/types.hpp>
 #include <FVGridMaker/Grid/Common/Tags1D.hpp>
-#include <FVGridMaker/Grid/Grid1D/API/Grid1D.h>
+#include <FVGridMaker/Grid/Grid1D/Grid1D.h>
 #include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/ConceptsDistribution.hpp>
 #include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/Random1D.hpp>
 #include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/Uniform1D.hpp>
@@ -26,9 +24,7 @@
 // ----------------------------------------------------------------------------
 // includes C++
 // ----------------------------------------------------------------------------
-#include <cstddef>
 #include <typeindex>
-#include <utility>
 
 #ifdef FVMGRIDMAKER_NAMESPACE_OPEN
 FVMGRIDMAKER_NAMESPACE_OPEN
@@ -46,7 +42,7 @@ namespace dist1d = ::FVGridMaker::grid::grid1d::patterns::distribution;
 // Importa tipos relevantes
 using ::FVGridMaker::grid::CenteringTag;
 using ::FVGridMaker::grid::DistributionTag;
-using ::FVGridMaker::grid::grid1d::api::Grid1D;
+using ::FVGridMaker::grid::grid1d::Grid1D;
 
 DETAIL_NAMESPACE_OPEN
 
@@ -62,7 +58,7 @@ struct Grid1DBuilderConfig {
     core::Real   a{};         ///< Limite esquerdo do domínio físico.
     core::Real   b{};         ///< Limite direito do domínio físico.
     core::Index  nGhost{};    ///< Número de células ghost em cada lado.
-    CenteringTag centering{CenteringTag::CellCentered};
+    CenteringTag centering{CenteringTag::FaceCentered};
 };
 
 /**
@@ -101,13 +97,14 @@ public:
     using Index = core::Index;
     using Real  = core::Real;
 
-    /// Constrói o builder em estado consistente, com distribuição Uniform1D.
+    /// Constrói o builder em estado consistente, com distribuição Uniform1D
+    /// e malha face-centrada por padrão.
     Grid1DBuilder() noexcept
         : n_{0}
         , a_{0.0}
         , b_{1.0}
         , nGhost_{0}
-        , centering_{CenteringTag::CellCentered}
+        , centering_{CenteringTag::FaceCentered}
         , distribution_type_{typeid(dist1d::Uniform1D)}
         , centering_type_{typeid(void)} {}
 
@@ -124,9 +121,21 @@ public:
         return *this;
     }
 
-    /// Define o número de células ghost em cada lado.
+    /// Define o número de células ghost em cada lado (alias legado).
     Grid1DBuilder& setNGhost(Index nGhost) noexcept {
         nGhost_ = nGhost;
+        return *this;
+    }
+
+    /// Define o número de volumes fictícios em cada lado.
+    Grid1DBuilder& setNFicticios(Index nFicticios) noexcept {
+        nGhost_ = nFicticios;
+        return *this;
+    }
+
+    /// Define o número de volumes fictícios em cada lado.
+    Grid1DBuilder& setNVolumesFicticios(Index nFicticios) noexcept {
+        nGhost_ = nFicticios;
         return *this;
     }
 

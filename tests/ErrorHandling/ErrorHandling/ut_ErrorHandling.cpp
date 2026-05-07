@@ -32,7 +32,7 @@ using namespace FVGridMaker::error;
 /**
  * @file ut_ErrorHandling.cpp
  * @brief Suíte de testes unitários para o subsistema de Tratamento de Erros.
- * @details Cobre configuração global, macros de logging, formatação i18n,
+ * @details Cobre configuração global, funções de logging, formatação i18n,
  * integração de novos domínios (Grid) e classes de retorno funcional.
  * @ingroup ErrorHandlingTests
  */
@@ -120,21 +120,21 @@ TEST(ErrorFormatting, Localizacao) {
 }
 
 // ============================================================================
-// SUÍTE: Macros e Lógica de Fluxo
+// SUÍTE: Funções e Lógica de Fluxo
 // ============================================================================
 
 /**
  * @test PolicyStatus_NaoLanca
- * @brief Garante que a política 'Status' apenas loga e não lança exceções.
+ * @brief Garante que registrarErro apenas loga e não lança exceções.
  */
-TEST(ErrorMacros, PolicyStatus_NaoLanca) {
+TEST(ErrorFunctions, PolicyStatus_NaoLanca) {
     auto original_cfg = Config::get();
     ErrorConfig cfg;
     cfg.policy = Policy::Status; 
     Config::set(cfg);
 
     EXPECT_NO_THROW({
-        FVG_ERROR(CoreErr::InvalidArgument, {{"name", "x"}});
+        registrarErro(CoreErr::InvalidArgument, {{"name", "x"}});
     });
 
     auto errors = ErrorManager::flush();
@@ -144,18 +144,17 @@ TEST(ErrorMacros, PolicyStatus_NaoLanca) {
 }
 
 /**
- * @test PolicyThrow_LancaEmErro
- * @brief Garante que a política 'Throw' lança exceção para erros graves.
+ * @test LancarErro_LancaExcecao
+ * @brief Garante que lancarErro lança a exceção própria da biblioteca.
  */
-TEST(ErrorMacros, PolicyThrow_LancaEmErro) {
+TEST(ErrorFunctions, LancarErro_LancaExcecao) {
     auto original_cfg = Config::get();
     ErrorConfig cfg;
     cfg.policy = Policy::Throw;
     Config::set(cfg);
 
     EXPECT_THROW({
-        // FileNotFound (Error) >= Warning -> Lança
-        FVG_ERROR(FileErr::FileNotFound, {{"path", "fail.txt"}});
+        lancarErro(FileErr::FileNotFound, {{"path", "fail.txt"}});
     }, FVGException);
 
     // Buffer deve estar vazio (exceção consome o erro)
@@ -166,9 +165,9 @@ TEST(ErrorMacros, PolicyThrow_LancaEmErro) {
 
 /**
  * @test PolicyThrow_RespeitaSeveridadeBaixa
- * @brief Verifica se warnings são apenas logados (não lançados) mesmo em modo Throw.
+ * @brief Verifica se warnings podem ser registrados sem lançar exceção.
  */
-TEST(ErrorMacros, PolicyThrow_RespeitaSeveridadeBaixa) {
+TEST(ErrorFunctions, PolicyThrow_RespeitaSeveridadeBaixa) {
     auto original_cfg = Config::get();
     ErrorConfig cfg;
     cfg.policy = Policy::Throw; 
@@ -177,7 +176,7 @@ TEST(ErrorMacros, PolicyThrow_RespeitaSeveridadeBaixa) {
 
     // NotImplemented é Warning. Warning < Error. Não deve lançar.
     EXPECT_NO_THROW({
-        FVG_ERROR(CoreErr::NotImplemented);
+        registrarErro(CoreErr::NotImplemented);
     });
 
     auto errors = ErrorManager::flush();
@@ -188,22 +187,22 @@ TEST(ErrorMacros, PolicyThrow_RespeitaSeveridadeBaixa) {
 }
 
 /**
- * @test Assert
- * @brief Verifica se a macro FVG_ASSERT dispara erro Fatal e exceção.
+ * @test Exigir
+ * @brief Verifica se exigir dispara erro Fatal e exceção.
  */
-TEST(ErrorMacros, Assert) {
+TEST(ErrorFunctions, Exigir) {
     auto original_cfg = Config::get();
     ErrorConfig cfg; 
     cfg.policy = Policy::Throw; 
     Config::set(cfg);
 
     // Sucesso
-    EXPECT_NO_THROW(FVG_ASSERT(true));
+    EXPECT_NO_THROW(exigir(true, CoreErr::AssertFailed));
     
     // Falha
     try {
-        FVG_ASSERT(false, {{"val", "0"}});
-        FAIL() << "FVG_ASSERT deve lançar exceção na falha.";
+        exigir(false, CoreErr::AssertFailed, {{"val", "0"}});
+        FAIL() << "exigir deve lançar exceção na falha.";
     } catch (const FVGException& e) {
         EXPECT_EQ(e.code(), code(CoreErr::AssertFailed));
         EXPECT_EQ(e.severity(), Severity::Fatal);

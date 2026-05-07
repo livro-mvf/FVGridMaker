@@ -139,8 +139,10 @@ foreach(dir_abs IN LISTS EXAMPLE_DIRS_ABS)
   else()
     set(out_name "${target_name}")
   endif()
+
+  set(example_output_dir "${CMAKE_BINARY_DIR}/examples/${dir_rel}")
   set_target_properties(${target_name} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY "${dir_abs}"
+    RUNTIME_OUTPUT_DIRECTORY "${example_output_dir}"
     OUTPUT_NAME              "${out_name}"
   )
 
@@ -172,8 +174,8 @@ foreach(dir_abs IN LISTS EXAMPLE_DIRS_ABS)
   # run_<alvo>
   add_custom_target(run_${target_name}
     DEPENDS ${target_name}
-    COMMAND "${dir_abs}/${out_name}"
-    WORKING_DIRECTORY "${dir_abs}"
+    COMMAND "$<TARGET_FILE:${target_name}>"
+    WORKING_DIRECTORY "${example_output_dir}"
     COMMENT "Executando exemplo ${out_name} (${dir_rel})"
   )
   add_dependencies(run_all_examples run_${target_name})

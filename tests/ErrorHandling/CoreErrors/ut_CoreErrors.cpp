@@ -98,12 +98,12 @@ TEST(CoreErrorsTest, SpecificValues_InvalidArgument) {
 
 /**
  * @test SpecificValues_AssertFailed
- * @brief Valida se AssertFailed é Fatal (crítico para a macro FVG_ASSERT).
+ * @brief Valida se AssertFailed é Fatal (crítico para a função exigir).
  */
 TEST(CoreErrorsTest, SpecificValues_AssertFailed) {
     constexpr auto e = CoreErr::AssertFailed;
     
-    // Assert Failed PRECISA ser Fatal, senão a macro FVG_ASSERT não aborta/lança
+    // AssertFailed PRECISA ser Fatal para representar falha interna grave.
     EXPECT_EQ(ErrorTraits<CoreErr>::default_severity(e), Severity::Fatal);
     EXPECT_EQ(ErrorTraits<CoreErr>::key(e), "CORE_ASSERT_FAILED");
 }

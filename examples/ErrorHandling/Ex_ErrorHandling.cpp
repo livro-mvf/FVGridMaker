@@ -4,7 +4,7 @@
 // Version: 1.2
 // Description: Exemplo COMPLETO do sistema de erros.
 //              Demonstra:
-//              1. Macros e Exceções (FVG_ERROR).
+//              1. Funções tipadas e exceções (lancarErro/registrarErro).
 //              2. Padrão Funcional (Status / StatusOr).
 //              3. Domínios de Erro customizados (GridErrors).
 //              4. Injeção de Logger Customizado (IErrorLogger).
@@ -65,8 +65,7 @@ public:
 // Exemplo A: Função Clássica (Lança Exceção em erro)
 void gerarMalha(int n) {
     if (n <= 0) {
-        // Macro padrão: Loga e Lança (se Policy::Throw)
-        FVG_ERROR(GridErr::InvalidN, {{"N", std::to_string(n)}});
+        lancarErro(GridErr::InvalidN, {{"N", std::to_string(n)}});
     }
     std::cout << "   -> Malha gerada com " << n << " volumes.\n";
 }
@@ -170,8 +169,8 @@ int main() {
     no_throw_cfg.policy = Policy::Status;
     Config::set(no_throw_cfg);
 
-    FVG_ERROR(GridErr::ParallelBackendMissing);
-    FVG_ERROR(FileErr::AccessDenied, {{"path", "/root/secret.txt"}});
+    registrarErro(GridErr::ParallelBackendMissing);
+    registrarErro(FileErr::AccessDenied, {{"path", "/root/secret.txt"}});
 
     // ------------------------------------------------------------------------
     // CENÁRIO 4: i18n Dinâmico
@@ -181,7 +180,7 @@ int main() {
     en_cfg.language = Language::EnUS;
     Config::set(en_cfg);
 
-    FVG_ERROR(GridErr::ParallelBackendMissing); // Deve aparecer em Inglês
+    registrarErro(GridErr::ParallelBackendMissing); // Deve aparecer em Inglês
 
     // Restaura tudo
     Config::set(*original_cfg);

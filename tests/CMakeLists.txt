@@ -9,6 +9,11 @@ add_custom_target(run_all_tests
     COMMENT "Executando todos os testes (via ctest)..."
 )
 
+add_custom_target(run_ut_all
+    DEPENDS run_all_tests
+    COMMENT "Alias para run_all_tests."
+)
+
 # Todos os testes principais começam com ut_*.cpp
 file(GLOB_RECURSE TEST_MAIN_SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/**/ut_*.cpp"

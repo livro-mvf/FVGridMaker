@@ -18,6 +18,8 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/ErrorConfig.h>
 
+#include <vector>
+
 /**
  * @file ErrorManager.h
  * @brief Fachada de gerenciamento de erros e Logger padrão.
@@ -89,7 +91,7 @@ inline ErrorConfig::ErrorConfig()
  * @class ErrorManager
  * @brief Fachada (Facade) estática para acesso ao sistema de logs.
  *
- * Atua como intermediário entre as macros de erro e o Logger configurado
+ * Atua como intermediário entre as funções de erro e o Logger configurado
  * no Singleton `Config`. Garante que chamadas de log sejam seguras mesmo
  * se a configuração estiver sendo trocada.
  */

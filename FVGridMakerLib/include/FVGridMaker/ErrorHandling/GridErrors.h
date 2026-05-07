@@ -85,10 +85,13 @@ enum class GridErr : std::uint16_t {
     /** @brief O Builder foi invocado em um estado inválido ou incompleto. */
     BuilderStateInvalid = 14,
 
+    /** @brief Número de volumes fictícios inválido. */
+    InvalidFictitiousVolumes = 15,
+
     /// @brief Limite inferior para iteração (metadado).
     _Min = InvalidN,
     /// @brief Limite superior para iteração (metadado).
-    _Max = BuilderStateInvalid
+    _Max = InvalidFictitiousVolumes
 };
 
 DETAIL_NAMESPACE_OPEN
@@ -181,6 +184,11 @@ DETAIL_NAMESPACE_OPEN
                 return {sv{"GRID_BUILDER_STATE_INVALID"}, Severity::Error,
                         sv{"Grid1DBuilder used in an invalid or incomplete state."},
                         sv{"Grid1DBuilder usado em estado inválido ou incompleto."}};
+
+            case GridErr::InvalidFictitiousVolumes:
+                return {sv{"GRID_INVALID_FICTITIOUS_VOLUMES"}, Severity::Error,
+                        sv{"Invalid number of fictitious volumes: {N} (must be >= 0)."},
+                        sv{"Número de volumes fictícios inválido: {N} (deve ser >= 0)."}};
             default:
                 return {sv{}, Severity::Trace, sv{}, sv{}};
         }
