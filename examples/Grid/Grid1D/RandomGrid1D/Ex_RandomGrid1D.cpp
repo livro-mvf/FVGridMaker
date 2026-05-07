@@ -1,272 +1,319 @@
-// // ----------------------------------------------------------------------------
-// // File: Ex_RandomGrid1D.cpp
-// // Author: FVMGridMaker Team
-// // Version: 2.3
-// // Date: 2025-10-26
-// // Description: Exemplo sem CLI — cria duas malhas 1D com distribuição Random1D:
-// //              (1) Face-centered e (2) Cell-centered. Usa seed fixa para
-// //              determinismo e multiplicadores relativos w_lo/w_hi.
-// // License: GNU GPL v3
-// // ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+// File: Ex_RandomGrid1D.cpp
+//
+// Exemplo de malha 1D aleatoria usando a FVGridMaker.
+//
+// Este exemplo e uma continuacao natural do primeiro exemplo uniforme. A ideia
+// aqui e mostrar como construir uma malha nao uniforme, mas ainda controlada e
+// reprodutivel.
+//
+// A malha aleatoria da FVGridMaker parte de uma malha uniforme de referencia.
+// Depois, cada coordenada primaria e perturbada por uma fração do espacamento
+// uniforme:
+//
+//   dx_uniforme = (xFinal - xInicial) / nVolumesFisicos
+//
+// Neste arquivo usamos:
+//
+//   percentual = 0.20
+//
+// isto e, uma perturbacao maxima de 20% de dx_uniforme.
+//
+// Importante:
+//   Se um sorteio gerar pontos muito proximos, a biblioteca descarta essa
+//   tentativa e sorteia novamente. Isso evita aceitar volumes degenerados sem
+//   transformar uma amostra aleatoria ruim em erro do usuario.
+//
+// Regras gerais de construcao:
+//   - CellCentered  (volume centrado): gera faces; calcula centros.
+//   - FaceCentered  (face centrada)  : gera centros; calcula faces.
+//
+// Opcoes:
+//   --volume-centrada  usa CellCentered (padrao deste exemplo)
+//   --face-centrada    usa FaceCentered
+//   --com-ficticios    imprime tambem os volumes ficticios
+//   --seed-variado     gera uma malha diferente a cada execucao
+//
+// Sem --seed-variado, o seed fixo torna a malha reprodutivel. Isso e melhor
+// para exemplos, testes e depuracao.
+//
+// Como executar a partir da pasta build:
+//
+//   cmake --build . --target run_Ex_RandomGrid1D --parallel 2
+//
+// Exemplos de execucao direta do binario gerado:
+//
+//   ./examples/Grid/Grid1D/RandomGrid1D/Ex_RandomGrid1D
+//   ./examples/Grid/Grid1D/RandomGrid1D/Ex_RandomGrid1D --face-centrada
+//   ./examples/Grid/Grid1D/RandomGrid1D/Ex_RandomGrid1D --com-ficticios
+//   ./examples/Grid/Grid1D/RandomGrid1D/Ex_RandomGrid1D --seed-variado
+// ----------------------------------------------------------------------------
 
-// /**
-//  * @file Ex_RandomGrid1D.cpp
-//  * @brief Demonstra a construção de malhas Random1D (face/cell) sem leitura de
-//  *        argumentos, e imprime estatísticas + malha usando utilitários da lib.
-//  *
-//  * Notas importantes:
-//  *  - Este exemplo inclui o cabeçalho do padrão Random1D **somente aqui**;
-//  *    o core permanece desacoplado de padrões.
-//  *  - Em Random1D::Options, w_lo e w_hi são **fatores relativos** a dx_ref
-//  *    (o passo uniforme médio): use valores como 0.6 … 1.4.
-//  */
+#include <FVGridMaker/Grid/Common/Tags1D.hpp> // CenteringTag.
+#include <FVGridMaker/Grid/Grid1D/Builders/Grid1DBuilder.hpp> // Grid1DBuilder.
+#include <FVGridMaker/Grid/Grid1D/Patterns/Distribution/Random1D.hpp> // Random1D.
+#include <FVGridMaker/Grid/Grid1D/Utils/Grid1DStats.hpp> // Grid1DStats.
 
-// #include <algorithm>
-// #include <cstdint>
-// #include <iomanip>
-// #include <iostream>
-// #include <iterator>
-// #include <numeric>
-// #include <span>
-// #include <sstream>
-// #include <string>
-// #include <string_view>
-// #include <vector>
+#include <algorithm> // std::max.
+#include <cstddef> // std::size_t.
+#include <iomanip> // std::setw, std::setprecision.
+#include <iostream> // std::cout.
+#include <string_view> // std::string_view.
 
-// // FVMGridMaker
-// #include <FVMGridMaker/Core/type.h>
-// #include <FVMGridMaker/Grid/Common/Tags1D.hpp>
-// #include <FVMGridMaker/Grid/Grid1D/API/Grid1D.h>
-// #include <FVMGridMaker/Grid/Grid1D/Builders/Grid1DBuilder.hpp>
-// #include <FVMGridMaker/Grid/Grid1D/Utils/Grid1DStats.hpp>
-// #include <FVMGridMaker/Grid/Grid1D/Utils/Grid1DStatsExec.hpp>
+int main(int argc, char** argv) {
+    // ------------------------------------------------------------------------
+    // 1. Apelidos de namespace e tipos
+    // ------------------------------------------------------------------------
+    //
+    // Estes apelidos reduzem o tamanho dos nomes no restante do arquivo.
+    //
+    namespace grid1d = FVGridMaker::grid::grid1d;
+    namespace dist   = FVGridMaker::grid::grid1d::patterns::distribution;
 
-// // Somente no EXEMPLO (não no core):
-// #include <FVMGridMaker/Grid/Grid1D/Patterns/Distribution/Random1D.hpp>
+    using FVGridMaker::grid::CenteringTag;
+    using Grid1DBuilder = grid1d::builders::Grid1DBuilder;
+    using Index         = Grid1DBuilder::Index;
+    using Real          = Grid1DBuilder::Real;
+    using Grid1DStats   = grid1d::utils::Grid1DStats;
 
-// using Real  = FVMGridMaker::core::Real;
-// using Index = FVMGridMaker::core::Index;
+    // ------------------------------------------------------------------------
+    // 2. Parametros principais da malha
+    // ------------------------------------------------------------------------
+    //
+    // nVolumesFisicos:
+    //   Numero de volumes dentro do dominio fisico.
+    //
+    // xInicial e xFinal:
+    //   Primeira e ultima face fisica da malha.
+    //
+    // percentual:
+    //   Fração do espacamento uniforme usada como limite da perturbacao.
+    //
+    // seedFixo:
+    //   Garante que a mesma malha seja gerada em execucoes repetidas.
+    //
+    const Index nVolumesFisicos = 10;
+    const Real  xInicial        = -10.0;
+    const Real  xFinal          = 10.0;
+    const Real  percentual      = 0.8;
+    const auto  seedFixo        = 12345u;
 
-// using FVMGridMaker::grid::CenteringTag;
-// using FVMGridMaker::grid::DistributionTag;
-// using FVMGridMaker::grid::grid1d::api::Grid1D;
-// using FVMGridMaker::grid::grid1d::builders::Grid1DBuilder;
-// namespace G1U = FVMGridMaker::grid::grid1d::utils;
-// namespace dist = FVMGridMaker::grid::grid1d::patterns::distribution;
+    // ------------------------------------------------------------------------
+    // 3. Opcoes alteradas pela linha de comando
+    // ------------------------------------------------------------------------
+    //
+    // O exemplo comeca com uma configuracao simples:
+    //   - sem volumes ficticios;
+    //   - seed fixo;
+    //   - malha volume-centrada.
+    //
+    Index nFicticios = 0;
+    bool imprimirFicticios = false;
+    bool seedVariado = true;
+    CenteringTag centering = CenteringTag::CellCentered;
 
-// // ----------------------------------------------------------------------------
-// // precisão padrão para números impressos
-// // ----------------------------------------------------------------------------
-// constexpr int FVMG_PRINT_PREC = 6;
+    // ------------------------------------------------------------------------
+    // 4. Leitura simples dos argumentos
+    // ------------------------------------------------------------------------
+    //
+    // Este parser e propositalmente pequeno. Ele reconhece apenas as opcoes do
+    // cabecalho do arquivo e ignora argumentos desconhecidos.
+    //
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view arg{argv[i]};
 
-// // ----------------------------------------------------------------------------
-// // helpers de impressão (alinhamento limpo)
-// // ----------------------------------------------------------------------------
-// static inline void kv_text(const char* key, std::string_view val,
-//                            int wkey = 24, int wval = 26) {
-//     std::cout << std::left  << std::setw(wkey) << key
-//               << std::right << std::setw(wval) << val << "\n";
-// }
+        if (arg == "--face-centrada") {
+            centering = CenteringTag::FaceCentered;
+        } else if (arg == "--volume-centrada") {
+            centering = CenteringTag::CellCentered;
+        } else if (arg == "--com-ficticios") {
+            nFicticios = 2;
+            imprimirFicticios = true;
+        } else if (arg == "--seed-variado") {
+            seedVariado = true;
+        }
+    }
 
-// template <class T>
-// static inline void kv_num(const char* key, T val,
-//                           int wkey = 24, int wval = 26, int prec = FVMG_PRINT_PREC) {
-//     std::ostringstream os;
-//     os.setf(std::ios::fixed);
-//     os << std::setprecision(prec) << val;
-//     std::cout << std::left  << std::setw(wkey) << key
-//               << std::right << std::setw(wval) << os.str() << "\n";
-// }
+    // ------------------------------------------------------------------------
+    // 5. Escolha do seed
+    // ------------------------------------------------------------------------
+    //
+    // Seed fixo:
+    //   a mesma entrada gera sempre a mesma malha.
+    //
+    // Seed variado:
+    //   cada execucao gera uma malha diferente. A geracao do seed fica dentro
+    //   da distribuicao Random1D, nao no programa de exemplo.
+    //
 
-// static inline void print_section(std::string_view title, int width = 24 + 26) {
-//     std::cout << "\n[" << title << "]\n";
-//     const auto n = static_cast<std::size_t>(width < 0 ? 0 : width);
-//     std::cout << std::string(n, '-') << "\n";
-// }
+    // ------------------------------------------------------------------------
+    // 6. Construcao da malha
+    // ------------------------------------------------------------------------
+    //
+    // setRandomPercentual(percentual):
+    //   controla a intensidade da perturbacao aleatoria.
+    //
+    // setRandomSeed(seedFixo):
+    //   controla a sequencia pseudoaleatoria usada por Random1D quando o modo
+    //   de seed fixo esta ativo.
+    //
+    // A regra de CellCentered/FaceCentered e resolvida dentro do builder:
+    //   - CellCentered: Random1D gera faces;
+    //   - FaceCentered: Random1D gera centros.
+    //
+    Grid1DBuilder builder = Grid1DBuilder{}
+        .setN(nVolumesFisicos)
+        .setDomain(xInicial, xFinal)
+        .setNVolumesFicticios(nFicticios)
+        .setCentering(centering)
+        .setDistribution<dist::Random1D>()
+        .setRandomPercentual(percentual)
+        .setRandomSeed(seedFixo);
 
-// // ----------------------------------------------------------------------------
-// // imprime malha (como você forneceu)
-// // ----------------------------------------------------------------------------
-// static void print_malha(std::span<const Real> xf,
-//                         std::span<const Real> xc,
-//                         std::span<const Real> dF,
-//                         std::span<const Real> dC) {
-//     std::cout << "\n\n";
-//     print_section("Legenda", 24 + 26);
-//     kv_text("xFace",    "coordenadas das faces (N+1)");
-//     kv_text("xCentro",  "coordenadas dos centros (N)");
-//     kv_text("dXFace",   "larguras entre faces (N)  -> fornecido pela malha");
-//     kv_text("dXCentro", "larguras centradas (N+1)  -> fornecido pela malha");
+    if (seedVariado) {
+        builder.setRandomSeedVariado();
+    }
 
-//     const Index N = static_cast<Index>(xc.size());
-//     const int   W = 24;
+    const auto malha = builder.build();
+    const auto stats = Grid1DStats::basicPhysicalFaces(malha);
+    const auto smooth = Grid1DStats::smoothnessPhysicalFaces(malha);
+    const auto uniformidade =
+        Grid1DStats::relativeUniformityPhysicalFaces(malha);
 
-//     // Cabeçalho alinhado aos números
-//     std::cout << std::right
-//               << "\n\n"
-//               << std::setw(W) << "xFace"
-//               << std::setw(W) << "xCentro"
-//               << std::setw(W) << "dXFace"
-//               << std::setw(W) << "dXCentro" << "\n";
+    // ------------------------------------------------------------------------
+    // 7. Resumo da configuracao
+    // ------------------------------------------------------------------------
+    //
+    std::cout << "FVGridMaker - exemplo Random1D\n";
+    std::cout << "Dominio fisico: [" << xInicial << ", " << xFinal << "]\n";
+    std::cout << "Volumes fisicos: " << malha.nVolumesFisicos() << '\n';
+    std::cout << "Volumes ficticios por lado: " << malha.nVolumesFicticios() << '\n';
+    std::cout << "Centralizacao: " << malha.nomePadraoArmazenamento() << '\n';
+    std::cout << "Percentual aleatorio: " << percentual * Real(100) << "%\n";
+    std::cout << "Seed: "
+              << (seedVariado ? "variado" : "fixo")
+              << (seedVariado ? "" : " (12345)") << "\n\n";
 
-//     std::cout << std::string(static_cast<std::size_t>(W) * 4u, '-') << "\n";
-//     std::cout << std::right << std::fixed << std::setprecision(FVMG_PRINT_PREC);
+    // ------------------------------------------------------------------------
+    // 8. Estatisticas simples da malha fisica
+    // ------------------------------------------------------------------------
+    //
+    // As estatisticas abaixo usam apenas os volumes fisicos. Se a opcao
+    // --com-ficticios estiver ativa, os volumes ficticios aparecem na tabela
+    // completa, mas nao entram neste resumo de qualidade.
+    //
+    std::cout << "Estatisticas de dface_x fisico\n";
+    std::cout << "min      : " << stats.min << '\n';
+    std::cout << "max      : " << stats.max << '\n';
+    std::cout << "mean     : " << stats.mean << '\n';
+    std::cout << "aspect   : " << stats.aspect << '\n';
+    std::cout << "cv       : " << stats.cv << '\n';
+    std::cout << "uniform. : " << uniformidade << '\n';
+    std::cout << "smoothMax: " << smooth.max_grad << "\n\n";
 
-//     // Formatter de uma célula (largura W, precisão FVMG_PRINT_PREC)
-//     auto fmt = [W](Real v) {
-//         std::ostringstream os;
-//         os.setf(std::ios::fixed);
-//         os << std::setw(W) << std::setprecision(FVMG_PRINT_PREC) << v;
-//         return os.str();
-//     };
-//     const std::string blank(static_cast<std::size_t>(W), ' ');
+    // ------------------------------------------------------------------------
+    // 9. Legenda da tabela
+    // ------------------------------------------------------------------------
+    //
+    // centro_x:
+    //   Coordenada do centro do volume.
+    //
+    // face_x:
+    //   Coordenada da face.
+    //
+    // dcentro_x:
+    //   Distancia associada aos centros.
+    //
+    // dface_x:
+    //   Distancia entre faces consecutivas, isto e, largura do volume.
+    //
+    // Para N volumes:
+    //   centro_x e dface_x tem N valores;
+    //   face_x e dcentro_x tem N + 1 valores.
+    //
+    std::cout << std::fixed << std::setprecision(6);
+    std::cout << std::setw(4) << "i"
+              << std::setw(14) << "centro_x"
+              << std::setw(14) << "face_x"
+              << std::setw(14) << "dcentro_x"
+              << std::setw(14) << "dface_x" << '\n';
 
-//     // Índices 0..N (para imprimir N+1 linhas)
-//     std::vector<std::size_t> ids(static_cast<std::size_t>(N) + 1u);
-//     std::iota(ids.begin(), ids.end(), std::size_t{0});
+    if (!imprimirFicticios) {
+        // --------------------------------------------------------------------
+        // 10A. Impressao padrao: somente grandezas fisicas
+        // --------------------------------------------------------------------
+        //
+        // Este modo e o mais indicado para entender a malha principal. Mesmo
+        // que a malha tenha volumes ficticios, eles nao aparecem aqui.
+        //
+        for (Index i = 0; i <= malha.nVolumesFisicos(); ++i) {
+            std::cout << std::setw(4) << i;
 
-//     // Constrói cada linha completa (4 colunas concatenadas) via transform
-//     std::vector<std::string> linhas(ids.size());
-//     std::transform(ids.begin(), ids.end(), linhas.begin(),
-//                    [&](std::size_t i) {
-//                        const std::string c0 = fmt(xf[i]);
-//                        const std::string c1 = (i < static_cast<std::size_t>(N)) ? fmt(xc[i]) : blank;
-//                        const std::string c2 = (i < static_cast<std::size_t>(N)) ? fmt(dF[i]) : blank;
-//                        const std::string c3 = fmt(dC[i]);
-//                        return c0 + c1 + c2 + c3;
-//                    });
+            if (i < malha.nVolumesFisicos()) {
+                std::cout << std::setw(14) << malha.centroFisico(i);
+            } else {
+                std::cout << std::setw(14) << "";
+            }
 
-//     // Imprime todas as linhas
-//     std::copy(linhas.begin(), linhas.end(),
-//               std::ostream_iterator<std::string>(std::cout, "\n"));
-// }
+            std::cout << std::setw(14) << malha.faceFisica(i);
+            std::cout << std::setw(14) << malha.deltaCentroFisico(i);
 
-// // ----------------------------------------------------------------------------
-// // estatísticas (como você forneceu)
-// // ----------------------------------------------------------------------------
-// static void mostra_estatisticas(const Grid1D& grid,
-//                                 std::string_view stats_mode) {
-//     using G1U::ExecPolicy;
+            if (i < malha.nVolumesFisicos()) {
+                std::cout << std::setw(14) << malha.deltaFaceFisica(i);
+            } else {
+                std::cout << std::setw(14) << "";
+            }
 
-//     ExecPolicy pol = ExecPolicy::Auto;
-//     if (stats_mode == "ser" || stats_mode == "serial")        pol = ExecPolicy::Serial;
-//     else if (stats_mode == "par" || stats_mode == "parallel") pol = ExecPolicy::Parallel;
+            std::cout << '\n';
+        }
+    } else {
+        // --------------------------------------------------------------------
+        // 10B. Impressao completa: inclui volumes ficticios
+        // --------------------------------------------------------------------
+        //
+        // Aqui imprimimos os vetores completos armazenados pela malha. Como
+        // eles tem tamanhos diferentes, percorremos ate o maior tamanho e
+        // deixamos uma coluna em branco quando o vetor nao possui aquele indice.
+        //
+        const auto xCentro  = malha.centers();
+        const auto xFace    = malha.faces();
+        const auto dxCentro = malha.deltasCenters();
+        const auto dxFace   = malha.deltasFaces();
+        const auto nLinhas  = std::max({xCentro.size(),
+                                        xFace.size(),
+                                        dxCentro.size(),
+                                        dxFace.size()});
 
-//     bool used_par = false;
-//     const auto basicF = G1U::basic_exec(grid, pol, &used_par);
+        for (std::size_t i = 0; i < nLinhas; ++i) {
+            std::cout << std::setw(4) << i;
 
-//     print_section("Estatísticas");
-//     kv_text("Modo", used_par ? "paralelo (PSTL)" : "serial");
+            if (i < xCentro.size()) {
+                std::cout << std::setw(14) << xCentro[i];
+            } else {
+                std::cout << std::setw(14) << "";
+            }
 
-//     print_section(used_par ? "Básicas — dXFace(par)" : "Básicas — dXFace");
-//     kv_num("min",    basicF.min);
-//     kv_num("max",    basicF.max);
-//     kv_num("mean",   basicF.mean);
-//     kv_num("std",    basicF.stddev);
-//     kv_num("aspect", basicF.aspect);
-//     kv_num("CV",     basicF.cv);
+            if (i < xFace.size()) {
+                std::cout << std::setw(14) << xFace[i];
+            } else {
+                std::cout << std::setw(14) << "";
+            }
 
-//     const auto U    = G1U::Grid1DStats::uniformidadeFaces(grid);
-//     const auto adj  = G1U::Grid1DStats::adjacent(grid);
-//     const auto sm   = G1U::Grid1DStats::smooth(grid);
-//     const auto edge = G1U::Grid1DStats::edgeBalance(grid);
-//     const auto sym  = G1U::Grid1DStats::symmetry(grid);
-//     const auto gp   = G1U::Grid1DStats::geom(grid);
+            if (i < dxCentro.size()) {
+                std::cout << std::setw(14) << dxCentro[i];
+            } else {
+                std::cout << std::setw(14) << "";
+            }
 
-//     print_section("Uniformidade");
-//     kv_num("U", U);
+            if (i < dxFace.size()) {
+                std::cout << std::setw(14) << dxFace[i];
+            } else {
+                std::cout << std::setw(14) << "";
+            }
 
-//     print_section("Adjacente");
-//     kv_num("maxRazao",           adj.max_ratio);
-//     kv_num("piorSaltoSimetrico", adj.worst_sym_ratio);
+            std::cout << '\n';
+        }
+    }
 
-//     print_section("Suavidade");
-//     kv_num("meanG", sm.mean_grad);
-//     kv_num("maxG",  sm.max_grad);
-
-//     print_section("Bordas/Interior");
-//     kv_num("meanInt",    edge.mean_interior);
-//     kv_num("L0/meanInt", edge.left_over_interior);
-//     kv_num("Ln/meanInt", edge.right_over_interior);
-
-//     print_section("Simetria");
-//     kv_num("score",      sym.symmetry_score);
-//     kv_num("maxRelDiff", sym.max_rel_diff);
-
-//     print_section("Progr. Geométrica");
-//     kv_num("r_est",            gp.r_est);
-//     kv_num("std_log_r",        gp.std_log_r);
-//     kv_num("max|r_i - r_est|", gp.max_dev_abs);
-//     kv_text("dentroTol",       gp.within_tolerance ? "sim" : "nao");
-// }
-
-// // ----------------------------------------------------------------------------
-// // helper: constrói uma malha Random1D com o centering desejado
-// // ----------------------------------------------------------------------------
-// static Grid1D build_random_grid(Index n, Real A, Real B,
-//                                 CenteringTag centering,
-//                                 const dist::Random1D::Options& opt)
-// {
-//     Grid1DBuilder b;
-//     b.setN(n)
-//      .setDomain(A, B)
-//      .setDistribution(DistributionTag::Random1D)
-//      .setCentering(centering)
-//      .setOption(opt); // overload específico de Random1D::Options
-//     return b.build();
-// }
-
-// // ----------------------------------------------------------------------------
-// // main — cria DUAS malhas (face-centered e cell-centered) e imprime tudo
-// // ----------------------------------------------------------------------------
-int main() {
-// #if defined(__GNUC__) || defined(__clang__)
-// #  pragma message("[FVMGridMaker][build] Compilando Ex_RandomGrid1D.cpp (sem CLI)")
-// #endif
-//     try {
-//         // Parâmetros ajustáveis AQUI
-//         constexpr Index N    = 32;     // número de intervalos
-//         constexpr Real  A    = 0.0;
-//         constexpr Real  B    = 1.0;
-//         constexpr Real  W_LO = 0.6;    // fatores relativos a dx_ref
-//         constexpr Real  W_HI = 1.4;
-//         constexpr std::uint64_t SEED = 202501; // determinismo
-
-//         // dx_ref apenas para log informativo
-//         const Real dx_ref = (B - A) / static_cast<Real>(N);
-
-//         // Opções do padrão: w_lo/w_hi são multiplicadores relativos
-//         dist::Random1D::Options opt{};
-//         opt.w_lo = W_LO;
-//         opt.w_hi = W_HI;
-//         opt.seed = SEED;
-
-//         std::cout << "[Ex_RandomGrid1D] N=" << N
-//                   << "  A=" << A << "  B=" << B
-//                   << "  dx_ref=" << std::fixed << std::setprecision(FVMG_PRINT_PREC) << dx_ref
-//                   << "  (w_lo=" << W_LO << ", w_hi=" << W_HI << ", seed=" << SEED << ")\n";
-
-//         // Malha face-centered
-//         Grid1D grid_face = build_random_grid(N, A, B, CenteringTag::FaceCentered, opt);
-
-//         // Malha cell-centered
-//         Grid1D grid_cell = build_random_grid(N, A, B, CenteringTag::CellCentered, opt);
-
-//         // ---- Imprime FACE-CENTERED -------------------------------------------------
-//         std::cout << "\n==================== Random1D — FACE-CENTERED ====================\n";
-//         mostra_estatisticas(grid_face, "auto");
-//         print_malha(grid_face.faces(), grid_face.centers(),
-//                     grid_face.deltasFaces(), grid_face.deltasCenters());
-
-//         // ---- Imprime CELL-CENTERED -------------------------------------------------
-//         std::cout << "\n==================== Random1D — CELL-CENTERED =====================\n";
-//         mostra_estatisticas(grid_cell, "auto");
-//         print_malha(grid_cell.faces(), grid_cell.centers(),
-//                     grid_cell.deltasFaces(), grid_cell.deltasCenters());
-
-//         return 0;
-//     } catch (const std::exception& e) {
-//         std::cerr << "[Ex_RandomGrid1D] Erro: " << e.what() << "\n";
-//         return 1;
-//     }
+    return 0;
 }

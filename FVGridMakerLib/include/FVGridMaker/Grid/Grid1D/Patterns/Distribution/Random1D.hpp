@@ -20,12 +20,11 @@
 // includes C++ (ordem alfabética)
 // ----------------------------------------------------------------------------
 #include <cassert>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
-#include <numeric>
 #include <random>
 #include <span>
-#include <vector>
 
 /**
  * @file Random1D.hpp
@@ -42,18 +41,30 @@ DISTRIBUTION_NAMESPACE_OPEN
 /**
  * @brief Random 1D distribution.
  *
- * Generates a non-uniform grid on [A, B] with N cells using random weights.
- * The domain is fully covered and the ordering of faces is strictly increasing.
+ * Generates a non-uniform grid on [A, B] by perturbing a uniform reference
+ * grid. The perturbation is controlled by a percentage of the reference
+ * spacing.
  *
  * Notes:
- *  - Randomness is controlled by @p seed. For reproducible grids, always pass
- *    an explicit non-zero seed.
- *  - The parameter @p dx_min is reserved for future refinements and is not
- *    enforced strictly in this implementation.
+ *  - Randomness is controlled by @p seed.
+ *  - The parameter @p percentual is interpreted as a fraction, e.g. 0.20 means
+ *    20% of the reference spacing.
+ *  - If a generated point is too close to a neighbor, the whole attempt is
+ *    rejected and a new one is generated.
  */
 struct Random1D {
     using Real = core::Real;
     using Size = std::size_t;
+
+    [[nodiscard]] static std::uint64_t variedSeed() {
+        const auto now = std::chrono::high_resolution_clock::now()
+                             .time_since_epoch()
+                             .count();
+        std::random_device rd;
+
+        return (static_cast<std::uint64_t>(now) << 1u) ^
+               static_cast<std::uint64_t>(rd());
+    }
 
     /**
      * @brief Generate random face coordinates on [A, B].
@@ -62,110 +73,178 @@ struct Random1D {
      * @param a       Left domain boundary.
      * @param b       Right domain boundary.
      * @param xf      Span where face coordinates will be stored (size >= n+1).
-     * @param seed    Seed for RNG (0 means use a default fixed seed).
-     * @param dx_min  Reserved for future use (not enforced strictly yet).
+     * @param seed        Seed for RNG (0 means use a default fixed seed).
+     * @param percentual  Maximum perturbation as a fraction of uniform dx.
      */
     void makeFaces(Size n,
                    Real a,
                    Real b,
                    std::span<Real> xf,
                    std::uint64_t seed = 0,
-                   Real /*dx_min*/ = Real(0)) const {
+                   Real percentual = Real(0.20)) const {
         assert(n > Size(0));
         assert(xf.size() >= n + Size(1));
 
         const Real length = b - a;
         assert(length > Real(0));
 
-        const auto weights = generateWeights(n, seed);
-        const Real sum_w =
-            std::accumulate(weights.begin(), weights.end(), Real(0));
+        const Real dx_ref = length / static_cast<Real>(n);
+        const Real dx_min = minSpacing(dx_ref);
+        std::mt19937_64 rng(effectiveSeed(seed));
+        std::uniform_real_distribution<Real> dist(-percentual, percentual);
 
-        // Fallback: uniform grid if RNG degenerates.
-        if (sum_w <= Real(0)) {
+        do {
             Uniform1D{}.makeFaces(n, a, b, xf);
-            return;
-        }
 
-        xf[0] = a;
-        Real x = a;
+            if (n <= Size(1) || percentual <= Real(0)) {
+                return;
+            }
 
-        // Use all but the last weight to avoid accumulating rounding error,
-        // and force the last face to be exactly at b.
-        for (Size i = 0; i + 1 < n; ++i) {
-            const Real frac = weights[i] / sum_w;
-            const Real dx = length * frac;
-            x += dx;
-            xf[i + 1] = x;
-        }
+            for (Size i = 1; i < n; ++i) {
+                xf[i] += dist(rng) * dx_ref;
+            }
 
-        xf[n] = b;
+            xf[0] = a;
+            xf[n] = b;
+        } while (!hasMinimumSpacing(xf.first(n + Size(1)), dx_min));
     }
 
-    /**
-     * @brief Generate random cell-center coordinates on [A, B].
-     *
-     * The same RNG sequence used in makeFaces is re-applied here so that
-     * centers are consistent with the underlying random pattern.
-     *
-     * @param n       Number of physical cells.
-     * @param a       Left domain boundary.
-     * @param b       Right domain boundary.
-     * @param xc      Span where center coordinates will be stored (size >= n).
-     * @param seed    Seed for RNG (0 means use a default fixed seed).
-     * @param dx_min  Reserved for future use (not enforced strictly yet).
-     */
+    void makeFaces(Size n,
+                   Real a,
+                   Real b,
+                   std::span<Real> xf,
+                   std::uint64_t seed,
+                   Real percentual,
+                   Real dx_min_fraction) const {
+        assert(n > Size(0));
+        assert(xf.size() >= n + Size(1));
+
+        const Real length = b - a;
+        assert(length > Real(0));
+
+        const Real dx_ref = length / static_cast<Real>(n);
+        const Real dx_min = dx_min_fraction * dx_ref;
+        std::mt19937_64 rng(effectiveSeed(seed));
+        std::uniform_real_distribution<Real> dist(-percentual, percentual);
+
+        do {
+            Uniform1D{}.makeFaces(n, a, b, xf);
+
+            if (n <= Size(1) || percentual <= Real(0)) {
+                return;
+            }
+
+            for (Size i = 1; i < n; ++i) {
+                xf[i] += dist(rng) * dx_ref;
+            }
+
+            xf[0] = a;
+            xf[n] = b;
+        } while (!hasMinimumSpacing(xf.first(n + Size(1)), dx_min));
+    }
+
     void makeCenters(Size n,
                      Real a,
                      Real b,
                      std::span<Real> xc,
-                     std::uint64_t seed = 0,
-                     Real /*dx_min*/ = Real(0)) const {
+                     std::uint64_t seed,
+                     Real percentual,
+                     Real dx_min_fraction) const {
         assert(n > Size(0));
         assert(xc.size() >= n);
 
         const Real length = b - a;
         assert(length > Real(0));
 
-        const auto weights = generateWeights(n, seed);
-        const Real sum_w =
-            std::accumulate(weights.begin(), weights.end(), Real(0));
+        const Real dx_ref = length / static_cast<Real>(n);
+        const Real dx_min = dx_min_fraction * dx_ref;
+        std::mt19937_64 rng(effectiveSeed(seed));
+        std::uniform_real_distribution<Real> dist(-percentual, percentual);
 
-        if (sum_w <= Real(0)) {
+        do {
             Uniform1D{}.makeCenters(n, a, b, xc);
-            return;
-        }
 
-        Real x_left = a;
-        Real x_right = a;
+            if (percentual <= Real(0)) {
+                return;
+            }
 
-        for (Size i = 0; i + 1 < n; ++i) {
-            const Real frac = weights[i] / sum_w;
-            const Real dx = length * frac;
-            x_right = x_left + dx;
-            xc[i] = (x_left + x_right) * Real(0.5);
-            x_left = x_right;
-        }
+            for (Size i = 0; i < n; ++i) {
+                xc[i] += dist(rng) * dx_ref;
+            }
+        } while (!hasMinimumSpacing(xc.first(n), dx_min) ||
+                 !insideDomain(xc.first(n), a, b));
+    }
 
-        // Last cell closes exactly at b.
-        x_right = b;
-        xc[n - 1] = (x_left + x_right) * Real(0.5);
+    /**
+     * @brief Generate cell-center coordinates for a random grid.
+     *
+     * @param n           Number of physical cells.
+     * @param a           Left domain boundary.
+     * @param b           Right domain boundary.
+     * @param xc          Span where center coordinates will be stored (size >= n).
+     * @param seed        Seed for RNG (0 means use a default fixed seed).
+     * @param percentual  Maximum perturbation as a fraction of uniform dx.
+     */
+    void makeCenters(Size n,
+                     Real a,
+                     Real b,
+                     std::span<Real> xc,
+                     std::uint64_t seed = 0,
+                     Real percentual = Real(0.20)) const {
+        assert(n > Size(0));
+        assert(xc.size() >= n);
+
+        const Real length = b - a;
+        assert(length > Real(0));
+
+        const Real dx_ref = length / static_cast<Real>(n);
+        const Real dx_min = minSpacing(dx_ref);
+        std::mt19937_64 rng(effectiveSeed(seed));
+        std::uniform_real_distribution<Real> dist(-percentual, percentual);
+
+        do {
+            Uniform1D{}.makeCenters(n, a, b, xc);
+
+            if (percentual <= Real(0)) {
+                return;
+            }
+
+            for (Size i = 0; i < n; ++i) {
+                xc[i] += dist(rng) * dx_ref;
+            }
+        } while (!hasMinimumSpacing(xc.first(n), dx_min) ||
+                 !insideDomain(xc.first(n), a, b));
     }
 
 private:
-    [[nodiscard]] static std::vector<Real> generateWeights(
-        Size n, std::uint64_t seed) {
-        const std::uint64_t effective_seed =
-            (seed != 0u) ? seed : defaultSeed();
+    [[nodiscard]] static constexpr Real minSpacing(Real dx_ref) noexcept {
+        return Real(0.01) * dx_ref;
+    }
 
-        std::mt19937_64 rng(effective_seed);
-        std::uniform_real_distribution<Real> dist(Real(0.0), Real(1.0));
-
-        std::vector<Real> w(n);
-        for (auto &wi : w) {
-            wi = dist(rng);
+    [[nodiscard]] static bool hasMinimumSpacing(std::span<const Real> x,
+                                                Real dx_min) noexcept {
+        for (Size i = 1; i < x.size(); ++i) {
+            if (!(x[i] - x[i - 1u] >= dx_min)) {
+                return false;
+            }
         }
-        return w;
+
+        return true;
+    }
+
+    [[nodiscard]] static bool insideDomain(std::span<const Real> x,
+                                           Real a,
+                                           Real b) noexcept {
+        for (Real xi : x) {
+            if (!(xi > a && xi < b)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+    [[nodiscard]] static std::uint64_t effectiveSeed(std::uint64_t seed) noexcept {
+        return (seed != 0u) ? seed : defaultSeed();
     }
 
     [[nodiscard]] static constexpr std::uint64_t defaultSeed() noexcept {

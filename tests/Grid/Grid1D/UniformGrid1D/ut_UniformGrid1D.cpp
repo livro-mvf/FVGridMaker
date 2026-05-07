@@ -332,6 +332,19 @@ TEST(Grid1DBuilderUniforme, AcessaGrandezasPorIndiceFisico) {
     EXPECT_NEAR(grid.deltaCentroFisico(4), 0.125, eps);
 }
 
+TEST(Grid1DBuilderUniforme, ComprimentoFisicoEntreFacesExtremasEPositivo) {
+    constexpr Index N = 4;
+
+    const auto grid = Grid1DBuilder{}
+        .setN(N)
+        .setDomain(0.0, 1.0)
+        .setNVolumesFicticios(2)
+        .setDistribution<Uniform1D>()
+        .build();
+
+    EXPECT_GT(grid.faceFisica(N) - grid.faceFisica(0), Real(0));
+}
+
 TEST(Grid1DBuilderUniforme, AcessoEscalarInvalidoLancaExcecaoPropria) {
     const auto grid = Grid1DBuilder{}
         .setN(4)
@@ -355,6 +368,22 @@ TEST(Grid1DBuilderUniforme, ConfiguracoesInvalidasLancamExcecaoPropria) {
     EXPECT_THROW(
         (void)Grid1DBuilder{}
             .setN(0)
+            .setDomain(0.0, 1.0)
+            .setDistribution<Uniform1D>()
+            .build(),
+        FVGException);
+
+    EXPECT_THROW(
+        (void)Grid1DBuilder{}
+            .setN(-1)
+            .setDomain(0.0, 1.0)
+            .setDistribution<Uniform1D>()
+            .build(),
+        FVGException);
+
+    EXPECT_THROW(
+        (void)Grid1DBuilder{}
+            .setN(-100)
             .setDomain(0.0, 1.0)
             .setDistribution<Uniform1D>()
             .build(),

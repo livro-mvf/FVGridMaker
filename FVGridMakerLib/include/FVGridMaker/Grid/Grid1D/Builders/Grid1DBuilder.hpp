@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 // includes C++
 // ----------------------------------------------------------------------------
+#include <cstdint>
 #include <typeindex>
 
 #ifdef FVMGRIDMAKER_NAMESPACE_OPEN
@@ -44,6 +45,11 @@ using ::FVGridMaker::grid::CenteringTag;
 using ::FVGridMaker::grid::DistributionTag;
 using ::FVGridMaker::grid::grid1d::Grid1D;
 
+enum class RandomSeedMode : std::uint8_t {
+    Fixed,
+    Varied
+};
+
 DETAIL_NAMESPACE_OPEN
 
 /**
@@ -54,11 +60,14 @@ DETAIL_NAMESPACE_OPEN
  * detail::build_grid1d().
  */
 struct Grid1DBuilderConfig {
-    core::Index  n{};         ///< Número de células físicas.
-    core::Real   a{};         ///< Limite esquerdo do domínio físico.
-    core::Real   b{};         ///< Limite direito do domínio físico.
-    core::Index  nGhost{};    ///< Número de células ghost em cada lado.
-    CenteringTag centering{CenteringTag::FaceCentered};
+    core::Index    n{};         ///< Número de células físicas.
+    core::Real     a{};         ///< Limite esquerdo do domínio físico.
+    core::Real     b{};         ///< Limite direito do domínio físico.
+    core::Index    nGhost{};    ///< Número de células ghost em cada lado.
+    CenteringTag   centering{CenteringTag::FaceCentered};
+    core::Real     randomPercentual{core::Real(0.20)};
+    std::uint64_t  randomSeed{12345u};
+    RandomSeedMode randomSeedMode{RandomSeedMode::Fixed};
 };
 
 /**
@@ -105,6 +114,9 @@ public:
         , b_{1.0}
         , nGhost_{0}
         , centering_{CenteringTag::FaceCentered}
+        , randomPercentual_{Real(0.20)}
+        , randomSeed_{12345u}
+        , randomSeedMode_{RandomSeedMode::Fixed}
         , distribution_type_{typeid(dist1d::Uniform1D)}
         , centering_type_{typeid(void)} {}
 
@@ -142,6 +154,26 @@ public:
     /// Define a política de centralização (face-centred, cell-centred, etc.).
     Grid1DBuilder& setCentering(CenteringTag centering) noexcept {
         centering_ = centering;
+        return *this;
+    }
+
+    /// Define o percentual de perturbação usado por Random1D.
+    /// Exemplo: 0.20 significa 20% da distância uniforme de referência.
+    Grid1DBuilder& setRandomPercentual(Real percentual) noexcept {
+        randomPercentual_ = percentual;
+        return *this;
+    }
+
+    /// Define seed fixo para Random1D, tornando a malha reprodutível.
+    Grid1DBuilder& setRandomSeed(std::uint64_t seed) noexcept {
+        randomSeed_ = seed;
+        randomSeedMode_ = RandomSeedMode::Fixed;
+        return *this;
+    }
+
+    /// Usa seed variado para Random1D a cada construção de malha.
+    Grid1DBuilder& setRandomSeedVariado() noexcept {
+        randomSeedMode_ = RandomSeedMode::Varied;
         return *this;
     }
 
@@ -199,6 +231,9 @@ public:
         cfg.b         = b_;
         cfg.nGhost    = nGhost_;
         cfg.centering = centering_;
+        cfg.randomPercentual = randomPercentual_;
+        cfg.randomSeed = randomSeed_;
+        cfg.randomSeedMode = randomSeedMode_;
         return detail::build_grid1d(cfg, distribution_type_, centering_type_);
     }
 
@@ -208,6 +243,9 @@ private:
     Real           b_;                ///< Limite direito do domínio.
     Index          nGhost_;           ///< Número de células ghost por lado.
     CenteringTag   centering_;        ///< Política de centralização.
+    Real           randomPercentual_; ///< Perturbação relativa para Random1D.
+    std::uint64_t  randomSeed_;       ///< Seed fixo para Random1D.
+    RandomSeedMode randomSeedMode_;   ///< Modo de seed para Random1D.
     std::type_index distribution_type_; ///< Tipo da distribuição 1D.
     std::type_index centering_type_;    ///< Tipo de centering (reservado).
 };

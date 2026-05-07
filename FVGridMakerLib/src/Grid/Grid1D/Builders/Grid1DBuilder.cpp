@@ -29,12 +29,12 @@
 // ----------------------------------------------------------------------------
 // includes C++ (alphabetical)
 // ----------------------------------------------------------------------------
-#include <algorithm>
-#include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <span>
 #include <string>
 #include <typeindex>
+#include <type_traits>
 #include <vector>
 
 FVGRIDMAKER_NAMESPACE_OPEN
@@ -51,6 +51,144 @@ using patterns::distribution::Distribution1D;
 using patterns::distribution::Random1D;
 using patterns::distribution::Uniform1D;
 
+namespace {
+
+void validate_strictly_increasing(std::span<const Real> values,
+                                  ::FVGridMaker::error::GridErr err) {
+    for (std::size_t i = 1; i < values.size(); ++i) {
+        if (!(values[i] > values[i - 1u])) {
+            ::FVGridMaker::error::lancarErro(
+                err, {{"i", std::to_string(i)}});
+        }
+    }
+}
+
+void validate_positive_physical_length(std::span<const Real> xf_physical) {
+    if (!(xf_physical.back() - xf_physical.front() > Real(0))) {
+        ::FVGridMaker::error::lancarErro(
+            ::FVGridMaker::error::GridErr::InvalidDomain,
+            {{"A", std::to_string(xf_physical.front())},
+             {"B", std::to_string(xf_physical.back())}});
+    }
+}
+
+void validate_fictitious_count(Index n_ficticios, Index n_physical) {
+    if (n_ficticios < Index{0} || n_ficticios > n_physical) {
+        ::FVGridMaker::error::lancarErro(
+            ::FVGridMaker::error::GridErr::InvalidFictitiousVolumes,
+            {{"N", std::to_string(n_ficticios)}});
+    }
+}
+
+Real max_random_percentual(Index n) {
+    if (n <= Index{1}) {
+        return Real(0);
+    }
+
+    return Real(1);
+}
+
+void validate_random_percentual(Real percentual, Index n) {
+    const Real max_percentual = max_random_percentual(n);
+
+    if (percentual < Real(0) || percentual > max_percentual) {
+        ::FVGridMaker::error::lancarErro(
+            ::FVGridMaker::error::GridErr::OptionsOutOfRange,
+            {{"w_lo", std::to_string(percentual)},
+             {"w_hi", std::to_string(max_percentual)}});
+    }
+}
+
+void extend_faces_by_reflection(std::span<const Real> xf_physical,
+                                std::span<Real> xf,
+                                std::size_t n_fict) {
+    const std::size_t n_physical = xf_physical.size() - 1u;
+
+    for (std::size_t i = 0; i <= n_physical; ++i) {
+        xf[n_fict + i] = xf_physical[i];
+    }
+
+    Real x_left = xf_physical.front();
+    for (std::size_t k = 0; k < n_fict; ++k) {
+        const Real dx = xf_physical[k + 1u] - xf_physical[k];
+        x_left -= dx;
+        xf[n_fict - 1u - k] = x_left;
+    }
+
+    Real x_right = xf_physical.back();
+    for (std::size_t k = 0; k < n_fict; ++k) {
+        const Real dx =
+            xf_physical[n_physical - k] - xf_physical[n_physical - 1u - k];
+        x_right += dx;
+        xf[n_fict + n_physical + 1u + k] = x_right;
+    }
+}
+
+void extend_centers_by_reflection(std::span<const Real> xc_physical,
+                                  std::span<Real> xc,
+                                  Real a,
+                                  Real b,
+                                  std::size_t n_fict) {
+    const std::size_t n_physical = xc_physical.size();
+
+    for (std::size_t i = 0; i < n_physical; ++i) {
+        xc[n_fict + i] = xc_physical[i];
+    }
+
+    for (std::size_t k = 0; k < n_fict; ++k) {
+        xc[n_fict - 1u - k] = Real(2) * a - xc_physical[k];
+        xc[n_fict + n_physical + k] =
+            Real(2) * b - xc_physical[n_physical - 1u - k];
+    }
+}
+
+void compute_centers_from_faces(std::span<const Real> xf,
+                                std::span<Real> xc) {
+    for (std::size_t i = 0; i < xc.size(); ++i) {
+        xc[i] = Real(0.5) * (xf[i] + xf[i + 1u]);
+    }
+}
+
+void compute_faces_from_centers(std::span<const Real> xc,
+                                std::span<Real> xf,
+                                Real a,
+                                Real b,
+                                std::size_t n_fict,
+                                std::size_t n_physical) {
+    const std::size_t n_cells = xc.size();
+
+    for (std::size_t i = 1; i < n_cells; ++i) {
+        xf[i] = Real(0.5) * (xc[i - 1u] + xc[i]);
+    }
+
+    if (n_fict == 0u) {
+        xf.front() = a;
+        xf.back() = b;
+    } else {
+        xf.front() = Real(2) * xc.front() - xf[1];
+        xf.back() = Real(2) * xc.back() - xf[n_cells - 1u];
+        xf[n_fict] = a;
+        xf[n_fict + n_physical] = b;
+    }
+}
+
+void compute_metrics(std::span<const Real> xf,
+                     std::span<const Real> xc,
+                     std::span<Real> dF,
+                     std::span<Real> dC) {
+    for (std::size_t i = 0; i < dF.size(); ++i) {
+        dF[i] = xf[i + 1u] - xf[i];
+    }
+
+    dC.front() = xc.front() - xf.front();
+    for (std::size_t i = 1; i < xc.size(); ++i) {
+        dC[i] = xc[i] - xc[i - 1u];
+    }
+    dC.back() = xf.back() - xc.back();
+}
+
+} // namespace
+
 // -----------------------------------------------------------------------------
 // Helper: builds a Grid1D for a given distribution functor
 // -----------------------------------------------------------------------------
@@ -63,9 +201,12 @@ using patterns::distribution::Uniform1D;
  *   - Real  a;        // left domain boundary
  *   - Real  b;        // right domain boundary
  *
- * Volumes fictícios (cfg.nGhost) are generated by extending the first and last
- * physical face spacing outside the physical domain. Centering is still
- * reserved for the future policy layer.
+ * Centering defines the primary coordinate generated by the distribution:
+ *   - CellCentered: distribution generates physical faces; centers are derived.
+ *   - FaceCentered: distribution generates physical centers; faces are derived.
+ *
+ * Fictitious volumes are mirrored from physical volumes after the physical mesh
+ * has been generated.
  */
 template <Distribution1D Dist>
 static Grid1D build_with_distribution(const Grid1DBuilderConfig& cfg) {
@@ -92,6 +233,11 @@ static Grid1D build_with_distribution(const Grid1DBuilderConfig& cfg) {
             ::FVGridMaker::error::GridErr::InvalidFictitiousVolumes,
             {{"N", std::to_string(n_ficticios)}});
     }
+    validate_fictitious_count(n_ficticios, n);
+
+    if constexpr (std::is_same_v<Dist, Random1D>) {
+        validate_random_percentual(cfg.randomPercentual, n);
+    }
 
     const std::size_t n_physical = static_cast<std::size_t>(n);
     const std::size_t n_fict = static_cast<std::size_t>(n_ficticios);
@@ -113,62 +259,92 @@ static Grid1D build_with_distribution(const Grid1DBuilderConfig& cfg) {
     // 3. Run the distribution functor on the physical domain [a, b]
     // -------------------------------------------------------------------------
     Dist dist{};
-
-    std::vector<Real> xf_physical(n_physical + 1u);
-    std::span<Real> xf_physical_span{xf_physical.data(), xf_physical.size()};
-
     using Size = typename Dist::Size;
+    const std::uint64_t seed =
+        cfg.randomSeedMode == RandomSeedMode::Varied
+            ? Random1D::variedSeed()
+            : cfg.randomSeed;
 
-    // Se Dist::Size for unsigned (size_t), o cast explícito evita warnings
-    // de conversão de sinal sem alterar o comportamento.
-    dist.makeFaces(static_cast<Size>(n), a, b, xf_physical_span);
+    switch (cfg.centering) {
+    case CenteringTag::CellCentered: {
+        std::vector<Real> xf_physical(n_physical + 1u);
+        dist.makeFaces(static_cast<Size>(n),
+                       a,
+                       b,
+                       std::span<Real>{xf_physical.data(), xf_physical.size()},
+                       seed,
+                       cfg.randomPercentual);
+        validate_strictly_increasing(
+            std::span<const Real>{xf_physical.data(), xf_physical.size()},
+            ::FVGridMaker::error::GridErr::NonIncreasingFaces);
+        validate_positive_physical_length(
+            std::span<const Real>{xf_physical.data(), xf_physical.size()});
 
-    const Real dx_left = xf_physical[1] - xf_physical[0];
-    const Real dx_right = xf_physical[n_physical] - xf_physical[n_physical - 1u];
-
-    for (std::size_t k = 0; k < n_fict; ++k) {
-        const std::size_t idx = n_fict - 1u - k;
-        xf[idx] = a - static_cast<Real>(k + 1u) * dx_left;
+        extend_faces_by_reflection(
+            std::span<const Real>{xf_physical.data(), xf_physical.size()},
+            std::span<Real>{xf.data(), xf.size()},
+            n_fict);
+        compute_centers_from_faces(
+            std::span<const Real>{xf.data(), xf.size()},
+            std::span<Real>{xc.data(), xc.size()});
+        break;
     }
 
-    for (std::size_t i = 0; i <= n_physical; ++i) {
-        xf[n_fict + i] = xf_physical[i];
+    case CenteringTag::FaceCentered: {
+        std::vector<Real> xc_physical(n_physical);
+        dist.makeCenters(static_cast<Size>(n),
+                         a,
+                         b,
+                         std::span<Real>{xc_physical.data(),
+                                         xc_physical.size()},
+                         seed,
+                         cfg.randomPercentual);
+        validate_strictly_increasing(
+            std::span<const Real>{xc_physical.data(), xc_physical.size()},
+            ::FVGridMaker::error::GridErr::NonIncreasingCenters);
+
+        extend_centers_by_reflection(
+            std::span<const Real>{xc_physical.data(), xc_physical.size()},
+            std::span<Real>{xc.data(), xc.size()},
+            a,
+            b,
+            n_fict);
+        compute_faces_from_centers(
+            std::span<const Real>{xc.data(), xc.size()},
+            std::span<Real>{xf.data(), xf.size()},
+            a,
+            b,
+            n_fict,
+            n_physical);
+        validate_positive_physical_length(
+            std::span<const Real>{xf.data() + n_fict, n_physical + 1u});
+        break;
     }
 
-    for (std::size_t k = 0; k < n_fict; ++k) {
-        xf[n_fict + n_physical + 1u + k] =
-            b + static_cast<Real>(k + 1u) * dx_right;
-    }
-
-    for (std::size_t i = 0; i < n_cells; ++i) {
-        xc[i] = Real(0.5) * (xf[i] + xf[i + 1u]);
+    default:
+        ::FVGridMaker::error::lancarErro(
+            ::FVGridMaker::error::GridErr::InvalidCentering,
+            {{"center", std::string{::FVGridMaker::grid::to_string(
+                            cfg.centering)}}});
     }
 
     // -------------------------------------------------------------------------
-    // 4. Compute face distances dF
+    // 4. Validate complete geometry and compute metrics
     // -------------------------------------------------------------------------
-    for (std::size_t i = 0; i < n_cells; ++i) {
-        dF[i] = xf[i + 1] - xf[i];
-    }
+    validate_strictly_increasing(
+        std::span<const Real>{xf.data(), xf.size()},
+        ::FVGridMaker::error::GridErr::NonIncreasingFaces);
+    validate_strictly_increasing(
+        std::span<const Real>{xc.data(), xc.size()},
+        ::FVGridMaker::error::GridErr::NonIncreasingCenters);
+    compute_metrics(
+        std::span<const Real>{xf.data(), xf.size()},
+        std::span<const Real>{xc.data(), xc.size()},
+        std::span<Real>{dF.data(), dF.size()},
+        std::span<Real>{dC.data(), dC.size()});
 
     // -------------------------------------------------------------------------
-    // 5. Compute cell "spacings" dC (mesma convenção do código antigo)
-    // -------------------------------------------------------------------------
-    dC.front() = xc.front() - xf.front();
-    if (n_cells >= 2) {
-        for (std::size_t i = 1; i < n_cells; ++i) {
-            dC[i] = xc[i] - xc[i - 1];
-        }
-    }
-    dC.back() = xf.back() - xc.back();
-
-    // -------------------------------------------------------------------------
-    // 6. Build the Grid1D object
-    //
-    // Mantém a mesma chamada usada anteriormente:
-    //   Grid1D{faces, centres, dF, dC}
-    // Se a assinatura de Grid1D mudar no futuro (ex.: suportar ghosts
-    // explicitamente), basta ajustar esta linha, sem alterar o builder.
+    // 5. Build the Grid1D object
     // -------------------------------------------------------------------------
     return Grid1D{std::move(xf), std::move(xc),
                   std::move(dF), std::move(dC),
