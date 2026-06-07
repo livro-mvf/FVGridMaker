@@ -9,14 +9,15 @@ add_custom_target(run_all_tests
     COMMENT "Executando todos os testes (via ctest)..."
 )
 
-add_custom_target(run_ut_all
+add_custom_target(run_tst_all
     DEPENDS run_all_tests
     COMMENT "Alias para run_all_tests."
 )
 
-# Todos os testes principais começam com ut_*.cpp
+# Todos os testes principais começam com tst_*.cc ou tst_*.cpp
 file(GLOB_RECURSE TEST_MAIN_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/**/ut_*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tst_*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/tst_*.cpp"
 )
 
 message(STATUS "[tests] Encontrando testes...")
@@ -36,12 +37,12 @@ foreach(test_main IN LISTS TEST_MAIN_SOURCES)
     # Colete todos os .cpp auxiliares no mesmo diretório do teste principal
     file(GLOB helper_srcs CONFIGURE_DEPENDS "${test_dir}/*.cpp")
 
-    # Remova o próprio arquivo ut_*.cpp da lista de helpers
+    # Remova o próprio arquivo tst_*.cpp da lista de helpers
     list(REMOVE_ITEM helper_srcs "${test_main}")
 
-    # Remova quaisquer outros ut_*.cpp para evitar múltiplos mains
+    # Remova quaisquer outros tst_*.cpp para evitar múltiplos mains
     foreach(s IN LISTS helper_srcs)
-        if(s MATCHES ".*/ut_.*\\.cpp$")
+        if(s MATCHES ".*/tst_.*\\.cpp$")
             list(REMOVE_ITEM helper_srcs "${s}")
         endif()
     endforeach()
@@ -90,4 +91,8 @@ foreach(test_main IN LISTS TEST_MAIN_SOURCES)
     list(APPEND ALL_TEST_TARGETS ${test_name})
 endforeach()
 
-add_dependencies(run_all_tests ${ALL_TEST_TARGETS})
+if(ALL_TEST_TARGETS)
+    add_dependencies(run_all_tests ${ALL_TEST_TARGETS})
+else()
+    message(WARNING "[tests] Nenhum teste tst_*.cc ou tst_*.cpp foi encontrado.")
+endif()

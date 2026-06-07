@@ -1,2 +1,46 @@
+# Build directories
+build/
+_build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+CTestTestfile.cmake
+Testing/
+
+# Binaries and libraries
+*.o
+*.obj
+*.a
+*.so
+*.dll
+*.dylib
+*.exe
+*.out
+
+# Python / Sphinx
+.venv/
+.venv-docs/
+__pycache__/
+*.pyc
+docs/_build/
+
+# IDEs and editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Generated outputs
 *.vtk
-/build
+*.vtr
+*.csv
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+/FVGridMakerLibOld
