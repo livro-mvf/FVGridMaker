@@ -1,5 +1,5 @@
 // ----------------------------------------------------------------------------
-// File: Axis1D.cc
+// File: Axis1D.cpp
 // Project: FVGridMaker
 // Version: 0.1.0
 // Description: Implements a one-dimensional structured finite-volume axis.
@@ -17,20 +17,35 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
-#include <FVGridMaker/ErrorHandling/ErrorCodes.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 
 namespace fvgrid {
 
 Axis1D::Axis1D(std::vector<Real> faces)
-    : Axis1D(std::move(faces), VolumeCentered1D::name()) {}
+    : Axis1D(
+          faces,
+          VolumeCentered1D::centers_from_faces(faces),
+          VolumeCentered1D::name()
+      ) {}
 
 Axis1D::Axis1D(std::vector<Real> faces, std::string_view pattern_name)
+    : Axis1D(
+          faces,
+          VolumeCentered1D::centers_from_faces(faces),
+          pattern_name
+      ) {}
+
+Axis1D::Axis1D(
+    std::vector<Real> faces,
+    std::vector<Real> centers,
+    std::string_view pattern_name
+)
     : faces_(std::move(faces)),
+      centers_(std::move(centers)),
       pattern_name_(pattern_name) {
-    validate_faces();
-    rebuild_derived_data();
+    validate_geometry();
+    rebuild_metrics();
 }
 
 Size Axis1D::num_cells() const noexcept {
@@ -49,8 +64,16 @@ std::span<const Real> Axis1D::centers() const noexcept {
     return centers_;
 }
 
+std::span<const Real> Axis1D::dx_faces() const noexcept {
+    return dx_faces_;
+}
+
+std::span<const Real> Axis1D::dx_centers() const noexcept {
+    return dx_centers_;
+}
+
 std::span<const Real> Axis1D::cell_lengths() const noexcept {
-    return cell_lengths_;
+    return dx_faces_;
 }
 
 Real Axis1D::xmin() const noexcept {
@@ -69,14 +92,20 @@ std::string_view Axis1D::pattern_name() const noexcept {
     return pattern_name_;
 }
 
-void Axis1D::validate_faces() const {
+void Axis1D::validate_geometry() const {
     require(
         faces_.size() >= 2,
         error_catalog::kInvalidFaceCount,
         Axis1D::id()
     );
 
-    const bool strictly_increasing =
+    require(
+        centers_.size() + 1 == faces_.size(),
+        error_catalog::kInvalidCenterCount,
+        Axis1D::id()
+    );
+
+    const bool faces_strictly_increasing =
         std::ranges::adjacent_find(
             faces_,
             [](Real left, Real right) {
@@ -85,27 +114,55 @@ void Axis1D::validate_faces() const {
         ) == faces_.end();
 
     require(
-        strictly_increasing,
+        faces_strictly_increasing,
         error_catalog::kNonIncreasingFaces,
+        Axis1D::id()
+    );
+
+    const bool centers_strictly_increasing =
+        std::ranges::adjacent_find(
+            centers_,
+            [](Real left, Real right) {
+                return !(right > left);
+            }
+        ) == centers_.end();
+
+    require(
+        centers_strictly_increasing,
+        error_catalog::kNonIncreasingCenters,
+        Axis1D::id()
+    );
+
+    require(
+        centers_.front() > faces_.front(),
+        error_catalog::kOutOfRange,
+        Axis1D::id()
+    );
+
+    require(
+        centers_.back() < faces_.back(),
+        error_catalog::kOutOfRange,
         Axis1D::id()
     );
 }
 
-void Axis1D::rebuild_derived_data() {
-    const Size cell_count = faces_.size() - 1;
+void Axis1D::rebuild_metrics() {
+    const Size cell_count = centers_.size();
 
-    centers_.resize(cell_count);
-    cell_lengths_.resize(cell_count);
-
-    constexpr Real half = static_cast<Real>(0.5);
+    dx_faces_.resize(cell_count);
+    dx_centers_.resize(cell_count + 1);
 
     for (Size i = 0; i < cell_count; ++i) {
-        const Real left = faces_[i];
-        const Real right = faces_[i + 1];
-
-        centers_[i] = half * (left + right);
-        cell_lengths_[i] = right - left;
+        dx_faces_[i] = faces_[i + 1] - faces_[i];
     }
+
+    dx_centers_[0] = centers_[0] - faces_[0];
+
+    for (Size i = 1; i < cell_count; ++i) {
+        dx_centers_[i] = centers_[i] - centers_[i - 1];
+    }
+
+    dx_centers_[cell_count] = faces_[cell_count] - centers_[cell_count - 1];
 }
 
 }  // namespace fvgrid

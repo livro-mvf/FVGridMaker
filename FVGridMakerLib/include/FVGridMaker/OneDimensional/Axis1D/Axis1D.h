@@ -23,7 +23,6 @@
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
-
 namespace fvgrid {
 
 class Axis1D final {
@@ -33,6 +32,12 @@ public:
     explicit Axis1D(std::vector<Real> faces);
 
     Axis1D(std::vector<Real> faces, std::string_view pattern_name);
+
+    Axis1D(
+        std::vector<Real> faces,
+        std::vector<Real> centers,
+        std::string_view pattern_name
+    );
 
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
@@ -55,6 +60,10 @@ public:
 
     [[nodiscard]] std::span<const Real> faces() const noexcept;
     [[nodiscard]] std::span<const Real> centers() const noexcept;
+
+    [[nodiscard]] std::span<const Real> dx_faces() const noexcept;
+    [[nodiscard]] std::span<const Real> dx_centers() const noexcept;
+
     [[nodiscard]] std::span<const Real> cell_lengths() const noexcept;
 
     [[nodiscard]] Real xmin() const noexcept;
@@ -66,11 +75,13 @@ public:
 private:
     std::vector<Real> faces_;
     std::vector<Real> centers_;
-    std::vector<Real> cell_lengths_;
+    std::vector<Real> dx_faces_;
+    std::vector<Real> dx_centers_;
+
     std::string_view pattern_name_ = VolumeCentered1D::name();
 
-    void validate_faces() const;
-    void rebuild_derived_data();
+    void validate_geometry() const;
+    void rebuild_metrics();
 };
 
 }  // namespace fvgrid

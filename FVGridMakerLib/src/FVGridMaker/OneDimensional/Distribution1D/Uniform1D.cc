@@ -10,13 +10,13 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <utility>
 #include <vector>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
-#include <FVGridMaker/ErrorHandling/ErrorCodes.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Uniform1D.h>
 
@@ -59,11 +59,26 @@ Axis1D Uniform1D::make(
 
     std::vector<Real> faces(cell_count + 1);
 
+    // Volume-centred uniform construction:
+    //
+    //   1. Uniform1D generates the face coordinates.
+    //   2. VolumeCentered1D reconstructs the centre coordinates from faces.
+    //   3. Axis1D stores the completed geometry and computes the metrics.
+    //
+    // This file intentionally implements only the volume-centred construction
+    // path. Face-centred uniform generation will be reintroduced later through
+    // a dedicated construction path.
     for (Size i = 0; i <= cell_count; ++i) {
         faces[i] = x0 + static_cast<Real>(i) * dx;
     }
 
-    return Axis1D{std::move(faces), pattern_name};
+    std::vector<Real> centers = VolumeCentered1D::centers_from_faces(faces);
+
+    return Axis1D{
+        std::move(faces),
+        std::move(centers),
+        pattern_name
+    };
 }
 
 Axis1D uniform_axis_1d(

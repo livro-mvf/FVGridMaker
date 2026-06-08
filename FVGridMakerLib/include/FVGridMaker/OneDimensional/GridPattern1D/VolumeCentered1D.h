@@ -12,17 +12,33 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <span>
 #include <string_view>
+#include <vector>
+
+// ----------------------------------------------------------------------------
+// FVGridMaker includes
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/ID.h>
+#include <FVGridMaker/Core/Types.h>
 
 namespace fvgrid {
 
 struct VolumeCentered1D final {
+    [[nodiscard]] static constexpr ID id() noexcept {
+        return ID{
+            "OneDimensional",
+            "VolumeCentered1D",
+            "fvgrid.1d.grid_pattern.VolumeCentered1D"
+        };
+    }
+
     [[nodiscard]] static constexpr std::string_view name() noexcept {
         return "VolumeCentered1D";
     }
 
     [[nodiscard]] static constexpr std::string_view class_id() noexcept {
-        return "fvgrid.1d.grid_pattern.VolumeCentered1D";
+        return id().class_id();
     }
 
     [[nodiscard]] static constexpr std::string_view primary_coordinates()
@@ -34,6 +50,10 @@ struct VolumeCentered1D final {
         noexcept {
         return "centers";
     }
+
+    [[nodiscard]] static std::vector<Real> centers_from_faces(
+        std::span<const Real> faces
+    );
 };
 
 }  // namespace fvgrid
