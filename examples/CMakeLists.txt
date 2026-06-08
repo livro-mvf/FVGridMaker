@@ -1,21 +1,36 @@
-add_executable(ex_Minimal
-    Ex_Minimal/ex_Minimal.cc
+# ----------------------------------------------------------------------------
+# File: CMakeLists.txt
+# Project: FVGridMaker
+# Version: 0.1.0
+# Description: Discovers and builds FVGridMaker example programs.
+# Author: FVGridMaker Team
+# License: MIT
+# ----------------------------------------------------------------------------
+
+file(GLOB_RECURSE FVGRIDMAKER_EXAMPLE_SOURCES
+    CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*/ex_*.cc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*/ex_*.cpp"
 )
 
-target_link_libraries(ex_Minimal
-    PRIVATE
-        FVGridMaker
-)
+foreach(example_source IN LISTS FVGRIDMAKER_EXAMPLE_SOURCES)
+    get_filename_component(example_name "${example_source}" NAME_WE)
 
-set_target_properties(ex_Minimal
-    PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/examples"
-)
+    add_executable("${example_name}" "${example_source}")
 
-add_custom_target(run_ex_Minimal
-    COMMAND $<TARGET_FILE:ex_Minimal>
-    DEPENDS ex_Minimal
-    WORKING_DIRECTORY "$<TARGET_FILE_DIR:ex_Minimal>"
-    COMMENT "Executando exemplo ex_Minimal..."
-    VERBATIM
-)
+    target_link_libraries("${example_name}"
+        PRIVATE
+            FVGridMaker
+    )
+
+    target_include_directories("${example_name}"
+        PRIVATE
+            "${PROJECT_SOURCE_DIR}/FVGridMakerLib/include"
+    )
+
+    add_custom_target("run_${example_name}"
+        COMMAND "${example_name}"
+        DEPENDS "${example_name}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+    )
+endforeach()
