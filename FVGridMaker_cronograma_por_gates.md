@@ -313,4 +313,21 @@ Axis1D estável;
 CoordinateSystem básico;
 regras de indexação 2D;
 medidas geométricas.
+
+Observação arquitetural para etapa futura:
+
+O Custom1D foi implementado inicialmente para os dois padrões disponíveis,
+VolumeCentered1D e FaceCentered1D. Antes de introduzir novos padrões de grid
+1D definidos pelo usuário, o Custom1D deverá ser refatorado para um mecanismo
+extensível baseado em traits ou builders, por exemplo Custom1DBuilder<Pattern>.
+
+Objetivo da refatoração futura:
+
+```text
+1. evitar que Custom1D precise conhecer todos os padrões possíveis;
+2. permitir que novos GridPattern1D sejam adicionados por especialização;
+3. manter a regra do projeto de não usar enum central para categorias
+   extensíveis;
+4. manter o caminho sem runtime polymorphism em rotinas centrais;
+5. permitir testar padrões novos sem modificar o núcleo de Custom1D.
 ```

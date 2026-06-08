@@ -69,6 +69,21 @@ TEST(ErrorCatalog, GridDescriptorsAreStable) {
         std::string_view{"The initial coordinate is invalid."}
     );
     EXPECT_EQ(error_catalog::kInvalidXInit.category, std::string_view{"Grid"});
+
+    EXPECT_EQ(
+        error_catalog::kInvalidCoordinateKind.code,
+        error_code::kInvalidCoordinateKind
+    );
+    EXPECT_EQ(
+        error_catalog::kInvalidCoordinateKind.message,
+        std::string_view{
+            "The input coordinate kind is incompatible with the grid pattern."
+        }
+    );
+    EXPECT_EQ(
+        error_catalog::kInvalidCoordinateKind.category,
+        std::string_view{"Grid"}
+    );
 }
 
 TEST(ErrorCatalog, CoordinateOrderDescriptorsAreStable) {

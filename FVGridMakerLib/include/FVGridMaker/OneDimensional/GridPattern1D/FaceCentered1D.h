@@ -13,7 +13,7 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <span>
-// #include <string_view>
+#include <string_view>
 #include <vector>
 
 // ----------------------------------------------------------------------------
@@ -21,6 +21,9 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
 namespace fvgrid {
 
@@ -51,22 +54,19 @@ struct FaceCentered1D final {
         return "faces";
     }
 
-    // Reconstructs face coordinates from centre coordinates.
-    //
-    // This is the defining rule for the face-centred construction path:
-    //
-    //   - the primary coordinates are the cell centres;
-    //   - the first face is fixed at x_min;
-    //   - the last face is fixed at x_max;
-    //   - internal faces are midpoints between neighbouring centres.
-    //
-    // This rule is intentionally kept in FaceCentered1D instead of Axis1D,
-    // because Axis1D should store a completed geometry and compute metrics,
-    // not decide how a specific grid pattern reconstructs missing coordinates.
+    [[nodiscard]] static constexpr CoordinateKind1D input_kind() noexcept {
+        return CoordinateKind1D::Centers;
+    }
+
     [[nodiscard]] static std::vector<Real> faces_from_centers(
         std::span<const Real> centers,
         Real x_min,
         Real x_max
+    );
+
+    [[nodiscard]] static AxisGeometry1D complete_geometry(
+        std::vector<Real> centers,
+        Domain1D domain
     );
 };
 

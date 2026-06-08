@@ -8,6 +8,12 @@
 // ----------------------------------------------------------------------------
 
 // ----------------------------------------------------------------------------
+// C++ standard library includes
+// ----------------------------------------------------------------------------
+#include <utility>
+#include <vector>
+
+// ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
@@ -35,6 +41,19 @@ std::vector<Real> VolumeCentered1D::centers_from_faces(
     }
 
     return centers;
+}
+
+AxisGeometry1D VolumeCentered1D::complete_geometry(
+    std::vector<Real> faces,
+    Domain1D
+) {
+    std::vector<Real> centers = centers_from_faces(faces);
+
+    return AxisGeometry1D{
+        std::move(faces),
+        std::move(centers),
+        VolumeCentered1D::name()
+    };
 }
 
 }  // namespace fvgrid

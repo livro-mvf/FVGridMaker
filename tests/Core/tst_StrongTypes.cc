@@ -60,6 +60,14 @@ TEST(StrongTypes, XInitUsesReal) {
     EXPECT_DOUBLE_EQ(xinit.value(), -1.0);
 }
 
+TEST(StrongTypes, XFinalUsesReal) {
+    const XFinal xfinal{3.0};
+
+    static_assert(std::is_same_v<XFinal::value_type, Real>);
+    static_assert(std::is_same_v<XFinal::tag_type, XFinalTag>);
+    EXPECT_DOUBLE_EQ(xfinal.value(), 3.0);
+}
+
 TEST(StrongTypes, SeedUsesUInt64) {
     const Seed seed{123456};
 
@@ -71,6 +79,7 @@ TEST(StrongTypes, SeedUsesUInt64) {
 TEST(StrongTypes, DifferentStrongTypesAreDifferentTypes) {
     static_assert(!std::is_same_v<NVol, Seed>);
     static_assert(!std::is_same_v<Length, XInit>);
+    static_assert(!std::is_same_v<XInit, XFinal>);
     static_assert(!std::is_same_v<Length, StrongReal<Real, XInitTag>>);
     static_assert(!std::is_same_v<NVol, StrongInteger<Size, SeedTag>>);
 

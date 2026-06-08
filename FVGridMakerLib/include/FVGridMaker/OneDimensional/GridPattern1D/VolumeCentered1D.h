@@ -13,7 +13,7 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <span>
-// #include <string_view>
+#include <string_view>
 #include <vector>
 
 // ----------------------------------------------------------------------------
@@ -21,6 +21,9 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
 namespace fvgrid {
 
@@ -51,8 +54,17 @@ struct VolumeCentered1D final {
         return "centers";
     }
 
+    [[nodiscard]] static constexpr CoordinateKind1D input_kind() noexcept {
+        return CoordinateKind1D::Faces;
+    }
+
     [[nodiscard]] static std::vector<Real> centers_from_faces(
         std::span<const Real> faces
+    );
+
+    [[nodiscard]] static AxisGeometry1D complete_geometry(
+        std::vector<Real> faces,
+        Domain1D domain
     );
 };
 

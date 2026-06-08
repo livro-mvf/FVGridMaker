@@ -10,7 +10,9 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
-// #include <algorithm>
+#include <algorithm>
+#include <utility>
+#include <vector>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
@@ -68,16 +70,37 @@ std::vector<Real> FaceCentered1D::faces_from_centers(
 
     std::vector<Real> faces(cell_count + 1);
 
-    // Boundary faces are prescribed by the physical interval.
     faces.front() = x_min;
     faces.back() = x_max;
 
-    // Internal faces are reconstructed from neighbouring centre coordinates.
     for (Size i = 1; i < cell_count; ++i) {
         faces[i] = static_cast<Real>(0.5) * (centers[i - 1] + centers[i]);
     }
 
     return faces;
+}
+
+AxisGeometry1D FaceCentered1D::complete_geometry(
+    std::vector<Real> centers,
+    Domain1D domain
+) {
+    require(
+        domain.has_bounds(),
+        error_catalog::kInvalidArgument,
+        FaceCentered1D::id()
+    );
+
+    std::vector<Real> faces = faces_from_centers(
+        centers,
+        domain.xmin(),
+        domain.xmax()
+    );
+
+    return AxisGeometry1D{
+        std::move(faces),
+        std::move(centers),
+        FaceCentered1D::name()
+    };
 }
 
 }  // namespace fvgrid

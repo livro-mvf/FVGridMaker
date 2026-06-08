@@ -37,6 +37,9 @@ inline constexpr std::string_view kInvalidLength =
 inline constexpr std::string_view kInvalidXInit =
     "FVGRID.GRID.INVALID_XINIT";
 
+inline constexpr std::string_view kInvalidCoordinateKind =
+    "FVGRID.GRID.INVALID_COORDINATE_KIND";
+
 inline constexpr std::string_view kNonIncreasingFaces =
     "FVGRID.GRID.NON_INCREASING_FACES";
 
