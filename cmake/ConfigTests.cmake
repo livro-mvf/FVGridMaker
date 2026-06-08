@@ -1,19 +1,33 @@
-# ------------------------------------------------------------
-# Tests configuration
-# ------------------------------------------------------------
+# ----------------------------------------------------------------------------
+# File: ConfigTests.cmake
+# Project: FVGridMaker
+# Version: 0.1.0
+# Description: Configures the FVGridMaker test infrastructure.
+# Author: FVGridMaker Team
+# License: MIT
+# ----------------------------------------------------------------------------
 
-if(BUILD_TESTS)
-  message(STATUS "Building Tests...")
-  include(CTest)
-  enable_testing()
-  include(FetchContent)
-  
-  FetchContent_Declare(
+include_guard()
+
+if(NOT BUILD_TESTS)
+    return()
+endif()
+
+message(STATUS "[tests] Building tests...")
+
+include(CTest)
+enable_testing()
+
+include(FetchContent)
+
+FetchContent_Declare(
     googletest
     URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
-  )
-  
-  set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-  FetchContent_MakeAvailable(googletest)
-  add_subdirectory(tests)
-endif()
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+
+FetchContent_MakeAvailable(googletest)
+
+add_subdirectory(tests)
