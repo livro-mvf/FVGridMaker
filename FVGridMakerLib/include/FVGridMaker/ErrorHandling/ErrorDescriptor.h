@@ -1,8 +1,8 @@
 // ----------------------------------------------------------------------------
-// File: ErrorRecord.h
+// File: ErrorDescriptor.h
 // Project: FVGridMaker
 // Version: 0.1.0
-// Description: Defines the structured error record used by FVGridMaker.
+// Description: Defines immutable descriptors for FVGridMaker error codes.
 // Author: FVGridMaker Team
 // License: MIT
 // ----------------------------------------------------------------------------
@@ -12,23 +12,14 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
-#include <source_location>
-#include <string>
 #include <string_view>
-
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
-#include <FVGridMaker/Core/ID.h>
 
 namespace fvgrid {
 
-struct ErrorRecord final {
+struct ErrorDescriptor final {
     std::string_view code;
-    std::string message;
+    std::string_view message;
     std::string_view category;
-    ID source;
-    std::source_location location = std::source_location::current();
 };
 
 }  // namespace fvgrid

@@ -2,8 +2,7 @@
 // File: ID.h
 // Project: FVGridMaker
 // Version: 0.1.0
-// Description: Defines a lightweight base type for stable textual class
-//              identification in FVGridMaker.
+// Description: Defines a lightweight immutable identity for FVGridMaker classes.
 // Author: FVGridMaker Team
 // License: MIT
 // ----------------------------------------------------------------------------
@@ -17,24 +16,35 @@
 
 namespace fvgrid {
 
-class ID {
+class ID final {
 public:
     constexpr ID() noexcept = default;
-    constexpr ID(const ID&) noexcept = default;
-    constexpr ID(ID&&) noexcept = default;
 
-    constexpr ID& operator=(const ID&) noexcept = default;
-    constexpr ID& operator=(ID&&) noexcept = default;
+    constexpr ID(
+        std::string_view module,
+        std::string_view class_name,
+        std::string_view class_id
+    ) noexcept
+        : module_(module),
+          class_name_(class_name),
+          class_id_(class_id) {}
 
-    ~ID() noexcept = default;
+    [[nodiscard]] constexpr std::string_view module() const noexcept {
+        return module_;
+    }
 
     [[nodiscard]] constexpr std::string_view class_name() const noexcept {
-        return "ID";
+        return class_name_;
     }
 
     [[nodiscard]] constexpr std::string_view class_id() const noexcept {
-        return "fvgrid.core.ID";
+        return class_id_;
     }
+
+private:
+    std::string_view module_ = "Unknown";
+    std::string_view class_name_ = "Unknown";
+    std::string_view class_id_ = "fvgrid.unknown.Unknown";
 };
 
 }  // namespace fvgrid

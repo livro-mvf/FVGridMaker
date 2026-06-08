@@ -27,8 +27,20 @@ namespace {
 
     stream << "[" << record.code << "] " << record.message;
 
-    if (!record.module.empty()) {
-        stream << " (module: " << record.module << ")";
+    if (!record.category.empty()) {
+        stream << " (category: " << record.category << ")";
+    }
+
+    if (!record.source.module().empty()) {
+        stream << " (module: " << record.source.module() << ")";
+    }
+
+    if (!record.source.class_name().empty()) {
+        stream << " (class: " << record.source.class_name() << ")";
+    }
+
+    if (!record.source.class_id().empty()) {
+        stream << " (class id: " << record.source.class_id() << ")";
     }
 
     stream << " at " << record.location.file_name() << ":"

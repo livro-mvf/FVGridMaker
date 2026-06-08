@@ -19,14 +19,30 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/ID.h>
+#include <FVGridMaker/ErrorHandling/ErrorDescriptor.h>
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 
 namespace fvgrid {
 
 [[noreturn]] void throw_error(
+    ErrorDescriptor descriptor,
+    ID source,
+    std::source_location location = std::source_location::current()
+);
+
+[[noreturn]] void throw_error(
     std::string_view code,
     std::string message,
-    std::string_view module,
+    std::string_view category,
+    ID source,
+    std::source_location location = std::source_location::current()
+);
+
+void require(
+    bool condition,
+    ErrorDescriptor descriptor,
+    ID source,
     std::source_location location = std::source_location::current()
 );
 
@@ -34,7 +50,8 @@ void require(
     bool condition,
     std::string_view code,
     std::string message,
-    std::string_view module,
+    std::string_view category,
+    ID source,
     std::source_location location = std::source_location::current()
 );
 

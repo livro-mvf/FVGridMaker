@@ -19,8 +19,10 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
+
 
 namespace fvgrid {
 
@@ -31,6 +33,22 @@ public:
     explicit Axis1D(std::vector<Real> faces);
 
     Axis1D(std::vector<Real> faces, std::string_view pattern_name);
+
+    [[nodiscard]] static constexpr ID id() noexcept {
+        return ID{
+            "OneDimensional",
+            "Axis1D",
+            "fvgrid.1d.axis.Axis1D"
+        };
+    }
+
+    [[nodiscard]] static constexpr std::string_view class_name() noexcept {
+        return id().class_name();
+    }
+
+    [[nodiscard]] static constexpr std::string_view class_id() noexcept {
+        return id().class_id();
+    }
 
     [[nodiscard]] Size num_cells() const noexcept;
     [[nodiscard]] Size num_faces() const noexcept;

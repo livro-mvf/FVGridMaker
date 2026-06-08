@@ -16,6 +16,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
+#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
 #include <FVGridMaker/ErrorHandling/ErrorCodes.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
@@ -71,9 +72,8 @@ std::string_view Axis1D::pattern_name() const noexcept {
 void Axis1D::validate_faces() const {
     require(
         faces_.size() >= 2,
-        error_code::kInvalidFaceCount,
-        "An Axis1D requires at least two faces.",
-        "Axis1D"
+        error_catalog::kInvalidFaceCount,
+        Axis1D::id()
     );
 
     const bool strictly_increasing =
@@ -86,9 +86,8 @@ void Axis1D::validate_faces() const {
 
     require(
         strictly_increasing,
-        error_code::kNonIncreasingFaces,
-        "Axis1D faces must be strictly increasing.",
-        "Axis1D"
+        error_catalog::kNonIncreasingFaces,
+        Axis1D::id()
     );
 }
 

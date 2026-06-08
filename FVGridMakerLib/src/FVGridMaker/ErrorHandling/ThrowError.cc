@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <string>
 #include <utility>
 
 // ----------------------------------------------------------------------------
@@ -19,17 +20,33 @@
 
 namespace fvgrid {
 
-void throw_error(
+[[noreturn]] void throw_error(
+    ErrorDescriptor descriptor,
+    ID source,
+    std::source_location location
+) {
+    throw_error(
+        descriptor.code,
+        std::string{descriptor.message},
+        descriptor.category,
+        source,
+        location
+    );
+}
+
+[[noreturn]] void throw_error(
     std::string_view code,
     std::string message,
-    std::string_view module,
+    std::string_view category,
+    ID source,
     std::source_location location
 ) {
     throw FVGridException{
         ErrorRecord{
             .code = code,
             .message = std::move(message),
-            .module = module,
+            .category = category,
+            .source = source,
             .location = location,
         }
     };
@@ -37,13 +54,25 @@ void throw_error(
 
 void require(
     bool condition,
-    std::string_view code,
-    std::string message,
-    std::string_view module,
+    ErrorDescriptor descriptor,
+    ID source,
     std::source_location location
 ) {
     if (!condition) {
-        throw_error(code, std::move(message), module, location);
+        throw_error(descriptor, source, location);
+    }
+}
+
+void require(
+    bool condition,
+    std::string_view code,
+    std::string message,
+    std::string_view category,
+    ID source,
+    std::source_location location
+) {
+    if (!condition) {
+        throw_error(code, std::move(message), category, source, location);
     }
 }
 

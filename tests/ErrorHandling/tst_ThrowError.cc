@@ -11,12 +11,12 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <source_location>
-#include <string>
 #include <string_view>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 
@@ -27,12 +27,25 @@
 
 namespace fvgrid {
 
+namespace {
+
+[[nodiscard]] constexpr ID test_id() noexcept {
+    return ID{
+        "ErrorHandling",
+        "ThrowErrorTest",
+        "fvgrid.test.ThrowErrorTest"
+    };
+}
+
+}  // namespace
+
 TEST(ThrowError, ThrowErrorThrowsFVGridException) {
     EXPECT_THROW(
         throw_error(
             "FVGRID.TEST.THROW",
             "throw test message",
-            "ErrorHandling"
+            "Test",
+            test_id()
         ),
         FVGridException
     );
@@ -43,12 +56,16 @@ TEST(ThrowError, ThrowErrorStoresRecordFields) {
         throw_error(
             "FVGRID.TEST.RECORD",
             "record test message",
-            "ErrorHandling"
+            "Test",
+            test_id()
         );
     } catch (const FVGridException& exception) {
         EXPECT_EQ(exception.record().code, std::string_view{"FVGRID.TEST.RECORD"});
         EXPECT_EQ(exception.record().message, "record test message");
-        EXPECT_EQ(exception.record().module, std::string_view{"ErrorHandling"});
+        EXPECT_EQ(exception.record().category, std::string_view{"Test"});
+        EXPECT_EQ(exception.record().source.module(), std::string_view{"ErrorHandling"});
+        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"ThrowErrorTest"});
+        EXPECT_EQ(exception.record().source.class_id(), std::string_view{"fvgrid.test.ThrowErrorTest"});
         return;
     }
 
@@ -62,7 +79,8 @@ TEST(ThrowError, ThrowErrorStoresExplicitSourceLocation) {
         throw_error(
             "FVGRID.TEST.LOCATION",
             "location test message",
-            "ErrorHandling",
+            "Test",
+            test_id(),
             location
         );
     } catch (const FVGridException& exception) {
@@ -80,7 +98,8 @@ TEST(Require, DoesNothingWhenConditionIsTrue) {
             true,
             "FVGRID.TEST.REQUIRE",
             "require test message",
-            "ErrorHandling"
+            "Test",
+            test_id()
         )
     );
 }
@@ -91,7 +110,8 @@ TEST(Require, ThrowsWhenConditionIsFalse) {
             false,
             "FVGRID.TEST.REQUIRE",
             "require test message",
-            "ErrorHandling"
+            "Test",
+            test_id()
         ),
         FVGridException
     );
@@ -103,12 +123,16 @@ TEST(Require, StoresRecordFieldsWhenConditionIsFalse) {
             false,
             "FVGRID.TEST.REQUIRE.RECORD",
             "require record message",
-            "ErrorHandling"
+            "Test",
+            test_id()
         );
     } catch (const FVGridException& exception) {
         EXPECT_EQ(exception.record().code, std::string_view{"FVGRID.TEST.REQUIRE.RECORD"});
         EXPECT_EQ(exception.record().message, "require record message");
-        EXPECT_EQ(exception.record().module, std::string_view{"ErrorHandling"});
+        EXPECT_EQ(exception.record().category, std::string_view{"Test"});
+        EXPECT_EQ(exception.record().source.module(), std::string_view{"ErrorHandling"});
+        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"ThrowErrorTest"});
+        EXPECT_EQ(exception.record().source.class_id(), std::string_view{"fvgrid.test.ThrowErrorTest"});
         return;
     }
 

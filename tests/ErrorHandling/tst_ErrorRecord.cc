@@ -25,16 +25,24 @@
 
 namespace fvgrid {
 
-TEST(ErrorRecord, StoresCodeMessageAndModule) {
+TEST(ErrorRecord, StoresCodeMessageCategoryAndSource) {
     const ErrorRecord record{
         .code = "FVGRID.TEST.ERROR",
         .message = "test error message",
-        .module = "ErrorHandling",
+        .category = "Test",
+        .source = ID{
+            "ErrorHandling",
+            "ErrorRecordTest",
+            "fvgrid.test.ErrorRecordTest"
+        },
     };
 
     EXPECT_EQ(record.code, std::string_view{"FVGRID.TEST.ERROR"});
     EXPECT_EQ(record.message, "test error message");
-    EXPECT_EQ(record.module, std::string_view{"ErrorHandling"});
+    EXPECT_EQ(record.category, std::string_view{"Test"});
+    EXPECT_EQ(record.source.module(), std::string_view{"ErrorHandling"});
+    EXPECT_EQ(record.source.class_name(), std::string_view{"ErrorRecordTest"});
+    EXPECT_EQ(record.source.class_id(), std::string_view{"fvgrid.test.ErrorRecordTest"});
 }
 
 TEST(ErrorRecord, StoresExplicitSourceLocation) {
@@ -43,7 +51,12 @@ TEST(ErrorRecord, StoresExplicitSourceLocation) {
     const ErrorRecord record{
         .code = "FVGRID.TEST.LOCATION",
         .message = "location test",
-        .module = "ErrorHandling",
+        .category = "Test",
+        .source = ID{
+            "ErrorHandling",
+            "ErrorRecordTest",
+            "fvgrid.test.ErrorRecordTest"
+        },
         .location = location,
     };
 

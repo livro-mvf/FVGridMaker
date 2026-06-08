@@ -17,6 +17,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 
 // ----------------------------------------------------------------------------
@@ -30,21 +31,34 @@ TEST(FVGridException, StoresErrorRecord) {
     const ErrorRecord record{
         .code = "FVGRID.TEST.EXCEPTION",
         .message = "exception test message",
-        .module = "ErrorHandling",
+        .category = "Test",
+        .source = ID{
+            "ErrorHandling",
+            "FVGridExceptionTest",
+            "fvgrid.test.FVGridExceptionTest"
+        },
     };
 
     const FVGridException exception{record};
 
     EXPECT_EQ(exception.record().code, std::string_view{"FVGRID.TEST.EXCEPTION"});
     EXPECT_EQ(exception.record().message, "exception test message");
-    EXPECT_EQ(exception.record().module, std::string_view{"ErrorHandling"});
+    EXPECT_EQ(exception.record().category, std::string_view{"Test"});
+    EXPECT_EQ(exception.record().source.module(), std::string_view{"ErrorHandling"});
+    EXPECT_EQ(exception.record().source.class_name(), std::string_view{"FVGridExceptionTest"});
+    EXPECT_EQ(exception.record().source.class_id(), std::string_view{"fvgrid.test.FVGridExceptionTest"});
 }
 
-TEST(FVGridException, WhatContainsCodeMessageAndModule) {
+TEST(FVGridException, WhatContainsCodeMessageCategoryAndSource) {
     const ErrorRecord record{
         .code = "FVGRID.TEST.WHAT",
         .message = "what test message",
-        .module = "ErrorHandling",
+        .category = "Test",
+        .source = ID{
+            "ErrorHandling",
+            "FVGridExceptionTest",
+            "fvgrid.test.FVGridExceptionTest"
+        },
     };
 
     const FVGridException exception{record};
@@ -52,7 +66,10 @@ TEST(FVGridException, WhatContainsCodeMessageAndModule) {
 
     EXPECT_NE(what.find("FVGRID.TEST.WHAT"), std::string::npos);
     EXPECT_NE(what.find("what test message"), std::string::npos);
+    EXPECT_NE(what.find("Test"), std::string::npos);
     EXPECT_NE(what.find("ErrorHandling"), std::string::npos);
+    EXPECT_NE(what.find("FVGridExceptionTest"), std::string::npos);
+    EXPECT_NE(what.find("fvgrid.test.FVGridExceptionTest"), std::string::npos);
 }
 
 TEST(FVGridException, WhatContainsSourceLocation) {
@@ -61,7 +78,12 @@ TEST(FVGridException, WhatContainsSourceLocation) {
     const ErrorRecord record{
         .code = "FVGRID.TEST.LOCATION",
         .message = "location test message",
-        .module = "ErrorHandling",
+        .category = "Test",
+        .source = ID{
+            "ErrorHandling",
+            "FVGridExceptionTest",
+            "fvgrid.test.FVGridExceptionTest"
+        },
         .location = location,
     };
 
