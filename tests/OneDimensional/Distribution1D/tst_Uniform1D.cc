@@ -39,7 +39,7 @@ TEST(Uniform1D, BuildsUniformAxisWithDefaultPattern) {
     EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
 }
 
-TEST(Uniform1D, ComputesUniformFaces) {
+TEST(Uniform1D, DefaultPatternComputesUniformFaces) {
     const Axis1D axis = Uniform1D::make(
         NVol{4},
         Length{1.0},
@@ -54,7 +54,7 @@ TEST(Uniform1D, ComputesUniformFaces) {
     EXPECT_DOUBLE_EQ(axis.faces()[4], 1.0);
 }
 
-TEST(Uniform1D, ComputesUniformCenters) {
+TEST(Uniform1D, DefaultPatternComputesUniformCenters) {
     const Axis1D axis = Uniform1D::make(
         NVol{4},
         Length{1.0},
@@ -68,7 +68,7 @@ TEST(Uniform1D, ComputesUniformCenters) {
     EXPECT_DOUBLE_EQ(axis.centers()[3], 0.875);
 }
 
-TEST(Uniform1D, ComputesUniformCellLengths) {
+TEST(Uniform1D, DefaultPatternComputesUniformCellLengths) {
     const Axis1D axis = Uniform1D::make(
         NVol{4},
         Length{1.0},
@@ -99,18 +99,31 @@ TEST(Uniform1D, SupportsShiftedInitialCoordinate) {
     EXPECT_DOUBLE_EQ(axis.centers()[1], 2.0);
 }
 
-TEST(Uniform1D, SupportsExplicitPatternName) {
+TEST(Uniform1D, SupportsExplicitVolumeCenteredPattern) {
     const Axis1D axis = Uniform1D::make(
         NVol{4},
         Length{1.0},
         XInit{0.0},
-        FaceCentered1D::name()
+        VolumeCentered1D{}
     );
 
-    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+
+    ASSERT_EQ(axis.faces().size(), static_cast<Size>(5));
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[1], 0.25);
+    EXPECT_DOUBLE_EQ(axis.faces()[2], 0.5);
+    EXPECT_DOUBLE_EQ(axis.faces()[3], 0.75);
+    EXPECT_DOUBLE_EQ(axis.faces()[4], 1.0);
+
+    ASSERT_EQ(axis.centers().size(), static_cast<Size>(4));
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.125);
+    EXPECT_DOUBLE_EQ(axis.centers()[1], 0.375);
+    EXPECT_DOUBLE_EQ(axis.centers()[2], 0.625);
+    EXPECT_DOUBLE_EQ(axis.centers()[3], 0.875);
 }
 
-TEST(Uniform1D, SupportsPatternObject) {
+TEST(Uniform1D, SupportsExplicitFaceCenteredPattern) {
     const Axis1D axis = Uniform1D::make(
         NVol{4},
         Length{1.0},
@@ -119,6 +132,74 @@ TEST(Uniform1D, SupportsPatternObject) {
     );
 
     EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
+
+    ASSERT_EQ(axis.centers().size(), static_cast<Size>(4));
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.125);
+    EXPECT_DOUBLE_EQ(axis.centers()[1], 0.375);
+    EXPECT_DOUBLE_EQ(axis.centers()[2], 0.625);
+    EXPECT_DOUBLE_EQ(axis.centers()[3], 0.875);
+
+    ASSERT_EQ(axis.faces().size(), static_cast<Size>(5));
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[1], 0.25);
+    EXPECT_DOUBLE_EQ(axis.faces()[2], 0.5);
+    EXPECT_DOUBLE_EQ(axis.faces()[3], 0.75);
+    EXPECT_DOUBLE_EQ(axis.faces()[4], 1.0);
+}
+
+TEST(Uniform1D, FaceCenteredPatternComputesUniformMetrics) {
+    const Axis1D axis = Uniform1D::make(
+        NVol{4},
+        Length{1.0},
+        XInit{0.0},
+        FaceCentered1D{}
+    );
+
+    ASSERT_EQ(axis.dx_faces().size(), static_cast<Size>(4));
+    EXPECT_DOUBLE_EQ(axis.dx_faces()[0], 0.25);
+    EXPECT_DOUBLE_EQ(axis.dx_faces()[1], 0.25);
+    EXPECT_DOUBLE_EQ(axis.dx_faces()[2], 0.25);
+    EXPECT_DOUBLE_EQ(axis.dx_faces()[3], 0.25);
+
+    ASSERT_EQ(axis.dx_centers().size(), static_cast<Size>(5));
+    EXPECT_DOUBLE_EQ(axis.dx_centers()[0], 0.125);
+    EXPECT_DOUBLE_EQ(axis.dx_centers()[1], 0.25);
+    EXPECT_DOUBLE_EQ(axis.dx_centers()[2], 0.25);
+    EXPECT_DOUBLE_EQ(axis.dx_centers()[3], 0.25);
+    EXPECT_DOUBLE_EQ(axis.dx_centers()[4], 0.125);
+}
+
+TEST(Uniform1D, VolumeAndFaceCenteredPatternsProduceSameGeometry) {
+    const Axis1D volume_centered_axis = Uniform1D::make(
+        NVol{4},
+        Length{1.0},
+        XInit{0.0},
+        VolumeCentered1D{}
+    );
+
+    const Axis1D face_centered_axis = Uniform1D::make(
+        NVol{4},
+        Length{1.0},
+        XInit{0.0},
+        FaceCentered1D{}
+    );
+
+    ASSERT_EQ(volume_centered_axis.faces().size(), face_centered_axis.faces().size());
+    ASSERT_EQ(volume_centered_axis.centers().size(), face_centered_axis.centers().size());
+
+    for (Size i = 0; i < volume_centered_axis.faces().size(); ++i) {
+        EXPECT_DOUBLE_EQ(
+            volume_centered_axis.faces()[i],
+            face_centered_axis.faces()[i]
+        );
+    }
+
+    for (Size i = 0; i < volume_centered_axis.centers().size(); ++i) {
+        EXPECT_DOUBLE_EQ(
+            volume_centered_axis.centers()[i],
+            face_centered_axis.centers()[i]
+        );
+    }
 }
 
 TEST(Uniform1D, FreeFunctionUsesDefaultPattern) {
@@ -132,18 +213,22 @@ TEST(Uniform1D, FreeFunctionUsesDefaultPattern) {
     EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
 }
 
-TEST(Uniform1D, FreeFunctionSupportsExplicitPatternName) {
+TEST(Uniform1D, FreeFunctionSupportsVolumeCenteredPattern) {
     const Axis1D axis = uniform_axis_1d(
         NVol{4},
         Length{1.0},
         XInit{0.0},
-        FaceCentered1D::name()
+        VolumeCentered1D{}
     );
 
-    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[4], 1.0);
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.125);
+    EXPECT_DOUBLE_EQ(axis.centers()[3], 0.875);
 }
 
-TEST(Uniform1D, FreeFunctionSupportsPatternObject) {
+TEST(Uniform1D, FreeFunctionSupportsFaceCenteredPattern) {
     const Axis1D axis = uniform_axis_1d(
         NVol{4},
         Length{1.0},
@@ -152,6 +237,10 @@ TEST(Uniform1D, FreeFunctionSupportsPatternObject) {
     );
 
     EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[4], 1.0);
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.125);
+    EXPECT_DOUBLE_EQ(axis.centers()[3], 0.875);
 }
 
 TEST(Uniform1D, RejectsZeroVolumes) {
@@ -160,6 +249,31 @@ TEST(Uniform1D, RejectsZeroVolumes) {
             NVol{0},
             Length{1.0},
             XInit{0.0}
+        );
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.GRID.INVALID_NVOL"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
+        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Uniform1D"});
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.1d.distribution.Uniform1D"}
+        );
+        return;
+    }
+
+    FAIL() << "Uniform1D did not reject zero volumes.";
+}
+
+TEST(Uniform1D, RejectsZeroVolumesWithExplicitFaceCenteredPattern) {
+    try {
+        const Axis1D axis = Uniform1D::make(
+            NVol{0},
+            Length{1.0},
+            XInit{0.0},
+            FaceCentered1D{}
         );
     } catch (const FVGridException& exception) {
         EXPECT_EQ(
@@ -226,19 +340,29 @@ TEST(Uniform1D, RejectsNegativeLength) {
     FAIL() << "Uniform1D did not reject negative length.";
 }
 
-TEST(Axis1D, StreamsFormattedAxis) {
-    const Axis1D axis{{0.0, 0.5, 1.0}};
+TEST(Uniform1D, RejectsNegativeLengthWithExplicitFaceCenteredPattern) {
+    try {
+        const Axis1D axis = Uniform1D::make(
+            NVol{4},
+            Length{-1.0},
+            XInit{0.0},
+            FaceCentered1D{}
+        );
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.GRID.INVALID_LENGTH"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
+        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Uniform1D"});
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.1d.distribution.Uniform1D"}
+        );
+        return;
+    }
 
-    std::ostringstream stream;
-    stream << axis;
-
-    const std::string output = stream.str();
-
-    EXPECT_NE(output.find("Axis1D"), std::string::npos);
-    EXPECT_NE(output.find("xface[i]"), std::string::npos);
-    EXPECT_NE(output.find("xcenter[i]"), std::string::npos);
-    EXPECT_NE(output.find("dxface[i]"), std::string::npos);
-    EXPECT_NE(output.find("dxcenter[i]"), std::string::npos);
+    FAIL() << "Uniform1D did not reject negative length.";
 }
 
 }  // namespace fvgrid
