@@ -17,13 +17,16 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 
 int main() {
     const fvgrid::Axis1D axis{
-        std::vector<fvgrid::Real>{0.0, 0.25, 0.5, 1.0}
+        std::vector<fvgrid::Real>{0.0, 0.25, 0.5, 1.0},
+        fvgrid::FaceCentered1D::name()
     };
 
     std::cout << "Axis1D example\n";
+    std::cout << "pattern         : " << axis.pattern_name() << '\n';
     std::cout << "number of faces : " << axis.num_faces() << '\n';
     std::cout << "number of cells : " << axis.num_cells() << '\n';
     std::cout << "xmin            : " << axis.xmin() << '\n';

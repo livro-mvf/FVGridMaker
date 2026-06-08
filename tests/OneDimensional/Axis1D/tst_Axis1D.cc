@@ -18,6 +18,8 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 // ----------------------------------------------------------------------------
 // External library includes
@@ -66,6 +68,30 @@ TEST(Axis1D, ComputesBoundsAndLength) {
     EXPECT_DOUBLE_EQ(axis.xmin(), -1.0);
     EXPECT_DOUBLE_EQ(axis.xmax(), 2.0);
     EXPECT_DOUBLE_EQ(axis.length(), 3.0);
+}
+
+TEST(Axis1D, UsesVolumeCenteredPatternByDefault) {
+    const Axis1D axis{{0.0, 0.5, 1.0}};
+
+    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+}
+
+TEST(Axis1D, StoresExplicitFaceCenteredPattern) {
+    const Axis1D axis{
+        {0.0, 0.5, 1.0},
+        FaceCentered1D::name()
+    };
+
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
+}
+
+TEST(Axis1D, StoresCustomPatternName) {
+    const Axis1D axis{
+        {0.0, 0.5, 1.0},
+        "CustomPattern1D"
+    };
+
+    EXPECT_EQ(axis.pattern_name(), std::string_view{"CustomPattern1D"});
 }
 
 TEST(Axis1D, RejectsEmptyFaces) {

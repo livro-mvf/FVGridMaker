@@ -22,7 +22,12 @@
 
 namespace fvgrid {
 
-Axis1D::Axis1D(std::vector<Real> faces) : faces_(std::move(faces)) {
+Axis1D::Axis1D(std::vector<Real> faces)
+    : Axis1D(std::move(faces), VolumeCentered1D::name()) {}
+
+Axis1D::Axis1D(std::vector<Real> faces, std::string_view pattern_name)
+    : faces_(std::move(faces)),
+      pattern_name_(pattern_name) {
     validate_faces();
     rebuild_derived_data();
 }
@@ -59,6 +64,10 @@ Real Axis1D::length() const noexcept {
     return xmax() - xmin();
 }
 
+std::string_view Axis1D::pattern_name() const noexcept {
+    return pattern_name_;
+}
+
 void Axis1D::validate_faces() const {
     require(
         faces_.size() >= 2,
@@ -89,11 +98,13 @@ void Axis1D::rebuild_derived_data() {
     centers_.resize(cell_count);
     cell_lengths_.resize(cell_count);
 
+    constexpr Real half = static_cast<Real>(0.5);
+
     for (Size i = 0; i < cell_count; ++i) {
         const Real left = faces_[i];
         const Real right = faces_[i + 1];
 
-        centers_[i] = static_cast<Real>(0.5) * (left + right);
+        centers_[i] = half * (left + right);
         cell_lengths_[i] = right - left;
     }
 }

@@ -13,12 +13,14 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <span>
+#include <string_view>
 #include <vector>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 namespace fvgrid {
 
@@ -27,6 +29,8 @@ public:
     Axis1D() = default;
 
     explicit Axis1D(std::vector<Real> faces);
+
+    Axis1D(std::vector<Real> faces, std::string_view pattern_name);
 
     [[nodiscard]] Size num_cells() const noexcept;
     [[nodiscard]] Size num_faces() const noexcept;
@@ -39,10 +43,13 @@ public:
     [[nodiscard]] Real xmax() const noexcept;
     [[nodiscard]] Real length() const noexcept;
 
+    [[nodiscard]] std::string_view pattern_name() const noexcept;
+
 private:
     std::vector<Real> faces_;
     std::vector<Real> centers_;
     std::vector<Real> cell_lengths_;
+    std::string_view pattern_name_ = VolumeCentered1D::name();
 
     void validate_faces() const;
     void rebuild_derived_data();
