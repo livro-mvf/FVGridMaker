@@ -11,6 +11,9 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <algorithm>
+#include <iomanip>
+#include <ostream>
+#include <string>
 #include <utility>
 
 // ----------------------------------------------------------------------------
@@ -163,6 +166,50 @@ void Axis1D::rebuild_metrics() {
     }
 
     dx_centers_[cell_count] = faces_[cell_count] - centers_[cell_count - 1];
+}
+
+std::ostream& operator<<(std::ostream& os, const Axis1D& axis) {
+    const auto faces = axis.faces();
+    const auto centers = axis.centers();
+    const auto dx_faces = axis.dx_faces();
+    const auto dx_centers = axis.dx_centers();
+
+    const Size nvol = axis.num_cells();
+
+    os << "Axis1D\n";
+    os << "pattern         : " << axis.pattern_name() << '\n';
+    os << "number of faces : " << axis.num_faces() << '\n';
+    os << "number of cells : " << axis.num_cells() << '\n';
+    os << "xmin            : " << axis.xmin() << '\n';
+    os << "xmax            : " << axis.xmax() << '\n';
+    os << "length          : " << axis.length() << '\n';
+    os << '\n';
+
+    os << std::setw(6) << "i"
+       << std::setw(16) << "xface[i]"
+       << std::setw(16) << "xcenter[i]"
+       << std::setw(16) << "dxface[i]"
+       << std::setw(16) << "dxcenter[i]"
+       << '\n';
+
+    os << std::string(70, '-') << '\n';
+
+    for (Size i = 0; i < nvol; ++i) {
+        os << std::setw(6) << i
+           << std::setw(16) << faces[i]
+           << std::setw(16) << centers[i]
+           << std::setw(16) << dx_faces[i]
+           << std::setw(16) << dx_centers[i]
+           << '\n';
+    }
+
+    os << std::setw(6) << nvol
+       << std::setw(16) << faces[nvol]
+       << std::setw(16) << ""
+       << std::setw(16) << ""
+       << std::setw(16) << dx_centers[nvol];
+
+    return os;
 }
 
 }  // namespace fvgrid

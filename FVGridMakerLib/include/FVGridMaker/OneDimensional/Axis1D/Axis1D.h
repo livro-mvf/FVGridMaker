@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <iosfwd>
 #include <span>
 #include <string_view>
 #include <vector>
@@ -83,5 +84,7 @@ private:
     void validate_geometry() const;
     void rebuild_metrics();
 };
+
+std::ostream& operator<<(std::ostream& os, const Axis1D& axis);
 
 }  // namespace fvgrid

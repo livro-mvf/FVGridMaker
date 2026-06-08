@@ -226,4 +226,19 @@ TEST(Uniform1D, RejectsNegativeLength) {
     FAIL() << "Uniform1D did not reject negative length.";
 }
 
+TEST(Axis1D, StreamsFormattedAxis) {
+    const Axis1D axis{{0.0, 0.5, 1.0}};
+
+    std::ostringstream stream;
+    stream << axis;
+
+    const std::string output = stream.str();
+
+    EXPECT_NE(output.find("Axis1D"), std::string::npos);
+    EXPECT_NE(output.find("xface[i]"), std::string::npos);
+    EXPECT_NE(output.find("xcenter[i]"), std::string::npos);
+    EXPECT_NE(output.find("dxface[i]"), std::string::npos);
+    EXPECT_NE(output.find("dxcenter[i]"), std::string::npos);
+}
+
 }  // namespace fvgrid

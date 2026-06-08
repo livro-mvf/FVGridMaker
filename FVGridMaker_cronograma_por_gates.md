@@ -1,823 +1,316 @@
-# FVGridMaker — Cronograma por Gates
-
-Este documento define um cronograma técnico sem datas para o desenvolvimento do **FVGridMaker**. O avanço deve ocorrer por **gates de qualidade**, não por calendário.
-
-A regra central é:
-
+FVGridMaker — Cronograma por Gates
+Este documento define o cronograma técnico atual do FVGridMaker. O avanço deve ocorrer por gates de qualidade, não por calendário.
+Regra geral:
 ```text
-Não iniciar um novo bloco funcional enquanto o bloco anterior não estiver
-compilando, testado, documentado minimamente e com exemplos executáveis quando
-a funcionalidade for visível ao usuário.
+Só avançamos para o próximo bloco quando o bloco anterior estiver compilando,
+testado com GoogleTest, executável por CTest, documentado minimamente e com
+exemplos funcionais quando a funcionalidade for pública.
 ```
-
-## 1. Regras gerais de avanço
-
-Nenhum bloco novo deve começar se qualquer uma das condições abaixo estiver pendente:
-
-```text
-algum teste GoogleTest falhando;
-alguma classe nova sem teste próprio;
-alguma policy nova sem teste próprio;
-algum writer novo sem teste próprio;
-algum exemplo público quebrado;
-documentação mínima ausente;
-erro esperado sem código textual testado;
-decisão arquitetural pendente que afete o bloco seguinte.
-```
-
-As regras formais de avanço são:
-
+1. Regras formais de avanço
 ```text
 1. Nenhum bloco novo começa com teste quebrado.
 2. Nenhum bloco novo começa com exemplo quebrado.
 3. Nenhum bloco novo começa com documentação essencial ausente.
 4. Nenhuma funcionalidade pública entra sem exemplo.
 5. Nenhuma regra geométrica entra sem teste numérico.
-6. Nenhuma policy nova entra sem teste de invariantes.
-7. Nenhum output entra sem arquivo de referência simples.
-8. Nenhum erro esperado entra sem código textual testado.
-9. Nenhum módulo periférico pode criar dependência reversa no núcleo.
-10. Nenhuma categoria extensível deve ser implementada com enum.
-11. Nenhuma classe nova é considerada pronta sem teste GoogleTest.
-12. Nenhuma funcionalidade é considerada pronta sem passar pelo CTest completo.
+6. Nenhuma distribution nova entra sem teste de invariantes.
+7. Nenhum grid pattern novo entra sem teste.
+8. Nenhuma operation nova entra sem teste.
+9. Nenhum output entra sem arquivo de referência simples.
+10. Nenhum erro esperado entra sem código textual testado.
+11. Nenhum módulo periférico pode criar dependência reversa no núcleo.
+12. Nenhuma categoria extensível deve ser implementada com enum.
+13. Toda classe que possa ser origem de erro deve expor ID próprio.
+14. require() deve receber ErrorDescriptor + ID sempre que possível.
 ```
-
-## 2. Política obrigatória de testes
-
-O FVGridMaker usa **GoogleTest** como infraestrutura principal de testes unitários e de integração.
-
-A regra é:
-
+2. Status resumido
 ```text
-classe nova sem teste não é considerada implementada;
-policy nova sem teste não é considerada implementada;
-writer novo sem teste não é considerado implementado;
-erro novo sem teste não é considerado implementado;
-builder novo sem teste não é considerado implementado.
+Bloco 0 — Fundação do projeto                  CONCLUÍDO
+Bloco 1 — Core                                  CONCLUÍDO
+Bloco 2 — ErrorHandling                         CONCLUÍDO
+Bloco 3 — GridPattern1D básico                  CONCLUÍDO
+Bloco 4 — Axis1D                                CONCLUÍDO
+Bloco 5 — Uniform1D volume-centred              CONCLUÍDO
+Bloco 6 — Output textual via operator<<         PRÓXIMO RECOMENDADO
+Bloco 7 — Custom1D / Axis1D from complete data  PENDENTE
+Bloco 8 — FaceCentered construction path        PENDENTE
+Bloco 9 — Random1D                              PENDENTE
+Bloco 10 — Operations1D                         PENDENTE
+Bloco 11 — CoordinateSystem                     PENDENTE
+Bloco 12 — StructuredGrid2D                     PENDENTE
 ```
-
-A restrição de dependências externas vale para a biblioteca em runtime:
-
+---
+Blocos concluídos
+Bloco 0 — Fundação do projeto
+Objetivo: criar um projeto mínimo, compilável e testável.
+Entregas:
 ```text
-Dependências da biblioteca:
-  C++ standard library;
-  yaml-cpp apenas no módulo YAML.
-
-Dependências de teste:
-  GoogleTest.
+estrutura inicial do projeto;
+FVGridMakerLib/ como nova biblioteca;
+FVGridMakerLibOld/ preservada como legado e fora do build;
+README inicial;
+LICENSE MIT;
+.gitignore;
+.clang-format;
+exemplo mínimo;
+teste mínimo;
+alvos run_ex_Minimal e run_tst_Minimal.
 ```
-
-O GoogleTest não deve aparecer em headers públicos da biblioteca.
-
-### 2.1 Convenção sugerida para testes
-
-Estrutura sugerida:
-
+Gate de saída:
 ```text
-tests/
-  Core/
-    tst_Types.cc
-    tst_StrongTypes.cc
-
-  Error/
-    tst_FVGridException.cc
-    tst_ThrowError.cc
-
-  Grid/
-    tst_GridBuildConfig1D.cc
-    tst_GridAxis1D.cc
-    tst_GridAxis1DBuilder.cc
-
-  Metrics/
-    tst_StandardMetrics1D.cc
-
-  Policies/
-    tst_UniformFaces.cc
-    tst_UniformCenters.cc
-    tst_RandomFaces.cc
-    tst_CentersFromFaces.cc
-    tst_FacesFromCenters.cc
-
-  Output/
-    tst_TextAxisReportWriter.cc
-    tst_CsvAxisCellsWriter.cc
-    tst_CsvAxisFacesWriter.cc
-    tst_VtkRectilinearWriter.cc
-
-  YAML/
-    tst_YamlGridReader.cc
-
-  Integration/
-    tst_CreateUniformGrid1D.cc
-    tst_CreateRandomGrid1D.cc
-    tst_CreateStructuredGrid2D.cc
+make run_ex_Minimal passa;
+make run_tst_Minimal passa;
+ctest --output-on-failure passa.
 ```
-
-Nome de arquivo recomendado:
-
+Status: concluído.
+Bloco 1 — Core
+Objetivo: criar a fundação tipada da biblioteca.
+Entregas:
 ```text
-tst_NomeDaClasse.cc
+Types.h;
+StrongTypes.h;
+Version.h;
+ID.h;
+Version.cc;
+ID.cc;
+testes de Types, StrongTypes, Version e ID.
 ```
-
-Todos os testes devem ser executáveis via CTest.
-
-## 3. Cronograma por blocos
-
-## Bloco 0 — Fundação do projeto
-
-Objetivo: preparar o esqueleto técnico do FVGridMaker antes da lógica de malha.
-
-Atividades:
-
+Decisão atual sobre `ID`:
 ```text
-definir estrutura de diretórios;
-definir CMake modular;
-definir opção FVGRID_BUILD_TESTS;
-integrar GoogleTest;
-integrar CTest;
-definir padrão .clang-format baseado no MohidNG;
-definir namespaces;
-definir tipos básicos: Real, Index, Size;
-definir política de includes;
-definir política de comentários;
-definir sistema mínimo de exemplos;
-definir sistema mínimo de testes;
-definir documentação Sphinx inicial;
-definir README inicial.
+ID é um valor imutável com module, class_name e class_id.
+Não há enum de classes.
+Não há herança virtual para identificação.
+Não há macro DefineIdentity.
+Toda classe deve expor sua própria identidade quando relevante.
 ```
-
-Critério de passagem:
-
+Gate de saída:
 ```text
-cmake configura;
-projeto compila;
-um exemplo mínimo executa;
-um teste GoogleTest mínimo executa;
-CTest roda e passa;
-Sphinx gera documentação;
-clang-format está definido;
-nenhum módulo de malha ainda é necessário.
+make run_tst_ID passa;
+make run_tst_Types passa;
+make run_tst_StrongTypes passa;
+make run_tst_Version passa;
+ctest --output-on-failure passa.
 ```
-
-## Bloco 1 — Sistema próprio de erros
-
-Objetivo: criar a base de erros antes das validações da malha.
-
-Atividades:
-
+Status: concluído.
+Bloco 2 — ErrorHandling
+Objetivo: criar um sistema de erro padronizado, textual, extensível e sem `enum`.
+Entregas:
 ```text
-criar FVGridException;
-criar ErrorRecord;
-criar throw_error;
-usar std::source_location;
-definir códigos textuais estáveis;
-não usar enum para erros;
-não usar enum para exceções;
-não usar enum para mensagens;
-não usar std::runtime_error diretamente no domínio;
-criar testes de erro;
-documentar política de erros.
+ErrorCodes.h;
+ErrorDescriptor.h;
+ErrorCatalog.h;
+ErrorRecord.h;
+FVGridException.h/.cc;
+ThrowError.h/.cc;
+exemplo Ex_ErrorHandling;
+testes de ErrorCodes, ErrorCatalog, ErrorRecord, FVGridException e ThrowError.
 ```
-
-Testes obrigatórios:
-
+Decisões:
 ```text
-tst_FVGridException.cc;
-tst_ThrowError.cc.
+códigos de erro são std::string_view;
+mensagens padrão vivem em ErrorCatalog;
+ErrorDescriptor contém code, message e category;
+ErrorRecord contém code, message, category, ID source e source_location;
+FVGridException formata diagnóstico completo;
+require() deve preferir ErrorDescriptor + ID;
+erros externos podem usar descritores próprios sem registrar enum.
 ```
-
-Critério de passagem:
-
-```text
-lançar FVGridException funciona;
-ErrorRecord contém código, mensagem, módulo e localização;
-testes confirmam códigos textuais;
-nenhum enum é usado para erro, exceção ou mensagem;
-documentação da política de erro existe;
-CTest completo passa.
+Uso interno preferencial:
+```cpp
+require(
+    condition,
+    error_catalog::kInvalidFaceCount,
+    Axis1D::id()
+);
 ```
-
-## Bloco 2 — Tipos fortes e configuração básica 1D
-
-Objetivo: definir os dados de entrada da malha sem ambiguidade.
-
-Atividades:
-
+Gate de saída:
 ```text
-criar tipos fortes: NVol, Length, XInit, Epsilon, Seed;
-criar GridBuildConfig1D;
-validar NVol > 0;
-validar Length > 0;
-validar epsilon quando aplicável;
-definir seed opcional;
-definir seed efetivo;
-criar testes de configuração válida e inválida.
+make run_tst_ErrorCodes passa;
+make run_tst_ErrorCatalog passa;
+make run_tst_ErrorRecord passa;
+make run_tst_FVGridException passa;
+make run_tst_ThrowError passa;
+make run_ex_ErrorHandling passa;
+ctest --output-on-failure passa.
 ```
-
-Testes obrigatórios:
-
+Status: concluído.
+Bloco 3 — GridPattern1D básico
+Objetivo: criar descritores de padrão 1D e regras iniciais de reconstrução.
+Entregas:
 ```text
-tst_StrongTypes.cc;
-tst_GridBuildConfig1D.cc.
+VolumeCentered1D.h/.cpp;
+FaceCentered1D.h/.cpp;
+tst_GridPattern1D.cc.
 ```
-
-Critério de passagem:
-
+Regras atuais:
 ```text
-configurações válidas são aceitas;
-configurações inválidas geram FVGridException;
-seed opcional funciona conceitualmente;
-seed efetivo pode ser armazenado;
-testes passam;
-documentação mínima dos dados de entrada existe;
-CTest completo passa.
+VolumeCentered1D:
+  primary_coordinates   = faces
+  secondary_coordinates = centers
+  centers_from_faces(faces)
+
+FaceCentered1D:
+  primary_coordinates   = centers
+  secondary_coordinates = faces
+  faces_from_centers(centers, x_min, x_max) prevista para uso futuro
 ```
-
-## Bloco 3 — Armazenamento DOD da malha 1D
-
-Objetivo: criar o objeto central da biblioteca.
-
-Atividades:
-
+Observação: `Uniform1D` foi mantido restrito ao caminho volume-centred neste momento.
+Gate de saída:
 ```text
-criar GridAxis1D;
-armazenar faces em std::vector<Real>;
-armazenar centers em std::vector<Real>;
-armazenar deltaFaces em std::vector<Real>;
-armazenar deltaCenters em std::vector<Real>;
-expor std::span<const Real>;
-criar acesso escalar read-only;
-definir invariantes:
-  centers.size() == NVol;
-  faces.size() == NVol + 1;
-  deltaFaces.size() == NVol;
-  deltaCenters.size() == NVol + 1.
+make run_tst_GridPattern1D passa;
+ctest --output-on-failure passa.
 ```
-
-Testes obrigatórios:
-
+Status: concluído.
+Bloco 4 — Axis1D
+Objetivo: criar a representação geométrica 1D fundamental.
+Entregas:
 ```text
-tst_GridAxis1D.cc.
+Axis1D.h/.cpp;
+tst_Axis1D.cc;
+ex_Axis1D.cc.
 ```
-
-Critério de passagem:
-
+`Axis1D` armazena:
 ```text
-GridAxis1D existe;
-dados são contíguos;
-views read-only funcionam;
-usuário não modifica arrays internos;
-invariantes são testadas;
-sem herança virtual;
-sem enum;
-CTest completo passa.
+faces       tamanho nvol + 1;
+centers     tamanho nvol;
+dx_faces    tamanho nvol;
+dx_centers  tamanho nvol + 1;
+pattern_name.
 ```
-
-## Bloco 4 — Métricas padrão 1D
-
-Objetivo: implementar as métricas geométricas básicas.
-
-Atividades:
-
+Métricas:
 ```text
-implementar deltaFaces:
-  deltaFaces[i] = faces[i+1] - faces[i];
-
-implementar deltaCenters:
-  deltaCenters[0] = centers[0] - faces[0];
-  deltaCenters[i] = centers[i] - centers[i-1];
-  deltaCenters[NVol] = faces[NVol] - centers[NVol-1];
-
-validar positividade;
-criar funções livres testáveis;
-documentar a convenção.
+dxface[i]       = xface[i + 1] - xface[i]
+dxcenter[0]     = xcenter[0] - xface[0]
+dxcenter[i]     = xcenter[i] - xcenter[i - 1]
+dxcenter[nvol]  = xface[nvol] - xcenter[nvol - 1]
 ```
-
-Testes obrigatórios:
-
+Decisão arquitetural:
 ```text
-tst_StandardMetrics1D.cc.
+Axis1D armazena geometria completa e calcula métricas gerais.
+Axis1D não deve conter regras específicas de reconstrução de padrões.
+VolumeCentered1D calcula centers a partir de faces.
+FaceCentered1D calculará faces a partir de centers quando esse caminho for ativado.
 ```
-
-Critério de passagem:
-
+Gate de saída:
 ```text
-deltaFaces tem NVol entradas;
-deltaCenters tem NVol + 1 entradas;
-somente deltaCenters[0] e deltaCenters[NVol] são casos especiais;
-todas as métricas são positivas;
-testes numéricos passam para malhas simples;
-documentação da métrica existe;
-CTest completo passa.
+make run_tst_Axis1D passa;
+make run_ex_Axis1D passa;
+ctest --output-on-failure passa.
 ```
-
-## Bloco 5 — Política volume-centrada uniforme
-
-Objetivo: implementar a primeira malha funcional de fábrica.
-
-Atividades:
-
+Status: concluído.
+Bloco 5 — Uniform1D volume-centred
+Objetivo: criar geração uniforme 1D no caminho volume-centred.
+Entregas:
 ```text
-criar policy UniformFaces;
-criar reconstruction policy CentersFromFaces;
-gerar faces a partir de NVol, Length, XInit;
-calcular centers;
-calcular métricas;
-validar malha final.
+Uniform1D.h/.cc;
+tst_Uniform1D.cc;
+ex_Uniform1D.cc.
 ```
-
-Testes obrigatórios:
-
+Regra implementada:
 ```text
-tst_UniformFaces.cc;
-tst_CentersFromFaces.cc;
-tst_CreateUniformGrid1D.cc.
+1. Uniform1D recebe NVol, Length e XInit.
+2. Uniform1D gera faces uniformes.
+3. VolumeCentered1D calcula centers a partir das faces.
+4. Axis1D recebe faces + centers.
+5. Axis1D calcula dx_faces e dx_centers.
 ```
-
-Critério de passagem:
-
+Exemplo público:
 ```text
-malha uniforme volume-centrada é gerada;
-faces[0] == XInit;
-faces[NVol] == XInit + Length;
-centers[i] == (faces[i] + faces[i+1]) / 2;
-deltaFaces é constante;
-deltaCenters de fronteira são h/2;
-exemplo executável existe;
-testes passam;
-CTest completo passa.
+make run_ex_Uniform1D
 ```
-
-## Bloco 6 — Builder 1D
-
-Objetivo: oferecer API pública limpa para construir malhas.
-
-Atividades:
-
+A saída deve mostrar uma tabela com:
 ```text
-criar GridAxis1DBuilder;
-adicionar set_nvol;
-adicionar set_length;
-adicionar set_xinit;
-adicionar build_with(policy);
-permitir composição com reconstruction policy;
-validar antes de construir;
-não usar enum;
-não usar virtual.
+i, xface[i], xcenter[i], dxface[i], dxcenter[i]
 ```
-
-Testes obrigatórios:
-
+Gate de saída:
 ```text
-tst_GridAxis1DBuilder.cc.
+make run_tst_Uniform1D passa;
+make run_ex_Uniform1D passa;
+make run_tst_GridPattern1D passa;
+make run_tst_Axis1D passa;
+ctest --output-on-failure passa.
 ```
-
-Critério de passagem:
-
-```text
-usuário cria malha via builder;
-malha uniforme é reproduzida via builder;
-erros do builder são estruturados;
-exemplo público funciona;
-testes passam;
-documentação do builder existe;
-CTest completo passa.
+Status: concluído.
+---
+Próximos blocos recomendados
+Bloco 6 — Output textual via `operator<<`
+Objetivo: permitir impressão simples de `Axis1D`.
+Uso desejado:
+```cpp
+std::cout << axis << '\n';
 ```
-
-## Bloco 7 — Output textual de conferência 1D
-
-Objetivo: permitir inspeção humana da malha.
-
-Atividades:
-
+Entregas:
 ```text
-criar writer textual por volume;
-imprimir i, face_left, center, face_right;
-imprimir delta_face;
-imprimir delta_center_left;
-imprimir delta_center_right;
-incluir metadados;
-permitir precisão configurável;
-usar std::ostream.
+operator<<(std::ostream&, const Axis1D&);
+teste de streaming em tst_Axis1D.cc;
+Ex_Uniform1D simplificado para usar std::cout << axis.
 ```
-
-Testes obrigatórios:
-
+Gate de saída:
 ```text
-tst_TextAxisReportWriter.cc.
+make run_tst_Axis1D passa;
+make run_ex_Uniform1D passa;
+ctest --output-on-failure passa.
 ```
-
-Critério de passagem:
-
+Bloco 7 — Custom1D / Axis1D from complete data
+Objetivo: estabilizar a construção a partir de `faces + centers` dados pelo usuário.
+Entregas previstas:
 ```text
-relatório de uma malha 1D é legível;
-valores batem com os arrays internos;
-não há dependência externa;
-teste compara saída esperada;
-exemplo executável gera relatório;
-CTest completo passa.
+Custom1D ou helpers equivalentes;
+validação explícita de faces e centers;
+testes de geometrias não uniformes;
+testes de dx_faces e dx_centers;
+exemplo público.
 ```
-
-## Bloco 8 — CSV 1D
-
-Objetivo: criar formato simples de conferência em colunas.
-
-Atividades:
-
+Bloco 8 — Face-centred construction path
+Objetivo: implementar corretamente construção face-centred em bloco próprio.
+Regra desejada:
 ```text
-criar CSV por volume;
-criar CSV por face, se necessário;
-incluir metadados no topo;
-definir separador;
-definir precisão;
-forçar locale estável;
-documentar colunas.
+1. distribuição gera centers;
+2. FaceCentered1D calcula faces;
+3. Axis1D recebe faces + centers;
+4. Axis1D calcula métricas.
 ```
-
-Testes obrigatórios:
-
+Atenção: não misturar este caminho com `Uniform1D` volume-centred enquanto os testes e a API não estiverem claros.
+Bloco 9 — Random1D
+Objetivo: criar distribuição 1D aleatória/controlada.
+Pontos pendentes:
 ```text
-tst_CsvAxisCellsWriter.cc;
-tst_CsvAxisFacesWriter.cc, se CSV por face for implementado.
+seed;
+monotonicidade;
+controle de mínimo espaçamento;
+uso de GridPattern1D quando a coordenada primária variar;
+testes de reprodutibilidade.
 ```
-
-Critério de passagem:
-
+Bloco 10 — Operations1D
+Objetivo: operações entre eixos 1D.
+Inclui:
 ```text
-CSV por volume é gerado;
-colunas estão documentadas;
-arquivo pode ser aberto em editor/planilha;
-teste verifica cabeçalho e valores;
-exemplo executável gera CSV;
-CTest completo passa.
+intersecção geométrica;
+merge/soma de eixos;
+remoção de duplicatas;
+remoção de volumes pequenos;
+validação de padrões compatíveis.
 ```
-
-## Bloco 9 — Política face-centrada uniforme
-
-Objetivo: suportar a segunda centragem de fábrica.
-
-Atividades:
-
+Regra já decidida:
 ```text
-criar policy UniformCenters;
-criar reconstruction policy FacesFromCenters;
-gerar centers;
-calcular faces internas por média entre centros vizinhos;
-definir política de fechamento das faces de fronteira;
-calcular métricas;
-validar malha final.
+A intersecção geométrica entre duas grades não pode ser vazia.
+Pode ser um ponto/faces coincidentes.
+Pode ser um intervalo.
 ```
-
-Testes obrigatórios:
-
+Bloco 11 — CoordinateSystem
+Objetivo: calcular medidas geométricas físicas a partir de eixos estruturados.
+Decisão:
 ```text
-tst_UniformCenters.cc;
-tst_FacesFromCenters.cc.
+CoordinateSystem não gera grid.
+CoordinateSystem interpreta eixos e calcula medidas.
+Deve ser extensível e sem enum central.
 ```
-
-Critério de passagem:
-
+Bloco 12 — StructuredGrid2D
+Objetivo: compor dois `Axis1D` em uma grade estruturada 2D.
+Dependências:
 ```text
-malha face-centrada uniforme é gerada;
-faces internas obedecem à regra definida;
-faces de fronteira obedecem à política documentada;
-invariantes são preservadas;
-testes passam;
-exemplo executável existe;
-CTest completo passa.
-```
-
-## Bloco 10 — Malha aleatória volume-centrada
-
-Objetivo: implementar a primeira malha aleatória de fábrica.
-
-Atividades:
-
-```text
-criar RandomFaces;
-partir da malha uniforme;
-perturbar apenas faces internas;
-usar deslocamento em [-epsilon*h/2, +epsilon*h/2];
-exigir 0 <= epsilon < 1;
-manter faces de fronteira fixas;
-usar seed fornecido ou seed gerado internamente;
-armazenar seed efetivo.
-```
-
-Testes obrigatórios:
-
-```text
-tst_RandomFaces.cc;
-tst_CreateRandomGrid1D.cc.
-```
-
-Critério de passagem:
-
-```text
-malha aleatória mantém faces crescentes;
-fronteiras permanecem fixas;
-mesmo seed gera mesma malha;
-sem seed gera seed interno;
-seed efetivo é consultável;
-testes estatísticos simples passam;
-exemplo executável existe;
-CTest completo passa.
-```
-
-## Bloco 11 — Extensão por policies, traits e concepts
-
-Objetivo: consolidar a arquitetura aberta.
-
-Atividades:
-
-```text
-definir concepts para generation policy;
-definir concepts para reconstruction policy;
-definir traits de policies;
-definir nomes textuais estáveis das policies;
-testar uma policy externa simples;
-evitar enum;
-evitar switch global.
-```
-
-Testes obrigatórios:
-
-```text
-tst_GenerationPolicyConcept.cc;
-tst_ReconstructionPolicyConcept.cc;
-tst_PolicyTraits.cc;
-tst_CustomPolicyExtension.cc.
-```
-
-Critério de passagem:
-
-```text
-nova policy pode ser criada sem alterar o núcleo;
-concepts detectam policy inválida;
-traits fornecem nome e metadados;
-testes demonstram extensão local;
-documentação para criação de nova malha existe;
-CTest completo passa.
-```
-
-## Bloco 12 — YAML de entrada
-
-Objetivo: permitir configuração externa sem contaminar o núcleo.
-
-Atividades:
-
-```text
-criar módulo YAML separado;
-ler NVol, Length, XInit;
-ler generation_policy;
-ler reconstruction_policy;
-ler epsilon;
-ler seed opcional;
-converter strings para policies registradas;
-não incluir yaml-cpp no núcleo.
-```
-
-Testes obrigatórios:
-
-```text
-tst_YamlGridReader.cc.
-```
-
-Critério de passagem:
-
-```text
-núcleo compila sem yaml-cpp;
-módulo YAML compila com yaml-cpp;
-YAML uniforme gera mesma malha que builder C++;
-YAML aleatório com seed é reprodutível;
-erros YAML usam FVGridException;
-exemplo executável existe;
-CTest completo passa.
-```
-
-## Bloco 13 — Composição direcional 2D
-
-Objetivo: representar malha bidimensional como duas malhas 1D.
-
-Atividades:
-
-```text
-definir composição com axis_x e axis_y;
-não materializar células (i,j);
-permitir acesso a x.faces(), x.centers();
-permitir acesso a y.faces(), y.centers();
-definir metadados da dimensão;
-definir sistema cartesiano inicial.
-```
-
-Testes obrigatórios:
-
-```text
-tst_StructuredGrid2D.cc;
-tst_CreateStructuredGrid2D.cc.
-```
-
-Critério de passagem:
-
-```text
-malha 2D é composta por duas GridAxis1D;
-não há tabela (i,j) no núcleo;
-exemplo cria malha_x e malha_y;
-testes confirmam independência dos eixos;
-documentação deixa claro: MeshX(i), MeshY(j);
-CTest completo passa.
-```
-
-## Bloco 14 — Output textual 2D por direção
-
-Objetivo: conferir malhas 2D sem tabela tensorial.
-
-Atividades:
-
-```text
-escrever relatório com bloco axis x;
-depois bloco axis y;
-reutilizar formato tabular 1D;
-incluir metadados globais;
-não percorrer (i,j).
-```
-
-Testes obrigatórios:
-
-```text
-tst_StructuredGridReportWriter.cc.
-```
-
-Critério de passagem:
-
-```text
-relatório 2D imprime x e depois y;
-cada direção usa a mesma tabela 1D;
-não há materialização de células 2D;
-teste compara saída esperada;
-exemplo executável existe;
-CTest completo passa.
-```
-
-## Bloco 15 — CSV multidirecional
-
-Objetivo: exportar as direções de uma malha estruturada.
-
-Atividades:
-
-```text
-gerar mesh_x_cells.csv;
-gerar mesh_y_cells.csv;
-opcionalmente gerar mesh_x_faces.csv;
-opcionalmente gerar mesh_y_faces.csv;
-incluir metadados por eixo;
-definir nomes de arquivos.
-```
-
-Testes obrigatórios:
-
-```text
-tst_StructuredGridCsvWriter.cc.
-```
-
-Critério de passagem:
-
-```text
-CSV de x e y é gerado;
-cada arquivo é conferível isoladamente;
-testes verificam conteúdo;
-exemplo executável existe;
-CTest completo passa.
-```
-
-## Bloco 16 — VTK Rectilinear Grid ASCII
-
-Objetivo: visualizar malhas estruturadas no ParaView.
-
-Atividades:
-
-```text
-implementar writer VTK legacy RECTILINEAR_GRID;
-usar coordenadas das faces;
-suportar 2D com z degenerado;
-não usar biblioteca VTK;
-usar std::ostream;
-testar arquivo mínimo.
-```
-
-Testes obrigatórios:
-
-```text
-tst_VtkRectilinearWriter.cc.
-```
-
-Critério de passagem:
-
-```text
-arquivo .vtk é gerado;
-ParaView lê o arquivo;
-dimensões usam NFacesX, NFacesY, 1;
-não há malha não estruturada;
-exemplo executável existe;
-documentação do formato existe;
-CTest completo passa.
-```
-
-## Bloco 17 — Documentação Sphinx
-
-Objetivo: estabilizar documentação semelhante ao bloco II.
-
-Atividades:
-
-```text
-configurar Sphinx;
-usar pydata_sphinx_theme;
-usar myst_parser;
-usar sphinx_design;
-usar sphinx_copybutton;
-criar CSS próprio;
-criar página inicial com hero;
-criar guia de usuário;
-criar guia de desenvolvedor;
-documentar requisitos;
-documentar arquitetura;
-documentar estilo;
-documentar testes;
-documentar desempenho;
-documentar output.
-```
-
-Critério de passagem:
-
-```text
-Sphinx gera HTML sem erro;
-página inicial existe;
-documentação de requisitos existe;
-documentação de arquitetura existe;
-documentação de coding standard existe;
-documentação de testes existe;
-documentação de uso básico existe.
-```
-
-## Bloco 18 — Testes de regressão e validação geral
-
-Objetivo: garantir que a base está sólida antes de avançar para novas famílias de malha.
-
-Atividades:
-
-```text
-rodar todos os testes;
-rodar todos os exemplos;
-validar outputs CSV;
-validar outputs VTK;
-testar erros esperados;
-testar seed reprodutível;
-testar documentação;
-limpar warnings;
-revisar cobertura dos requisitos;
-verificar se toda classe possui teste correspondente.
-```
-
-Critério de passagem:
-
-```text
-todos os testes passam;
-todos os exemplos executam;
-documentação compila;
-outputs conferidos;
-nenhum erro silencioso conhecido;
-nenhum requisito P0 pendente;
-toda classe/policy/writer criada possui teste GoogleTest.
-```
-
-## 4. Ordem resumida
-
-```text
-0. Fundação do projeto
-1. Erros e exceções
-2. Tipos fortes e configuração
-3. GridAxis1D
-4. Métricas 1D
-5. Uniforme volume-centrada
-6. Builder 1D
-7. Output textual 1D
-8. CSV 1D
-9. Uniforme face-centrada
-10. Aleatória volume-centrada
-11. Policies, traits e concepts
-12. YAML
-13. Composição 2D por eixos
-14. Output textual 2D por direção
-15. CSV multidirecional
-16. VTK rectilinear
-17. Sphinx
-18. Regressão geral
-```
-
-## 5. Filosofia do cronograma
-
-```text
-Cada bloco deve produzir uma biblioteca melhor, executável e testada.
-Nenhum bloco deve depender de promessa futura para funcionar.
-O avanço só ocorre quando o passo anterior está funcional, testado e verificável.
+Axis1D estável;
+CoordinateSystem básico;
+regras de indexação 2D;
+medidas geométricas.
 ```
