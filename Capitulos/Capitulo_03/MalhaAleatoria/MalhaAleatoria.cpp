@@ -19,16 +19,11 @@
 //==============================================================================
 // Bibliotecas padrão do C++
 //==============================================================================
-
 #include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <cstdint>
 #include <iomanip>
 #include <iostream>
 #include <random>
 #include <span>
-#include <stdexcept>
 #include <vector>
 
 //==============================================================================
