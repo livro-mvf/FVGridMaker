@@ -240,6 +240,34 @@ TEST(ErrorCatalog, OperationDescriptorsAreStable) {
     );
 }
 
+TEST(ErrorCatalog, OutputDescriptorsAreStable) {
+    EXPECT_EQ(
+        error_catalog::kOutputFileOpenFailed.code,
+        error_code::kOutputFileOpenFailed
+    );
+    EXPECT_EQ(
+        error_catalog::kOutputFileOpenFailed.message,
+        std::string_view{"Output file could not be opened."}
+    );
+    EXPECT_EQ(
+        error_catalog::kOutputFileOpenFailed.category,
+        std::string_view{"Output"}
+    );
+
+    EXPECT_EQ(
+        error_catalog::kOutputFileWriteFailed.code,
+        error_code::kOutputFileWriteFailed
+    );
+    EXPECT_EQ(
+        error_catalog::kOutputFileWriteFailed.message,
+        std::string_view{"Output file could not be written."}
+    );
+    EXPECT_EQ(
+        error_catalog::kOutputFileWriteFailed.category,
+        std::string_view{"Output"}
+    );
+}
+
 TEST(ErrorCatalog, YamlDescriptorsAreStable) {
     EXPECT_EQ(
         error_catalog::kInvalidYamlNode.code,

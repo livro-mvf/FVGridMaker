@@ -14,6 +14,7 @@ include(cmake/ConfigVersion.cmake)        # Versionamento da biblioteca
 include(cmake/ConfigCompiler.cmake)       # Configurações do compilador
 include(cmake/ConfigTargets.cmake)        # Alvo principal da biblioteca
 include(cmake/ConfigExamples.cmake)       # Exemplos (chama add_subdirectory)
+include(cmake/ConfigLivro.cmake)          # Exemplos dos capítulos do livro (chama add_subdirectory)
 include(cmake/ConfigTests.cmake)          # Testes (chama add_subdirectory)
 include(cmake/ConfigDocs.cmake)           # Documentação (Sphinx)
 

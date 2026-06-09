@@ -73,6 +73,12 @@ inline constexpr std::string_view kEmptyGridIntersection =
 inline constexpr std::string_view kInvalidTolerance =
     "FVGRID.OPERATION.INVALID_TOLERANCE";
 
+inline constexpr std::string_view kOutputFileOpenFailed =
+    "FVGRID.OUTPUT.FILE_OPEN_FAILED";
+
+inline constexpr std::string_view kOutputFileWriteFailed =
+    "FVGRID.OUTPUT.FILE_WRITE_FAILED";
+
 inline constexpr std::string_view kInvalidYamlNode =
     "FVGRID.YAML.INVALID_NODE";
 

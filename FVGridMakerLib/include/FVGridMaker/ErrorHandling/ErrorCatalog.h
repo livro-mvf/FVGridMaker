@@ -133,6 +133,18 @@ inline constexpr ErrorDescriptor kInvalidTolerance{
     .category = "Operation",
 };
 
+inline constexpr ErrorDescriptor kOutputFileOpenFailed{
+    .code = ::fvgrid::error_code::kOutputFileOpenFailed,
+    .message = "Output file could not be opened.",
+    .category = "Output",
+};
+
+inline constexpr ErrorDescriptor kOutputFileWriteFailed{
+    .code = ::fvgrid::error_code::kOutputFileWriteFailed,
+    .message = "Output file could not be written.",
+    .category = "Output",
+};
+
 inline constexpr ErrorDescriptor kInvalidYamlNode{
     .code = ::fvgrid::error_code::kInvalidYamlNode,
     .message = "The YAML node is invalid.",

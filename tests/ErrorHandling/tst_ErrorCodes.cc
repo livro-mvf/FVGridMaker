@@ -115,6 +115,17 @@ TEST(ErrorCodes, OperationCodesAreStable) {
     );
 }
 
+TEST(ErrorCodes, OutputCodesAreStable) {
+    EXPECT_EQ(
+        error_code::kOutputFileOpenFailed,
+        std::string_view{"FVGRID.OUTPUT.FILE_OPEN_FAILED"}
+    );
+    EXPECT_EQ(
+        error_code::kOutputFileWriteFailed,
+        std::string_view{"FVGRID.OUTPUT.FILE_WRITE_FAILED"}
+    );
+}
+
 TEST(ErrorCodes, YamlCodesAreStable) {
     EXPECT_EQ(
         error_code::kInvalidYamlNode,
