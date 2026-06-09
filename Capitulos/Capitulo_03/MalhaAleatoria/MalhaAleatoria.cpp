@@ -9,10 +9,8 @@
 // L, comprimento do domínio, com L > 0.
 // N, número total de nós, com N > 2.
 //
-// A malha gerada contém:
-// primeiro nó fixo em xI.
-// último nó fixo em xI + L.
-// N - 2 nós internos sorteados no intervalo aberto (xI, xI + L).
+// A malha gerada contém o primeiro nó fixo em xI, o último nó fixo em xI + L,
+// e N - 2 nós internos sorteados no intervalo aberto (xI, xI + L).
 //
 // O código é autocontido, não usa classes e não depende da biblioteca em
 // desenvolvimento.
@@ -42,6 +40,24 @@ using Real = double;
 //==============================================================================
 // Declarações das funções
 //==============================================================================
+
+// Imprime os dados iniciais da execução.
+//
+// Esta função mostra os parâmetros usados para construir a malha antes que os
+// nós sejam gerados. Isso facilita conferir se a execução corresponde ao caso
+// desejado.
+//
+// Parâmetros:
+// xI, coordenada inicial do domínio.
+// comprimento, comprimento L do domínio.
+// numero_nos, número total de nós da malha.
+// semente, semente usada no gerador pseudoaleatório.
+inline void imprimir_dados_iniciais(
+    Real xI,
+    Real comprimento,
+    std::size_t numero_nos,
+    std::uint64_t semente
+);
 
 // Verifica se os dados básicos usados para construir a malha são válidos.
 //
@@ -127,11 +143,8 @@ inline void validar_dados_da_malha(
 
 // Imprime a malha gerada.
 //
-// Para cada nó, a função imprime:
-// índice i.
-// coordenada x_i.
-// espaçamento à esquerda, quando existir.
-// espaçamento à direita, quando existir.
+// Para cada nó, a função imprime o índice i, a coordenada x_i, o espaçamento à
+// esquerda, quando existir, e o espaçamento à direita, quando existir.
 //
 // Esta saída permite verificar visualmente se os nós foram ordenados e se os
 // espaçamentos são de fato irregulares.
@@ -144,11 +157,8 @@ inline void imprimir_malha(
 
 // Imprime estatísticas simples dos espaçamentos da malha.
 //
-// A função calcula e imprime:
-// menor espaçamento.
-// maior espaçamento.
-// espaçamento médio.
-// razão entre maior e menor espaçamento.
+// A função calcula e imprime o menor espaçamento, o maior espaçamento, o
+// espaçamento médio e a razão entre maior e menor espaçamento.
 //
 // Essas estatísticas não são obrigatórias no enunciado, mas ajudam a mostrar
 // numericamente o grau de irregularidade da malha aleatória.
@@ -189,6 +199,17 @@ int main()
         const std::uint64_t semente = 20260301;
 
         //======================================================================
+        // Impressão dos dados iniciais
+        //======================================================================
+
+        imprimir_dados_iniciais(
+            xI,
+            comprimento,
+            numero_nos,
+            semente
+        );
+
+        //======================================================================
         // Geração da malha
         //======================================================================
 
@@ -217,6 +238,32 @@ int main()
         std::cerr << "Erro: " << erro.what() << '\n';
         return 1;
     }
+}
+
+//==============================================================================
+// Impressão dos dados iniciais
+//==============================================================================
+
+inline void imprimir_dados_iniciais(
+    Real xI,
+    Real comprimento,
+    std::size_t numero_nos,
+    std::uint64_t semente
+)
+{
+    const Real x_final = xI + comprimento;
+
+    std::cout << std::fixed << std::setprecision(12);
+
+    std::cout << "Dados iniciais da execucao\n";
+    std::cout << "==========================\n";
+    std::cout << "xI            = " << xI << '\n';
+    std::cout << "L             = " << comprimento << '\n';
+    std::cout << "xI + L        = " << x_final << '\n';
+    std::cout << "N             = " << numero_nos << '\n';
+    std::cout << "nos internos  = " << numero_nos - 2 << '\n';
+    std::cout << "semente       = " << semente << '\n';
+    std::cout << '\n';
 }
 
 //==============================================================================
@@ -398,7 +445,7 @@ inline void imprimir_malha(
     std::cout << std::fixed << std::setprecision(12);
 
     std::cout << "Malha gerada\n";
-    std::cout << "------------\n";
+    std::cout << "============\n";
 
     std::cout << std::setw(6)  << "i"
               << std::setw(20) << "x_i"
@@ -452,7 +499,7 @@ inline void imprimir_resumo_dos_espacamentos(
     const Real razao = *maior / *menor;
 
     std::cout << "\nResumo dos espacamentos\n";
-    std::cout << "-----------------------\n";
+    std::cout << "=======================\n";
     std::cout << "dx_min        = " << *menor << '\n';
     std::cout << "dx_max        = " << *maior << '\n';
     std::cout << "dx_medio      = " << media << '\n';
