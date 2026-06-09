@@ -68,6 +68,14 @@ TEST(StrongTypes, XFinalUsesReal) {
     EXPECT_DOUBLE_EQ(xfinal.value(), 3.0);
 }
 
+TEST(StrongTypes, MinSpacingUsesReal) {
+    const MinSpacing min_spacing{0.05};
+
+    static_assert(std::is_same_v<MinSpacing::value_type, Real>);
+    static_assert(std::is_same_v<MinSpacing::tag_type, MinSpacingTag>);
+    EXPECT_DOUBLE_EQ(min_spacing.value(), 0.05);
+}
+
 TEST(StrongTypes, SeedUsesUInt64) {
     const Seed seed{123456};
 
@@ -80,6 +88,7 @@ TEST(StrongTypes, DifferentStrongTypesAreDifferentTypes) {
     static_assert(!std::is_same_v<NVol, Seed>);
     static_assert(!std::is_same_v<Length, XInit>);
     static_assert(!std::is_same_v<XInit, XFinal>);
+    static_assert(!std::is_same_v<Length, MinSpacing>);
     static_assert(!std::is_same_v<Length, StrongReal<Real, XInitTag>>);
     static_assert(!std::is_same_v<NVol, StrongInteger<Size, SeedTag>>);
 

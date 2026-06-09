@@ -59,6 +59,19 @@ inline constexpr ErrorDescriptor kInvalidXInit{
     .category = "Grid",
 };
 
+inline constexpr ErrorDescriptor kInvalidMinSpacing{
+    .code = ::fvgrid::error_code::kInvalidMinSpacing,
+    .message = "The minimum spacing must be non-negative.",
+    .category = "Grid",
+};
+
+inline constexpr ErrorDescriptor kImpossibleMinSpacing{
+    .code = ::fvgrid::error_code::kImpossibleMinSpacing,
+    .message =
+        "The minimum spacing is too large for the requested domain.",
+    .category = "Grid",
+};
+
 inline constexpr ErrorDescriptor kInvalidCoordinateKind{
     .code = ::fvgrid::error_code::kInvalidCoordinateKind,
     .message =

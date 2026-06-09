@@ -101,7 +101,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebI
     target_compile_options(FVGridMaker PRIVATE
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3>
         $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-march=native>
-        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-ffast-math>
     )
     
     # Link Time Optimization

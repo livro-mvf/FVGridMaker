@@ -37,6 +37,12 @@ inline constexpr std::string_view kInvalidLength =
 inline constexpr std::string_view kInvalidXInit =
     "FVGRID.GRID.INVALID_XINIT";
 
+inline constexpr std::string_view kInvalidMinSpacing =
+    "FVGRID.GRID.INVALID_MIN_SPACING";
+
+inline constexpr std::string_view kImpossibleMinSpacing =
+    "FVGRID.GRID.IMPOSSIBLE_MIN_SPACING";
+
 inline constexpr std::string_view kInvalidCoordinateKind =
     "FVGRID.GRID.INVALID_COORDINATE_KIND";
 

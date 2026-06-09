@@ -1,6 +1,6 @@
 # FVGridMaker
 
-FVGridMaker is a C++20 library for building structured finite-volume grids. The current implementation focuses on one-dimensional structured grids and establishes the core infrastructure that will later support two-dimensional and three-dimensional grid construction, metric evaluation, input parsing in external examples and export utilities.
+FVGridMaker is a C++20 library for building structured finite-volume grids. The current implementation focuses on one-dimensional structured grids and establishes the core infrastructure that will later support two-dimensional and three-dimensional grid construction, metric evaluation, external configuration examples and export utilities.
 
 The library is being developed with an emphasis on clear numerical semantics, data-oriented storage, explicit grid-pattern rules and robust error diagnostics.
 
@@ -19,12 +19,14 @@ Implemented components include:
 - one-dimensional domain description through `Domain1D`;
 - one-dimensional axis storage through `Axis1D`;
 - volume-centred uniform one-dimensional grid generation through `Uniform1D`;
+- pattern-aware uniform one-dimensional grid generation through `Uniform1D`;
+- pattern-aware random one-dimensional grid generation through `Random1D`;
 - generic custom one-dimensional axis generation through `Custom1D`;
 - volume-centred reconstruction from faces through `VolumeCentered1D`;
 - face-centred reconstruction from centres through `FaceCentered1D`;
 - examples and tests for the implemented components.
 
-The current `Uniform1D` implementation is intentionally restricted to the volume-centred construction path. The face-centred reconstruction rule exists in `FaceCentered1D` and is already used by `Custom1D`, but a dedicated face-centred distribution path remains a later milestone.
+`Uniform1D` and `Random1D` generate primary coordinates according to the selected grid pattern. `VolumeCentered1D` receives face coordinates and reconstructs centre coordinates. `FaceCentered1D` receives centre coordinates and reconstructs face coordinates using the physical domain.
 
 YAML support is not part of `FVGridMakerLib`. YAML may be used by examples or external applications, but the library itself must not depend on YAML, `yaml-cpp` or any other configuration parser.
 
@@ -85,6 +87,7 @@ FVGridMakerLib/
 
       Distribution1D/
         Custom1D.h
+        Random1D.h
         Uniform1D.h
 
       GridPattern1D/
@@ -112,6 +115,7 @@ FVGridMakerLib/
 
       Distribution1D/
         Custom1D.cc
+        Random1D.cc
         Uniform1D.cc
 
       GridPattern1D/
@@ -150,6 +154,7 @@ fvgrid::NVol
 fvgrid::Length
 fvgrid::XInit
 fvgrid::XFinal
+fvgrid::MinSpacing
 fvgrid::Seed
 ```
 
@@ -430,47 +435,100 @@ std::cout << axis << '\n';
 
 ## Uniform1D
 
-`Uniform1D` generates a volume-centred uniform one-dimensional grid.
+`Uniform1D` generates uniform primary coordinates and delegates secondary-coordinate reconstruction to the selected grid pattern.
 
-Current construction rule:
-
-```text
-Uniform1D generates faces.
-VolumeCentered1D reconstructs centres.
-Axis1D stores geometry and metrics.
-```
-
-Minimal example:
+The default construction remains volume-centred:
 
 ```cpp
-#include <iostream>
-
-#include <FVGridMaker/OneDimensional/Distribution1D/Uniform1D.h>
-
-int main() {
-    const fvgrid::Axis1D axis = fvgrid::Uniform1D::make(
-        fvgrid::NVol{10},
-        fvgrid::Length{1.0},
-        fvgrid::XInit{0.0}
-    );
-
-    std::cout << axis << '\n';
-
-    return 0;
-}
+const fvgrid::Axis1D axis = fvgrid::Uniform1D::make(
+    fvgrid::NVol{10},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0}
+);
 ```
 
-For `NVol{10}`, `Length{1.0}` and `XInit{0.0}`, the generated faces are:
+This is equivalent to:
 
-```text
-0.0, 0.1, 0.2, ..., 1.0
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Uniform1D::make(
+    fvgrid::NVol{10},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::VolumeCentered1D{}
+);
 ```
 
-and the centres are reconstructed as:
+For `VolumeCentered1D`, `Uniform1D` generates face coordinates and `VolumeCentered1D` reconstructs centres.
 
-```text
-0.05, 0.15, 0.25, ..., 0.95
+For `FaceCentered1D`, `Uniform1D` generates centre coordinates and `FaceCentered1D` reconstructs faces:
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Uniform1D::make(
+    fvgrid::NVol{10},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::FaceCentered1D{}
+);
 ```
+
+## Random1D
+
+`Random1D` generates random primary coordinates and delegates secondary-coordinate reconstruction to the selected grid pattern.
+
+The default construction is volume-centred:
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Random1D::make(
+    fvgrid::NVol{8},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::Seed{1234}
+);
+```
+
+A minimum spacing may be imposed:
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Random1D::make(
+    fvgrid::NVol{8},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::Seed{1234},
+    fvgrid::MinSpacing{0.05}
+);
+```
+
+The explicit pattern-aware overloads are:
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Random1D::make(
+    fvgrid::NVol{8},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::Seed{1234},
+    fvgrid::MinSpacing{0.05},
+    fvgrid::VolumeCentered1D{}
+);
+```
+
+and
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Random1D::make(
+    fvgrid::NVol{8},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::Seed{1234},
+    fvgrid::MinSpacing{0.05},
+    fvgrid::FaceCentered1D{}
+);
+```
+
+For `VolumeCentered1D`, `Random1D` generates random face coordinates.
+
+For `FaceCentered1D`, `Random1D` generates random centre coordinates inside the domain.
+
+In both cases, the final geometry is stored in `Axis1D`.
 
 ## Custom1D
 
@@ -528,6 +586,7 @@ A YAML example should parse a configuration file and translate it into public FV
 
 ```cpp
 fvgrid::Uniform1D::make(...)
+fvgrid::Random1D::make(...)
 fvgrid::Custom1D::make(...)
 fvgrid::Coordinates1D::faces(...)
 fvgrid::Coordinates1D::centers(...)
@@ -562,6 +621,7 @@ make run_ex_Minimal
 make run_ex_ErrorHandling
 make run_ex_Axis1D
 make run_ex_Uniform1D
+make run_ex_Random1D
 make run_ex_Custom1D
 ```
 
@@ -571,7 +631,7 @@ All examples can be run with:
 make run_all_examples
 ```
 
-The `Uniform1D` and `Custom1D` examples print generated one-dimensional grids as tables with:
+The `Uniform1D`, `Random1D` and `Custom1D` examples print generated one-dimensional grids as tables with:
 
 ```text
 i
@@ -602,6 +662,7 @@ make run_tst_Domain1D
 make run_tst_GridPattern1D
 make run_tst_Axis1D
 make run_tst_Uniform1D
+make run_tst_Random1D
 make run_tst_Custom1D
 ```
 
@@ -632,7 +693,8 @@ AxisGeometry1D
 VolumeCentered1D centre reconstruction
 FaceCentered1D face reconstruction
 Axis1D geometry and metric storage
-Uniform1D volume-centred generation
+Uniform1D pattern-aware generation
+Random1D pattern-aware generation
 Custom1D primary-coordinate construction
 Minimal examples
 Unit tests
@@ -641,12 +703,19 @@ Unit tests
 Current `Uniform1D` status:
 
 ```text
-volume-centred path : implemented
-face-centred path   : deferred
-non-uniform path    : deferred
-random path         : deferred
-YAML input          : external examples only
-2D grids            : deferred
+volume-centred default path       : implemented
+explicit VolumeCentered1D path    : implemented
+explicit FaceCentered1D path      : implemented
+```
+
+Current `Random1D` status:
+
+```text
+volume-centred default path       : implemented
+explicit VolumeCentered1D path    : implemented
+explicit FaceCentered1D path      : implemented
+seed-based reproducibility        : implemented
+minimum spacing control           : implemented
 ```
 
 Current `Custom1D` status:
@@ -718,13 +787,11 @@ For new error types, add textual codes and descriptors instead.
 Near-term planned work:
 
 ```text
-1. Review and implement pattern-aware Distribution1D construction.
-2. Add Random1D.
-3. Add Operations1D.
-4. Add coordinate-system metric modules.
-5. Add structured 2D grid composition.
-6. Add output/export utilities.
-7. Add external YAML examples.
+1. Add Operations1D.
+2. Add coordinate-system metric modules.
+3. Add structured 2D grid composition.
+4. Add output/export utilities.
+5. Add external YAML examples.
 ```
 
 ## License
