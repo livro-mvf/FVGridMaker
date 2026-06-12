@@ -1,169 +1,134 @@
-# ------------------------------------------------------------------------------
-# ConfigDocs.cmake
-# Configuração da geração de documentação (Doxygen + Sphinx)
-# ------------------------------------------------------------------------------
-
 include_guard()
 
-# Se a opção de build de docs estiver desligada, não faz nada
-if(NOT BUILD_DOCS)
-    message(STATUS "[docs] BUILD_DOCS=OFF - documentação desabilitada.")
+if(NOT BUILD_DOCUMENTATION)
     return()
 endif()
 
-# ------------------------------------------------------------------------------
-# Diretórios base
-# ------------------------------------------------------------------------------
-
-# Pasta com os arquivos de configuração de documentação (conf.py, .rst, Doxyfile.in)
-set(DOCS_SOURCE_DIR "${CMAKE_SOURCE_DIR}/docs")
-
-# Diretório onde o Doxygen vai escrever tudo (HTML desabilitado; só XML nos interessa)
-set(DOXYGEN_OUTPUT_DIR "${CMAKE_BINARY_DIR}/docs_doxygen")  # CORRIGIDO: mantém docs_doxygen
-set(DOXYGEN_XML_DIR    "${DOXYGEN_OUTPUT_DIR}/xml")
-
-# Diretórios do Sphinx
-set(DOCS_SPHINX_DOCTREES "${CMAKE_BINARY_DIR}/docs_sphinx_doctrees")
-set(DOCS_HTML_DIR        "${CMAKE_BINARY_DIR}/docs_html")
-
-# Diretório do ambiente virtual de documentação
-set(DOCS_VENV_DIR "${CMAKE_SOURCE_DIR}/.venv-docs")
-set(DOCS_VENV_PY  "${DOCS_VENV_DIR}/bin/python3")
-
-message(STATUS "-- [docs] Docs source dir   : ${DOCS_SOURCE_DIR}")
-message(STATUS "-- [docs] Doxygen XML dir  : ${DOXYGEN_XML_DIR}")
-message(STATUS "-- [docs] Docs venv dir    : ${DOCS_VENV_DIR}")
-message(STATUS "-- [docs] Sphinx cache dir : ${DOCS_SPHINX_DOCTREES}")
-message(STATUS "-- [docs] Publish dir      : ${DOCS_HTML_DIR}")
-
-# ------------------------------------------------------------------------------
-# Doxygen: gera XML a partir dos headers da biblioteca
-# ------------------------------------------------------------------------------
-
 find_package(Doxygen QUIET)
+find_package(Python3 COMPONENTS Interpreter QUIET)
 
-if(DOXYGEN_FOUND)
-    set(DOXYGEN_INPUT_DXY "${DOCS_SOURCE_DIR}/Doxyfile.in")
-    set(DOXYGEN_OUTPUT_DXY "${CMAKE_BINARY_DIR}/Doxyfile")
+set(FVG_DOCS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/docs_sphinx")
+set(FVG_DOCS_BUILD_DIR "${CMAKE_CURRENT_BINARY_DIR}/docs_sphinx")
+set(FVG_DOCS_HTML_DIR "${FVG_DOCS_BUILD_DIR}/html")
+set(FVG_DOXYGEN_INPUT_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in")
+set(FVG_DOXYGEN_OUTPUT_FILE "${CMAKE_CURRENT_BINARY_DIR}/Doxyfile")
+set(FVG_DOXYGEN_XML_DIR "${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml")
+set(FVG_DOCS_DEPENDENCIES)
 
-    if(NOT EXISTS "${DOXYGEN_INPUT_DXY}")
-        message(WARNING
-            "[docs] Doxyfile.in não encontrado em ${DOXYGEN_INPUT_DXY}; "
-            "alvo doxygen_xml não será criado."
-        )
-    else()
-        # Variáveis usadas dentro do Doxyfile.in (@DOXYGEN_OUTPUT_DIR@ etc.)
-        set(DOXYGEN_OUTPUT_DIR "${DOXYGEN_OUTPUT_DIR}")
+if(DOXYGEN_FOUND AND EXISTS "${FVG_DOXYGEN_INPUT_FILE}")
+    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
+    set(DOXYGEN_XML_OUTPUT "xml")
+    set(DOXYGEN_GENERATE_XML "YES")
+    set(DOXYGEN_GENERATE_HTML "NO")
+    set(DOXYGEN_PROJECT_NAME "${PROJECT_NAME}")
+    set(DOXYGEN_PROJECT_NUMBER "${PROJECT_VERSION}")
 
-        configure_file(
-            "${DOXYGEN_INPUT_DXY}"
-            "${DOXYGEN_OUTPUT_DXY}"
-            @ONLY
-        )
+    configure_file(
+        "${FVG_DOXYGEN_INPUT_FILE}"
+        "${FVG_DOXYGEN_OUTPUT_FILE}"
+        @ONLY
+    )
 
-        message(STATUS "[docs] Doxygen input  : ${DOXYGEN_INPUT_DXY}")
-        message(STATUS "[docs] Doxygen file   : ${DOXYGEN_OUTPUT_DXY}")
+    add_custom_target(doxygen_xml
+        COMMAND "${DOXYGEN_EXECUTABLE}" "${FVG_DOXYGEN_OUTPUT_FILE}"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Generating Doxygen XML documentation"
+        VERBATIM
+    )
 
-        add_custom_target(doxygen_xml
-            COMMAND "${DOXYGEN_EXECUTABLE}" "${DOXYGEN_OUTPUT_DXY}"
-            WORKING_DIRECTORY "${CMAKE_BINARY_DIR}"
-            COMMENT "[docs] Gerando XML do Doxygen"
-            VERBATIM
-        )
-    endif()
-else()
+    list(APPEND FVG_DOCS_DEPENDENCIES doxygen_xml)
+elseif(NOT DOXYGEN_FOUND)
     message(WARNING
-        "[docs] Doxygen não encontrado; XML para o Breathe não será gerado."
+        "Doxygen was not found. Doxygen XML documentation will not be built."
+    )
+elseif(NOT EXISTS "${FVG_DOXYGEN_INPUT_FILE}")
+    message(WARNING
+        "Doxyfile.in was not found. Doxygen XML documentation will not be built."
     )
 endif()
 
-# ------------------------------------------------------------------------------
-# Ambiente virtual Python para documentação
-# ------------------------------------------------------------------------------
+if(NOT Python3_FOUND)
+    message(WARNING
+        "Python3 was not found. Sphinx documentation will not be built."
+    )
 
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+    if(TARGET doxygen_xml)
+        add_custom_target(docs
+            DEPENDS doxygen_xml
+        )
+    endif()
 
-# Script Python para verificar e criar o ambiente virtual de forma robusta
-set(VENV_SETUP_SCRIPT "${CMAKE_BINARY_DIR}/setup_venv.py")
-file(WRITE "${VENV_SETUP_SCRIPT}"
-"import os
-import subprocess
-import sys
-import shutil
+    return()
+endif()
 
-venv_dir = '${DOCS_VENV_DIR}'
-requirements = '${DOCS_SOURCE_DIR}/requirements.txt'
+if(NOT EXISTS "${FVG_DOCS_SOURCE_DIR}/conf.py")
+    message(WARNING
+        "Sphinx source directory or conf.py was not found. "
+        "Sphinx documentation will not be built."
+    )
 
-# Remove ambiente virtual corrompido se existir
-if os.path.exists(venv_dir):
-    try:
-        # Tenta usar o Python do venv para verificar se está válido
-        venv_python = os.path.join(venv_dir, 'bin', 'python3')
-        if os.path.exists(venv_python):
-            result = subprocess.run([venv_python, '--version'], 
-                                  capture_output=True, text=True, timeout=10)
-            if result.returncode != 0:
-                raise Exception('Venv Python inválido')
-        else:
-            raise Exception('Venv Python não encontrado')
-    except Exception as e:
-        print(f'Removendo ambiente virtual corrompido: {e}')
-        shutil.rmtree(venv_dir, ignore_errors=True)
+    if(TARGET doxygen_xml)
+        add_custom_target(docs
+            DEPENDS doxygen_xml
+        )
+    endif()
 
-# Cria novo ambiente virtual se não existir
-if not os.path.exists(venv_dir):
-    print('Criando novo ambiente virtual...')
-    subprocess.run([sys.executable, '-m', 'venv', venv_dir], check=True)
-    
-    # Instala dependências
-    venv_python = os.path.join(venv_dir, 'bin', 'python3')
-    print('Instalando dependências...')
-    subprocess.run([venv_python, '-m', 'pip', 'install', '-r', requirements], check=True)
-    print('Ambiente virtual configurado com sucesso!')
-else:
-    print('Ambiente virtual já existe e é válido.')
-")
+    return()
+endif()
 
-add_custom_target(docs_venv_setup
-    COMMAND "${Python3_EXECUTABLE}" "${VENV_SETUP_SCRIPT}"
-    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-    COMMENT "[docs] Verificando/criando ambiente virtual de documentação"
-    VERBATIM
+set(FVG_DOCS_VENV_DIR "${CMAKE_CURRENT_BINARY_DIR}/.venv-docs")
+
+if(WIN32)
+    set(FVG_DOCS_VENV_PYTHON
+        "${FVG_DOCS_VENV_DIR}/Scripts/python.exe"
+    )
+    set(FVG_DOCS_SPHINX_BUILD
+        "${FVG_DOCS_VENV_DIR}/Scripts/sphinx-build.exe"
+    )
+else()
+    set(FVG_DOCS_VENV_PYTHON
+        "${FVG_DOCS_VENV_DIR}/bin/python3"
+    )
+    set(FVG_DOCS_SPHINX_BUILD
+        "${FVG_DOCS_VENV_DIR}/bin/sphinx-build"
+    )
+endif()
+
+set(FVG_DOCS_REQUIREMENTS_FILE
+    "${FVG_DOCS_SOURCE_DIR}/requirements.txt"
 )
 
-# ------------------------------------------------------------------------------
-# Sphinx: gera HTML a partir dos .rst + Breathe (XML do Doxygen)
-# ------------------------------------------------------------------------------
-
-# OBS IMPORTANTE:
-#   - conf.py lê a variável de ambiente FVGRIDMAKER_DOXYGEN_XML
-#     para definir o caminho do XML do Doxygen:
-#       doxygen_xml = os.environ.get("FVGRIDMAKER_DOXYGEN_XML", ...)
-#   - Aqui garantimos que essa variável aponte para ${DOXYGEN_XML_DIR}.
-
-add_custom_target(docs_sphinx
+add_custom_command(
+    OUTPUT "${FVG_DOCS_SPHINX_BUILD}"
+    COMMAND "${Python3_EXECUTABLE}" -m venv "${FVG_DOCS_VENV_DIR}"
+    COMMAND "${FVG_DOCS_VENV_PYTHON}" -m pip install --upgrade pip
+    COMMAND "${FVG_DOCS_VENV_PYTHON}" -m pip install sphinx breathe
     COMMAND
         "${CMAKE_COMMAND}" -E env
-            "FVGRIDMAKER_DOXYGEN_XML=${DOXYGEN_XML_DIR}"
-            "VIRTUAL_ENV=${DOCS_VENV_DIR}"
-            "PATH=${DOCS_VENV_DIR}/bin:$ENV{PATH}"
-        "${DOCS_VENV_PY}" -m sphinx
-            -b html
-            -c "${DOCS_SOURCE_DIR}"
-            -d "${DOCS_SPHINX_DOCTREES}"
-            "${DOCS_SOURCE_DIR}"
-            "${DOCS_HTML_DIR}"
-    WORKING_DIRECTORY "${DOCS_SOURCE_DIR}"
-    DEPENDS docs_venv_setup doxygen_xml
-    COMMENT "[docs] Gerando documentação HTML com Sphinx"
+        "PIP_DISABLE_PIP_VERSION_CHECK=1"
+        "${FVG_DOCS_VENV_PYTHON}" -m pip install
+        $<$<BOOL:$<EXISTS:${FVG_DOCS_REQUIREMENTS_FILE}>>:-r>
+        $<$<BOOL:$<EXISTS:${FVG_DOCS_REQUIREMENTS_FILE}>>:${FVG_DOCS_REQUIREMENTS_FILE}>
+    COMMENT "Preparing Python virtual environment for Sphinx"
     VERBATIM
 )
 
-# ------------------------------------------------------------------------------
-# Alvo agregado 'docs' (não faz parte de 'all'; chame 'make docs')
-# ------------------------------------------------------------------------------
+add_custom_target(sphinx_html
+    COMMAND
+        "${CMAKE_COMMAND}" -E env
+        "FVG_DOXYGEN_XML_DIR=${FVG_DOXYGEN_XML_DIR}"
+        "${FVG_DOCS_SPHINX_BUILD}"
+        -b html
+        "${FVG_DOCS_SOURCE_DIR}"
+        "${FVG_DOCS_HTML_DIR}"
+    DEPENDS
+        "${FVG_DOCS_SPHINX_BUILD}"
+        ${FVG_DOCS_DEPENDENCIES}
+    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+    COMMENT "Generating Sphinx HTML documentation"
+    VERBATIM
+)
 
 add_custom_target(docs
-    DEPENDS docs_sphinx
-    COMMENT "[docs] Geração completa da documentação (Doxygen + Sphinx)"
+    DEPENDS sphinx_html
 )

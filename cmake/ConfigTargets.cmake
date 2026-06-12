@@ -1,230 +1,131 @@
-# ==============================================================================
-# ConfigTargets.cmake - Configuração dos targets da biblioteca FVGridMaker
-# ==============================================================================
-
 include_guard()
 
-# ------------------------------------------------------------------------------
-# 1. MÓDULOS NECESSÁRIOS
-# ------------------------------------------------------------------------------
 include(GNUInstallDirs)
 
-# ------------------------------------------------------------------------------
-# 2. CONFIGURAÇÃO DO TARGET PRINCIPAL (BIBLIOTECA SHARED)
-# ------------------------------------------------------------------------------
-
-# Busca todos os arquivos fonte da biblioteca
-file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS
-    "${FVG_SRC_DIR}/*.cpp"
-    "${FVG_SRC_DIR}/*.cxx"
-    "${FVG_SRC_DIR}/*.cc"
+set(FVG_LIBRARY_SOURCE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/FVGridMakerLib/src"
 )
 
-# Busca todos os headers públicos da biblioteca (para verificação)
-file(GLOB_RECURSE LIB_HEADERS CONFIGURE_DEPENDS
-    "${FVG_INCLUDE_DIR}/FVGridMaker/*.hpp"
-    "${FVG_INCLUDE_DIR}/FVGridMaker/*.h"
-    "${FVG_INCLUDE_DIR}/FVGridMaker/*.tpp"
+set(FVG_LIBRARY_INCLUDE_DIR
+    "${CMAKE_CURRENT_SOURCE_DIR}/FVGridMakerLib/include"
 )
 
-# Verifica se há fontes disponíveis
-list(LENGTH LIB_SOURCES NUM_SOURCES)
-if(NUM_SOURCES EQUAL 0)
-    message(WARNING "Nenhum arquivo fonte encontrado em ${FVG_SRC_DIR}")
-endif()
-
-message(STATUS "Biblioteca FVGridMaker:")
-message(STATUS "  Fontes: ${NUM_SOURCES} arquivos")
-list(LENGTH LIB_HEADERS NUM_HEADERS)
-message(STATUS "  Headers: ${NUM_HEADERS} arquivos")
-
-# Cria a biblioteca dinâmica (shared)
-add_library(FVGridMaker SHARED ${LIB_SOURCES})
-
-# Define propriedades da biblioteca
-set_target_properties(FVGridMaker PROPERTIES
-    # Informações de versão da biblioteca (SOVERSION)
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR}
-    
-    # Informações descritivas
-    OUTPUT_NAME "FVGridMaker"
-    DEBUG_POSTFIX "_d"
-    
-    # Metadados do projeto
-    CXX_STANDARD 20
-    CXX_STANDARD_REQUIRED ON
-    CXX_EXTENSIONS OFF
-    
-    # Configurações específicas para Windows
-    WINDOWS_EXPORT_ALL_SYMBOLS OFF
+set(FVG_GENERATED_INCLUDE_DIR
+    "${CMAKE_CURRENT_BINARY_DIR}/generated"
 )
 
-# ------------------------------------------------------------------------------
-# 3. DIRETÓRIOS DE INCLUDE
-# ------------------------------------------------------------------------------
-
-# Verifica se a variável FVG_GENERATED_INCLUDE_DIR foi definida
-if(NOT DEFINED FVG_GENERATED_INCLUDE_DIR)
-    set(FVG_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}/generated_include")
-endif()
-
-if(NOT DEFINED FVG_VERSION_HEADER)
-    set(FVG_VERSION_HEADER "${FVG_GENERATED_INCLUDE_DIR}/FVGridMaker/version.hpp")
-endif()
-
-# Cria diretório para headers gerados
-file(MAKE_DIRECTORY "${FVG_GENERATED_INCLUDE_DIR}/FVGridMaker")
-
-target_include_directories(FVGridMaker
-    PUBLIC
-        # Headers públicos da biblioteca
-        $<BUILD_INTERFACE:${FVG_INCLUDE_DIR}>
-        
-        # Headers gerados automaticamente (version.hpp)
-        $<BUILD_INTERFACE:${FVG_GENERATED_INCLUDE_DIR}>
-        
-        # Para quando a biblioteca for instalada
-        $<INSTALL_INTERFACE:include>
-    PRIVATE
-        # Fontes podem incluir de outros diretórios privados
-        ${FVG_SRC_DIR}
+set(FVG_GENERATED_VERSION_HEADER
+    "${FVG_GENERATED_INCLUDE_DIR}/FVGridMaker/version.hpp"
 )
 
-# ------------------------------------------------------------------------------
-# 4. CONFIGURAÇÕES DE COMPILAÇÃO E LINK
-# ------------------------------------------------------------------------------
-
-# Aplica otimizações específicas para o target
-if(CMAKE_BUILD_TYPE STREQUAL "Release" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
-    # Otimizações agressivas para Release
-    target_compile_options(FVGridMaker PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O3>
-        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-march=native>
-    )
-    
-    # Link Time Optimization
-    if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        target_compile_options(FVGridMaker PRIVATE -flto)
-        target_link_options(FVGridMaker PRIVATE -flto)
-    endif()
-    
-elseif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    # Configurações para Debug
-    target_compile_definitions(FVGridMaker PRIVATE
-        FVG_DEBUG=1
-        FVG_ENABLE_ASSERTIONS=1
-    )
-    
-    target_compile_options(FVGridMaker PRIVATE
-        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-O0>
-        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-g3>
-        $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-fno-omit-frame-pointer>
+if(NOT EXISTS "${FVG_LIBRARY_INCLUDE_DIR}")
+    message(FATAL_ERROR
+        "FVGridMaker include directory was not found: "
+        "${FVG_LIBRARY_INCLUDE_DIR}"
     )
 endif()
 
-# Aplica otimizações padrão da função definida em ConfigCompiler.cmake
-if(COMMAND set_target_optimizations)
+configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/templates/version.hpp.in"
+    "${FVG_GENERATED_VERSION_HEADER}"
+    @ONLY
+)
+
+set(FVG_LIBRARY_SOURCES)
+
+if(EXISTS "${FVG_LIBRARY_SOURCE_DIR}")
+    file(GLOB_RECURSE FVG_LIBRARY_SOURCES CONFIGURE_DEPENDS
+        "${FVG_LIBRARY_SOURCE_DIR}/*.cpp"
+        "${FVG_LIBRARY_SOURCE_DIR}/*.cxx"
+        "${FVG_LIBRARY_SOURCE_DIR}/*.cc"
+    )
+endif()
+
+if(FVG_LIBRARY_SOURCES)
+    add_library(FVGridMaker ${FVG_LIBRARY_SOURCES})
+
+    target_compile_features(FVGridMaker
+        PUBLIC
+            cxx_std_20
+    )
+
+    target_include_directories(FVGridMaker
+        PUBLIC
+            $<BUILD_INTERFACE:${FVG_LIBRARY_INCLUDE_DIR}>
+            $<BUILD_INTERFACE:${FVG_GENERATED_INCLUDE_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
+
+    target_compile_definitions(FVGridMaker
+        PRIVATE
+            $<$<AND:$<BOOL:${FVG_ENABLE_NDEBUG}>,$<CONFIG:Release>>:NDEBUG>
+            $<$<AND:$<BOOL:${FVG_ENABLE_NDEBUG}>,$<CONFIG:RelWithDebInfo>>:NDEBUG>
+            $<$<AND:$<BOOL:${FVG_ENABLE_NDEBUG}>,$<CONFIG:MinSizeRel>>:NDEBUG>
+    )
+
+    set_target_properties(FVGridMaker
+        PROPERTIES
+            OUTPUT_NAME FVGridMaker
+            ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+            LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+            CXX_STANDARD 20
+            CXX_STANDARD_REQUIRED ON
+            CXX_EXTENSIONS OFF
+            POSITION_INDEPENDENT_CODE ON
+    )
+
     set_target_optimizations(FVGridMaker)
-endif()
+else()
+    add_library(FVGridMaker INTERFACE)
 
-# ------------------------------------------------------------------------------
-# 5. DIRETÓRIOS DE SAÍDA
-# ------------------------------------------------------------------------------
+    target_compile_features(FVGridMaker
+        INTERFACE
+            cxx_std_20
+    )
 
-# Configura diretórios de saída organizados
-set(OUTPUT_RUNTIME_DIR "${FVG_OUTPUT_BIN_DIR}")
-set(OUTPUT_LIBRARY_DIR "${FVG_OUTPUT_BIN_DIR}")
-set(OUTPUT_ARCHIVE_DIR "${FVG_OUTPUT_BIN_DIR}")
+    target_include_directories(FVGridMaker
+        INTERFACE
+            $<BUILD_INTERFACE:${FVG_LIBRARY_INCLUDE_DIR}>
+            $<BUILD_INTERFACE:${FVG_GENERATED_INCLUDE_DIR}>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+    )
 
-set_target_properties(FVGridMaker PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY "${OUTPUT_ARCHIVE_DIR}"
-    LIBRARY_OUTPUT_DIRECTORY "${OUTPUT_LIBRARY_DIR}"
-    RUNTIME_OUTPUT_DIRECTORY "${OUTPUT_RUNTIME_DIR}"
-)
-
-# Cria os diretórios se não existirem
-file(MAKE_DIRECTORY "${OUTPUT_RUNTIME_DIR}")
-file(MAKE_DIRECTORY "${OUTPUT_LIBRARY_DIR}")
-file(MAKE_DIRECTORY "${OUTPUT_ARCHIVE_DIR}")
-
-# ------------------------------------------------------------------------------
-# 6. REGRAS DE INSTALAÇÃO
-# ------------------------------------------------------------------------------
-
-# Exporta o target para uso por outros projetos
-install(TARGETS FVGridMaker
-    EXPORT FVGridMakerTargets
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-)
-
-# Instala headers públicos
-install(DIRECTORY ${FVG_INCLUDE_DIR}/FVGridMaker
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    FILES_MATCHING
-        PATTERN "*.hpp"
-        PATTERN "*.h"
-        PATTERN "*.tpp"
-    PATTERN "*.in" EXCLUDE
-    PATTERN ".gitkeep" EXCLUDE
-)
-
-# Instala headers gerados automaticamente (version.hpp)
-if(EXISTS "${FVG_VERSION_HEADER}")
-    install(FILES ${FVG_VERSION_HEADER}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/FVGridMaker
+    message(WARNING
+        "No FVGridMaker source files were found in "
+        "'${FVG_LIBRARY_SOURCE_DIR}'. "
+        "FVGridMaker will be configured as an INTERFACE header-only target."
     )
 endif()
 
-# Instala implementações de templates (.tpp) do diretório src/
-if(EXISTS "${FVG_SRC_DIR}")
-    file(GLOB_RECURSE TPP_FILES "${FVG_SRC_DIR}/*.tpp")
-    if(TPP_FILES)
-        install(FILES ${TPP_FILES}
-            DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/FVGridMaker/internal
-        )
-        message(STATUS "Instalando templates de implementação")
-    endif()
-endif()
+add_library(FVGridMaker::FVGridMaker ALIAS FVGridMaker)
 
-# Cria arquivo de configuração para o pacote
-install(EXPORT FVGridMakerTargets
-    FILE FVGridMakerTargets.cmake
-    NAMESPACE FVGridMaker::
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/FVGridMaker
-)
-
-# ------------------------------------------------------------------------------
-# 7. TARGETS ADICIONAIS ÚTEIS
-# ------------------------------------------------------------------------------
-
-# Target para limpeza de builds antigos
-add_custom_target(clean-all
-    COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_BINARY_DIR}
-    COMMENT "Removendo diretório de build completo"
-)
-
-# Target para mostrar informações da biblioteca
 add_custom_target(info
-    COMMAND ${CMAKE_COMMAND} -E echo "=== FVGridMaker Library Info ==="
-    COMMAND ${CMAKE_COMMAND} -E echo "Version: @FVG_VERSION_FULL@"
-    COMMAND ${CMAKE_COMMAND} -E echo "Sources: ${NUM_SOURCES} files"
-    COMMAND ${CMAKE_COMMAND} -E echo "Headers: ${NUM_HEADERS} files"
+    COMMAND ${CMAKE_COMMAND} -E echo "Project: ${PROJECT_NAME}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Version: ${FVG_VERSION_FULL}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Semantic version: ${FVG_VERSION_SEMANTIC}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Git hash: ${FVG_GIT_HASH}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Git branch: ${FVG_GIT_BRANCH}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Git dirty suffix: ${FVG_GIT_DIRTY_SUFFIX}"
     COMMAND ${CMAKE_COMMAND} -E echo "Build type: ${CMAKE_BUILD_TYPE}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Output dir: ${FVG_OUTPUT_BIN_DIR}"
-    COMMENT "Exibindo informações da biblioteca"
+    COMMAND ${CMAKE_COMMAND} -E echo "C++ compiler: ${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}"
+    COMMAND ${CMAKE_COMMAND} -E echo "C++ standard: C++20"
+    COMMAND ${CMAKE_COMMAND} -E echo "Source directory: ${FVG_LIBRARY_SOURCE_DIR}"
+    COMMAND ${CMAKE_COMMAND} -E echo "Include directory: ${FVG_LIBRARY_INCLUDE_DIR}"
+    VERBATIM
 )
 
-# ------------------------------------------------------------------------------
-# 8. MENSAGENS FINAIS
-# ------------------------------------------------------------------------------
-
-message(STATUS "✅ Target FVGridMaker configurado com sucesso!")
-message(STATUS "   Tipo: Biblioteca Dinâmica (SHARED)")
-message(STATUS "   Versão: @FVG_VERSION_SEMANTIC@")
-message(STATUS "   SOVERSION: @PROJECT_VERSION_MAJOR@")
-message(STATUS "   Saída: ${FVG_OUTPUT_BIN_DIR}")
+add_custom_target(clean-all
+    COMMAND ${CMAKE_COMMAND} -E rm -rf
+        "${CMAKE_CURRENT_BINARY_DIR}/CMakeCache.txt"
+        "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles"
+        "${CMAKE_CURRENT_BINARY_DIR}/cmake_install.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/Makefile"
+        "${CMAKE_CURRENT_BINARY_DIR}/build.ninja"
+        "${CMAKE_CURRENT_BINARY_DIR}/install_manifest.txt"
+        "${CMAKE_CURRENT_BINARY_DIR}/bin"
+        "${CMAKE_CURRENT_BINARY_DIR}/lib"
+        "${CMAKE_CURRENT_BINARY_DIR}/generated"
+    COMMENT "Removing generated CMake and build artefacts"
+    VERBATIM
+)

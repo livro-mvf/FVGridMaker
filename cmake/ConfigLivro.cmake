@@ -1,52 +1,92 @@
-# ----------------------------------------------------------------------------
-# File: CMakeLists.txt
-# Project: FVGridMaker
-# Version: 0.1.0
-# Description: Discovers and builds FVGridMaker books programs.
-# Author: FVGridMaker Team
-# License: MIT
-# ----------------------------------------------------------------------------
+include_guard()
 
-file(GLOB_RECURSE FVGRIDMAKER_EXAMPLE_SOURCES
-    CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/Capitulos/*.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Capitulos/*.cpp"
+if(NOT BUILD_BOOK)
+    return()
+endif()
+
+set(FVG_BOOK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/capitulos")
+
+if(NOT EXISTS "${FVG_BOOK_DIR}")
+    message(WARNING "Directory not found: ${FVG_BOOK_DIR}")
+    return()
+endif()
+
+file(GLOB_RECURSE FVG_BOOK_SOURCES CONFIGURE_DEPENDS
+    "${FVG_BOOK_DIR}/ex_*.cpp"
+    "${FVG_BOOK_DIR}/ex_*.cc"
 )
 
-set(FVGRIDMAKER_EXAMPLE_RUN_TARGETS "")
+set(FVG_BOOK_RUN_TARGETS)
 
-foreach(example_source IN LISTS FVGRIDMAKER_EXAMPLE_SOURCES)
-    get_filename_component(example_name "${example_source}" NAME_WE)
-
-    add_executable("${example_name}" "${example_source}")
-
-    target_link_libraries("${example_name}"
-        PRIVATE
-            FVGridMaker
+foreach(FVG_BOOK_SOURCE IN LISTS FVG_BOOK_SOURCES)
+    file(RELATIVE_PATH
+        FVG_BOOK_RELATIVE_PATH
+        "${FVG_BOOK_DIR}"
+        "${FVG_BOOK_SOURCE}"
     )
 
-    target_include_directories("${example_name}"
-        PRIVATE
-            "${PROJECT_SOURCE_DIR}/FVGridMakerLib/include"
+    get_filename_component(FVG_BOOK_NAME
+        "${FVG_BOOK_RELATIVE_PATH}"
+        NAME_WE
     )
 
-    set(example_run_target "run_${example_name}")
+    get_filename_component(FVG_BOOK_DIRNAME
+        "${FVG_BOOK_RELATIVE_PATH}"
+        DIRECTORY
+    )
 
-    add_custom_target("${example_run_target}"
-        COMMAND "$<TARGET_FILE:${example_name}>"
-        DEPENDS "${example_name}"
+    string(REGEX REPLACE "^ex_" "" FVG_BOOK_NAME_TOKEN
+        "${FVG_BOOK_NAME}"
+    )
+
+    string(REPLACE "/" "_" FVG_BOOK_DIR_TOKEN
+        "${FVG_BOOK_DIRNAME}"
+    )
+
+    string(REPLACE "\\" "_" FVG_BOOK_DIR_TOKEN
+        "${FVG_BOOK_DIR_TOKEN}"
+    )
+
+    set(FVG_BOOK_TARGET
+        "cap_${FVG_BOOK_DIR_TOKEN}_${FVG_BOOK_NAME_TOKEN}"
+    )
+
+    add_executable("${FVG_BOOK_TARGET}"
+        "${FVG_BOOK_SOURCE}"
+    )
+
+    target_link_libraries("${FVG_BOOK_TARGET}"
+        PRIVATE
+            FVGridMaker::FVGridMaker
+    )
+
+    target_compile_features("${FVG_BOOK_TARGET}"
+        PRIVATE
+            cxx_std_20
+    )
+
+    set_target_properties("${FVG_BOOK_TARGET}"
+        PROPERTIES
+            CXX_STANDARD 20
+            CXX_STANDARD_REQUIRED ON
+            CXX_EXTENSIONS OFF
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/capitulos"
+    )
+
+    add_custom_target("run_${FVG_BOOK_TARGET}"
+        COMMAND "$<TARGET_FILE:${FVG_BOOK_TARGET}>"
+        DEPENDS "${FVG_BOOK_TARGET}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-        COMMENT "Running ${example_name}"
         VERBATIM
     )
 
-    list(APPEND FVGRIDMAKER_EXAMPLE_RUN_TARGETS "${example_run_target}")
+    list(APPEND FVG_BOOK_RUN_TARGETS
+        "run_${FVG_BOOK_TARGET}"
+    )
 endforeach()
 
-add_custom_target(run_all_book
-    COMMENT "Running all FVGridMaker book examples"
-)
-
-if(FVGRIDMAKER_EXAMPLE_RUN_TARGETS)
-    add_dependencies(run_all_book ${FVGRIDMAKER_EXAMPLE_RUN_TARGETS})
+if(FVG_BOOK_RUN_TARGETS)
+    add_custom_target(run_all_capitulos
+        DEPENDS ${FVG_BOOK_RUN_TARGETS}
+    )
 endif()

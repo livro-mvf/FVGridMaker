@@ -1,190 +1,130 @@
-# ------------------------------------------------------------------------------
-# ConfigVersion.cmake
-# Versionamento automático para FVGridMaker
-# ------------------------------------------------------------------------------
-
 include_guard()
 
-# ------------------------------------------------------------------------------
-# 1. BUSCA POR GIT E OBTÉM VERSÃO
-# ------------------------------------------------------------------------------
-
-# Busca Git (opcional, mas recomendado)
-find_package(Git QUIET)
-
-# Variáveis de versão padrão
-set(FVG_PROJECT_VERSION_MAJOR 1)
-set(FVG_PROJECT_VERSION_MINOR 0)
-set(FVG_PROJECT_VERSION_PATCH 0)
-set(FVG_PROJECT_VERSION_TWEAK 0)
-set(FVG_GIT_HASH "unknown")
-set(FVG_GIT_BRANCH "unknown")
-set(FVG_BUILD_TIMESTAMP "")
-
-# Se Git estiver disponível, obtém informações de versão
-if(GIT_FOUND)
-    # Obtém hash do commit atual (curto)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-parse --short HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE FVG_GIT_HASH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    
-    # Obtém branch atual
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE FVG_GIT_BRANCH
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    
-    # Tenta obter versão a partir de tags (semantic versioning)
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} describe --tags --always --match "v[0-9]*.[0-9]*.[0-9]*"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE FVG_GIT_DESCRIBE
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-        ERROR_QUIET
-    )
-    
-    # Se obteve uma tag, extrai versão semântica
-    if(FVG_GIT_DESCRIBE AND FVG_GIT_DESCRIBE MATCHES "v?([0-9]+)\\.([0-9]+)\\.([0-9]+)")
-        set(FVG_PROJECT_VERSION_MAJOR ${CMAKE_MATCH_1})
-        set(FVG_PROJECT_VERSION_MINOR ${CMAKE_MATCH_2})
-        set(FVG_PROJECT_VERSION_PATCH ${CMAKE_MATCH_3})
-    endif()
-    
-    # Verifica se há modificações não commitadas
-    execute_process(
-        COMMAND ${GIT_EXECUTABLE} status --porcelain
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE GIT_STATUS
-        OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    
-    if(GIT_STATUS)
-        set(FVG_GIT_DIRTY_SUFFIX "-dirty")
-    else()
-        set(FVG_GIT_DIRTY_SUFFIX "")
-    endif()
-endif()
-
-# Define timestamp de build
-string(TIMESTAMP FVG_BUILD_TIMESTAMP "%Y-%m-%d %H:%M:%S" UTC)
+string(TIMESTAMP FVG_BUILD_TIMESTAMP "%Y-%m-%dT%H:%M:%SZ" UTC)
 string(TIMESTAMP FVG_BUILD_DATE "%Y-%m-%d" UTC)
 
-# ------------------------------------------------------------------------------
-# 2. DEFINE VERSÃO COMPLETA
-# ------------------------------------------------------------------------------
+set(FVG_PROJECT_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
+set(FVG_PROJECT_VERSION_MINOR "${PROJECT_VERSION_MINOR}")
+set(FVG_PROJECT_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 
-# Versão semântica completa
-set(FVG_VERSION_SEMANTIC 
+if(PROJECT_VERSION_TWEAK)
+    set(FVG_PROJECT_VERSION_TWEAK "${PROJECT_VERSION_TWEAK}")
+else()
+    set(FVG_PROJECT_VERSION_TWEAK 0)
+endif()
+
+set(FVG_VERSION_SEMANTIC
     "${FVG_PROJECT_VERSION_MAJOR}.${FVG_PROJECT_VERSION_MINOR}.${FVG_PROJECT_VERSION_PATCH}"
 )
 
-# Versão com informações do Git (se disponível)
-if(GIT_FOUND AND FVG_GIT_HASH)
-    set(FVG_VERSION_FULL 
-        "${FVG_VERSION_SEMANTIC}+${FVG_GIT_HASH}${FVG_GIT_DIRTY_SUFFIX}"
-    )
-else()
-    set(FVG_VERSION_FULL 
-        "${FVG_VERSION_SEMANTIC}+nogit"
-    )
-endif()
+set(FVG_GIT_AVAILABLE FALSE)
+set(FVG_GIT_REPOSITORY FALSE)
+set(FVG_GIT_HASH "unknown")
+set(FVG_GIT_BRANCH "unknown")
+set(FVG_GIT_DIRTY_SUFFIX "")
+set(FVG_GIT_EXACT_TAG "")
 
-# Define versão do projeto CMake (para uso interno)
-set(PROJECT_VERSION ${FVG_VERSION_SEMANTIC})
-set(PROJECT_VERSION_MAJOR ${FVG_PROJECT_VERSION_MAJOR})
-set(PROJECT_VERSION_MINOR ${FVG_PROJECT_VERSION_MINOR})
-set(PROJECT_VERSION_PATCH ${FVG_PROJECT_VERSION_PATCH})
+find_package(Git QUIET)
 
-# ------------------------------------------------------------------------------
-# 3. GERA ARQUIVO DE HEADER COM INFORMAÇÕES DE VERSÃO
-# ------------------------------------------------------------------------------
-
-# Define diretório de saída para headers gerados
-set(FVG_GENERATED_INCLUDE_DIR "${CMAKE_BINARY_DIR}/generated_include")
-set(FVG_VERSION_HEADER "${FVG_GENERATED_INCLUDE_DIR}/FVGridMaker/version.hpp")
-
-# Cria o diretório se não existir
-file(MAKE_DIRECTORY "${FVG_GENERATED_INCLUDE_DIR}/FVGridMaker")
-
-# Template do arquivo de versão
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/templates/version.hpp.in"
-    "${FVG_VERSION_HEADER}"
-    @ONLY
-)
-
-# Mensagens informativas
-message(STATUS "---------------------------------------------------")
-message(STATUS "FVGridMaker Version Configuration:")
-message(STATUS "  Semantic Version:  ${FVG_VERSION_SEMANTIC}")
-message(STATUS "  Full Version:      ${FVG_VERSION_FULL}")
-message(STATUS "  Git Hash:          ${FVG_GIT_HASH}")
-message(STATUS "  Git Branch:        ${FVG_GIT_BRANCH}")
-message(STATUS "  Build Timestamp:   ${FVG_BUILD_TIMESTAMP}")
 if(GIT_FOUND)
-    message(STATUS "  Git Available:     YES")
-else()
-    message(STATUS "  Git Available:     NO - using default version")
-endif()
-message(STATUS "---------------------------------------------------")
+    set(FVG_GIT_AVAILABLE TRUE)
 
-# ------------------------------------------------------------------------------
-# 4. FUNÇÕES ÚTEIS PARA VERSIONAMENTO
-# ------------------------------------------------------------------------------
-
-# Função para incrementar versão via script
-function(fvg_increment_version TYPE)
-    if(TYPE STREQUAL "MAJOR")
-        math(EXPR NEW_MAJOR "${FVG_PROJECT_VERSION_MAJOR} + 1")
-        set(FVG_PROJECT_VERSION_MAJOR ${NEW_MAJOR} PARENT_SCOPE)
-        set(FVG_PROJECT_VERSION_MINOR 0 PARENT_SCOPE)
-        set(FVG_PROJECT_VERSION_PATCH 0 PARENT_SCOPE)
-    elseif(TYPE STREQUAL "MINOR")
-        math(EXPR NEW_MINOR "${FVG_PROJECT_VERSION_MINOR} + 1")
-        set(FVG_PROJECT_VERSION_MINOR ${NEW_MINOR} PARENT_SCOPE)
-        set(FVG_PROJECT_VERSION_PATCH 0 PARENT_SCOPE)
-    elseif(TYPE STREQUAL "PATCH")
-        math(EXPR NEW_PATCH "${FVG_PROJECT_VERSION_PATCH} + 1")
-        set(FVG_PROJECT_VERSION_PATCH ${NEW_PATCH} PARENT_SCOPE)
-    else()
-        message(FATAL_ERROR "Tipo de incremento inválido. Use: MAJOR, MINOR ou PATCH")
-    endif()
-endfunction()
-
-# Função para criar tag de release
-function(fvg_create_release_tag)
-    if(NOT GIT_FOUND)
-        message(WARNING "Git não encontrado. Não é possível criar tag.")
-        return()
-    endif()
-    
-    set(TAG_NAME "v${FVG_VERSION_SEMANTIC}")
-    
-    message(STATUS "Criando tag de release: ${TAG_NAME}")
-    
-    # Verifica se a tag já existe
     execute_process(
-        COMMAND ${GIT_EXECUTABLE} tag -l "${TAG_NAME}"
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        OUTPUT_VARIABLE EXISTING_TAG
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --is-inside-work-tree
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        RESULT_VARIABLE FVG_GIT_REPOSITORY_RESULT
+        OUTPUT_VARIABLE FVG_GIT_REPOSITORY_OUTPUT
+        ERROR_QUIET
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-    
-    if(EXISTING_TAG)
-        message(WARNING "Tag ${TAG_NAME} já existe!")
-    else()
-        # Cria a tag anotada
+
+    if(FVG_GIT_REPOSITORY_RESULT EQUAL 0 AND
+       FVG_GIT_REPOSITORY_OUTPUT STREQUAL "true")
+        set(FVG_GIT_REPOSITORY TRUE)
+
         execute_process(
-            COMMAND ${GIT_EXECUTABLE} tag -a "${TAG_NAME}" -m "Release ${TAG_NAME}"
-            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMAND "${GIT_EXECUTABLE}" rev-parse --short=12 HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            RESULT_VARIABLE FVG_GIT_HASH_RESULT
+            OUTPUT_VARIABLE FVG_GIT_HASH_OUTPUT
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-        message(STATUS "Tag ${TAG_NAME} criada com sucesso!")
+
+        if(FVG_GIT_HASH_RESULT EQUAL 0 AND NOT FVG_GIT_HASH_OUTPUT STREQUAL "")
+            set(FVG_GIT_HASH "${FVG_GIT_HASH_OUTPUT}")
+        endif()
+
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" branch --show-current
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            RESULT_VARIABLE FVG_GIT_BRANCH_RESULT
+            OUTPUT_VARIABLE FVG_GIT_BRANCH_OUTPUT
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        if(FVG_GIT_BRANCH_RESULT EQUAL 0 AND NOT FVG_GIT_BRANCH_OUTPUT STREQUAL "")
+            set(FVG_GIT_BRANCH "${FVG_GIT_BRANCH_OUTPUT}")
+        else()
+            execute_process(
+                COMMAND "${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD
+                WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+                RESULT_VARIABLE FVG_GIT_BRANCH_FALLBACK_RESULT
+                OUTPUT_VARIABLE FVG_GIT_BRANCH_FALLBACK_OUTPUT
+                ERROR_QUIET
+                OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+
+            if(FVG_GIT_BRANCH_FALLBACK_RESULT EQUAL 0 AND
+               NOT FVG_GIT_BRANCH_FALLBACK_OUTPUT STREQUAL "")
+                set(FVG_GIT_BRANCH "${FVG_GIT_BRANCH_FALLBACK_OUTPUT}")
+            endif()
+        endif()
+
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" status --porcelain
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            RESULT_VARIABLE FVG_GIT_STATUS_RESULT
+            OUTPUT_VARIABLE FVG_GIT_STATUS_OUTPUT
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        if(FVG_GIT_STATUS_RESULT EQUAL 0 AND
+           NOT FVG_GIT_STATUS_OUTPUT STREQUAL "")
+            set(FVG_GIT_DIRTY_SUFFIX "-dirty")
+        endif()
+
+        execute_process(
+            COMMAND "${GIT_EXECUTABLE}" describe --tags --exact-match HEAD
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+            RESULT_VARIABLE FVG_GIT_TAG_RESULT
+            OUTPUT_VARIABLE FVG_GIT_TAG_OUTPUT
+            ERROR_QUIET
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+
+        if(FVG_GIT_TAG_RESULT EQUAL 0 AND NOT FVG_GIT_TAG_OUTPUT STREQUAL "")
+            set(FVG_GIT_EXACT_TAG "${FVG_GIT_TAG_OUTPUT}")
+        endif()
     endif()
-endfunction()
+endif()
+
+if(FVG_GIT_REPOSITORY)
+    if(FVG_GIT_EXACT_TAG)
+        set(FVG_VERSION_FULL "${FVG_VERSION_SEMANTIC}${FVG_GIT_DIRTY_SUFFIX}")
+    else()
+        set(FVG_VERSION_FULL
+            "${FVG_VERSION_SEMANTIC}+${FVG_GIT_HASH}${FVG_GIT_DIRTY_SUFFIX}"
+        )
+    endif()
+else()
+    set(FVG_VERSION_FULL "${FVG_VERSION_SEMANTIC}")
+endif()
+
+message(STATUS "FVGridMaker version: ${FVG_VERSION_FULL}")
+message(STATUS "Git available: ${FVG_GIT_AVAILABLE}")
+message(STATUS "Git repository: ${FVG_GIT_REPOSITORY}")
+message(STATUS "Git hash: ${FVG_GIT_HASH}")
+message(STATUS "Git branch: ${FVG_GIT_BRANCH}")

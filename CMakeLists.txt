@@ -1,25 +1,50 @@
-# ------------------------------------------------------------
-# Root CMakeLists.txt for FVGridMaker
-# ------------------------------------------------------------
 cmake_minimum_required(VERSION 3.15)
-cmake_policy(SET CMP0135 NEW)
 
-# Definição do projeto
-project(FVGridMaker VERSION 1.0 LANGUAGES CXX)
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
 
-# Incluir todos os módulos
-include(cmake/ConfigUtils.cmake)          # Utilitários (bloqueio de in-source build)
-include(cmake/ConfigOptions.cmake)        # Opções (C++20, BUILD_TESTS, etc)
-include(cmake/ConfigVersion.cmake)        # Versionamento da biblioteca
-include(cmake/ConfigCompiler.cmake)       # Configurações do compilador
-include(cmake/ConfigTargets.cmake)        # Alvo principal da biblioteca
-include(cmake/ConfigExamples.cmake)       # Exemplos (chama add_subdirectory)
-include(cmake/ConfigLivro.cmake)          # Exemplos dos capítulos do livro (chama add_subdirectory)
-include(cmake/ConfigTests.cmake)          # Testes (chama add_subdirectory)
-include(cmake/ConfigDocs.cmake)           # Documentação (Sphinx)
+project(FVGridMaker
+    VERSION 1.0.0
+    LANGUAGES CXX
+)
 
+list(APPEND CMAKE_MODULE_PATH
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake"
+)
 
-# Mensagem final
-message(STATUS "FVGridMaker configuration complete!")
+include(ConfigUtils)
+include(ConfigOptions)
+include(ConfigVersion)
+include(ConfigCompiler)
+include(ConfigTargets)
+include(ConfigInstall)
+include(ConfigExamples)
+include(ConfigLivro)
+include(ConfigTests)
+include(ConfigDocs)
+
+set(FVG_RUN_ALL_TARGETS)
+
+if(TARGET run_all_examples)
+    list(APPEND FVG_RUN_ALL_TARGETS run_all_examples)
+endif()
+
+if(TARGET run_all_capitulos)
+    list(APPEND FVG_RUN_ALL_TARGETS run_all_capitulos)
+endif()
+
+if(TARGET run_all_tests)
+    list(APPEND FVG_RUN_ALL_TARGETS run_all_tests)
+endif()
+
+if(FVG_RUN_ALL_TARGETS)
+    add_custom_target(run_all
+        DEPENDS ${FVG_RUN_ALL_TARGETS}
+    )
+endif()
+
+message(STATUS "FVGridMaker configuration complete")
+message(STATUS "Version: ${FVG_VERSION_FULL}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 message(STATUS "Install prefix: ${CMAKE_INSTALL_PREFIX}")

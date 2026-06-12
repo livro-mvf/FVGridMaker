@@ -1,72 +1,53 @@
-# ------------------------------------------------------------
-# Project options and policies
-# ------------------------------------------------------------
+include_guard()
 
-# Set minimum CMake version
-cmake_minimum_required(VERSION 3.15)
+option(BUILD_TESTS "Build test targets" OFF)
+option(BUILD_EXAMPLES "Build example targets" ON)
+option(BUILD_BOOK "Build book/chapter targets" OFF)
+option(BUILD_DOCUMENTATION "Build documentation targets" OFF)
 
-# Set policies
-if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 NEW)  # Improved MSVC_RUNTIME_LIBRARY handling
-endif()
-if(POLICY CMP0135)
-  cmake_policy(SET CMP0135 NEW)  # FILE_SET for install()
-endif()
+option(FVG_ENABLE_IPO "Enable IPO/LTO for supported release builds" ON)
+option(FVG_ENABLE_NATIVE_OPTIMIZATION "Enable native CPU optimisation flags" ON)
+option(FVG_ENABLE_NDEBUG "Define NDEBUG explicitly for release-like builds" OFF)
+option(FVG_BUILD_SHARED "Build FVGridMaker as a shared library" OFF)
 
-# C++ standard (RNF01)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(FVG_ALLOWED_BUILD_TYPES
+    Debug
+    Release
+    RelWithDebInfo
+    MinSizeRel
+)
 
-# Project options (RNF07)
-option(BUILD_EXAMPLES "Build examples" ON)
-option(BUILD_TESTS "Build tests" OFF)
-option(BUILD_DOCS "Build docs (Doxygen + Sphinx)" OFF)
+if(NOT CMAKE_CONFIGURATION_TYPES)
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
+    endif()
 
-# Default build type
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING "Build type" FORCE)
-endif()
+    set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS
+        ${FVG_ALLOWED_BUILD_TYPES}
+    )
 
-# Set build type options
-set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build: Debug Release RelWithDebInfo MinSizeRel")
-
-# Project layout (Adaptado para FVGridMaker)
-set(FVG_LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/FVGridMakerLib)
-set(FVG_INCLUDE_DIR ${FVG_LIB_DIR}/include)
-set(FVG_SRC_DIR ${FVG_LIB_DIR}/src)
-# Saída para DENTRO do diretório de build
-set(FVG_OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin)
-
-# Compiler-specific settings
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    # GCC-specific settings
-    if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 13.0)
-        add_compile_options(-Wno-psabi)  # Silence ABI warnings if needed
+    if(NOT CMAKE_BUILD_TYPE IN_LIST FVG_ALLOWED_BUILD_TYPES)
+        message(FATAL_ERROR
+            "Invalid CMAKE_BUILD_TYPE='${CMAKE_BUILD_TYPE}'. "
+            "Allowed values are: ${FVG_ALLOWED_BUILD_TYPES}"
+        )
     endif()
 endif()
 
-# Common compiler warnings
-add_compile_options(
-    -Wall
-    -Wextra
-    -Wpedantic
-    -Wshadow
-    -Wnon-virtual-dtor
-    -Wold-style-cast
-    -Wcast-align
-    -Wunused
-    -Woverloaded-virtual
-    -Wconversion
-    -Wsign-conversion
-)
-
-# Release mode optimizations
-if(CMAKE_BUILD_TYPE STREQUAL "Release")
-    add_compile_options(-O3 -DNDEBUG)
+if(BUILD_TESTS AND BUILD_EXAMPLES)
+    message(FATAL_ERROR
+        "BUILD_TESTS and BUILD_EXAMPLES cannot be enabled simultaneously."
+    )
 endif()
 
-# Debug mode options
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(-g -O0 -DDEBUG)
+if(BUILD_TESTS AND BUILD_BOOK)
+    message(FATAL_ERROR
+        "BUILD_TESTS and BUILD_BOOK cannot be enabled simultaneously."
+    )
+endif()
+
+if(FVG_BUILD_SHARED)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries" FORCE)
+else()
+    set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared libraries" FORCE)
 endif()
