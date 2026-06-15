@@ -64,6 +64,21 @@ struct FaceCentered1D final {
         Real x_max
     );
 
+    template <class CoordinateMap>
+    [[nodiscard]] static std::vector<Real> primary_coordinates_from_map(
+        Size cell_count,
+        CoordinateMap&& map
+    ) {
+        std::vector<Real> centers(cell_count);
+        const Real deta = static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+
+        for (Size i = 0; i < cell_count; ++i) {
+            centers[i] = map((static_cast<Real>(i) + static_cast<Real>(0.5)) * deta);
+        }
+
+        return centers;
+    }
+
     [[nodiscard]] static AxisGeometry1D complete_geometry(
         std::vector<Real> centers,
         Domain1D domain

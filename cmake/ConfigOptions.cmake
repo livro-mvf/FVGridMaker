@@ -3,6 +3,8 @@ include_guard()
 option(BUILD_TESTS "Build test targets" OFF)
 option(BUILD_EXAMPLES "Build example targets" ON)
 option(BUILD_BOOK "Build book/chapter targets" OFF)
+option(BUILD_MEMCHECK "Build Valgrind memory-check targets for tests" OFF)
+option(BUILD_SANITIZERS "Build targets with AddressSanitizer and UBSan" OFF)
 option(BUILD_DOCUMENTATION "Build documentation targets" OFF)
 
 option(FVG_ENABLE_IPO "Enable IPO/LTO for supported release builds" ON)

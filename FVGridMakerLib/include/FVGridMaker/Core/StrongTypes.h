@@ -59,6 +59,7 @@ struct LengthTag final {};
 struct XInitTag final {};
 struct XFinalTag final {};
 struct MinSpacingTag final {};
+struct BetaTag final {};
 struct SeedTag final {};
 
 using NVol = StrongInteger<Size, NVolTag>;
@@ -66,6 +67,7 @@ using Length = StrongReal<Real, LengthTag>;
 using XInit = StrongReal<Real, XInitTag>;
 using XFinal = StrongReal<Real, XFinalTag>;
 using MinSpacing = StrongReal<Real, MinSpacingTag>;
+using Beta = StrongReal<Real, BetaTag>;
 using Seed = StrongInteger<UInt64, SeedTag>;
 
 }  // namespace fvgrid

@@ -66,6 +66,20 @@ if(NOT FVG_TEST_SOURCES)
     return()
 endif()
 
+set(FVG_TEST_RUN_TARGETS)
+set(FVG_MEMCHECK_RUN_TARGETS)
+
+if(BUILD_MEMCHECK)
+    find_program(FVG_VALGRIND_EXECUTABLE valgrind)
+
+    if(NOT FVG_VALGRIND_EXECUTABLE)
+        message(WARNING
+            "BUILD_MEMCHECK is ON, but valgrind was not found. "
+            "Memory-check targets will not be created."
+        )
+    endif()
+endif()
+
 foreach(FVG_TEST_SOURCE IN LISTS FVG_TEST_SOURCES)
     file(RELATIVE_PATH
         FVG_TEST_RELATIVE_PATH
@@ -134,6 +148,8 @@ foreach(FVG_TEST_SOURCE IN LISTS FVG_TEST_SOURCES)
                 "${CMAKE_CURRENT_BINARY_DIR}/bin/tests"
     )
 
+    set_target_optimizations("${FVG_TEST_TARGET}")
+
     gtest_discover_tests("${FVG_TEST_TARGET}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )
@@ -144,4 +160,40 @@ foreach(FVG_TEST_SOURCE IN LISTS FVG_TEST_SOURCES)
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         VERBATIM
     )
+
+    list(APPEND FVG_TEST_RUN_TARGETS
+        "run_${FVG_TEST_TARGET}"
+    )
+
+    if(BUILD_MEMCHECK AND FVG_VALGRIND_EXECUTABLE)
+        add_custom_target("memcheck_${FVG_TEST_TARGET}"
+            COMMAND "${FVG_VALGRIND_EXECUTABLE}"
+                    --tool=memcheck
+                    --leak-check=full
+                    --show-leak-kinds=definite,possible
+                    --errors-for-leak-kinds=definite,possible
+                    --track-origins=yes
+                    --error-exitcode=99
+                    "$<TARGET_FILE:${FVG_TEST_TARGET}>"
+            DEPENDS "${FVG_TEST_TARGET}"
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            VERBATIM
+        )
+
+        list(APPEND FVG_MEMCHECK_RUN_TARGETS
+            "memcheck_${FVG_TEST_TARGET}"
+        )
+    endif()
 endforeach()
+
+if(FVG_TEST_RUN_TARGETS)
+    add_custom_target(run_all_tests
+        DEPENDS ${FVG_TEST_RUN_TARGETS}
+    )
+endif()
+
+if(FVG_MEMCHECK_RUN_TARGETS)
+    add_custom_target(memcheck_all_tests
+        DEPENDS ${FVG_MEMCHECK_RUN_TARGETS}
+    )
+endif()

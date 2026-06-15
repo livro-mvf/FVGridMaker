@@ -49,7 +49,7 @@ function(fvg_enable_extra_concepts_support target)
 endfunction()
 
 function(fvg_enable_ipo target)
-    if(NOT FVG_ENABLE_IPO)
+    if(NOT FVG_ENABLE_IPO OR BUILD_SANITIZERS)
         return()
     endif()
 
@@ -69,6 +69,33 @@ function(fvg_enable_ipo target)
         message(WARNING
             "IPO/LTO requested for target ${target}, but it is not supported: "
             "${ipo_error}"
+        )
+    endif()
+endfunction()
+
+function(fvg_enable_sanitizers target)
+    if(NOT BUILD_SANITIZERS)
+        return()
+    endif()
+
+    fvg_is_gnu_like(is_gnu_like)
+
+    if(is_gnu_like)
+        target_compile_options("${target}"
+            PRIVATE
+                -fsanitize=address,undefined
+                -fno-omit-frame-pointer
+                -g
+        )
+
+        target_link_options("${target}"
+            PRIVATE
+                -fsanitize=address,undefined
+        )
+    else()
+        message(WARNING
+            "BUILD_SANITIZERS is ON, but sanitizer flags are configured "
+            "only for GNU-like compilers."
         )
     endif()
 endfunction()
@@ -116,5 +143,6 @@ function(set_target_optimizations target)
             $<$<CONFIG:Debug>:FVG_ENABLE_ASSERTIONS=1>
     )
 
+    fvg_enable_sanitizers("${target}")
     fvg_enable_ipo("${target}")
 endfunction()
