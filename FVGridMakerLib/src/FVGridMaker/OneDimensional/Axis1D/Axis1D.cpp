@@ -10,11 +10,11 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
-// #include <algorithm>
+#include <algorithm>
 #include <iomanip>
-// #include <ostream>
-// #include <string>
-// #include <utility>
+#include <ostream>
+#include <string>
+#include <utility>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
@@ -22,6 +22,7 @@
 #include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 namespace fvgrid {
 

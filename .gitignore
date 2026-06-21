@@ -44,3 +44,5 @@ docs/_build/
 .DS_Store
 Thumbs.db
 /FVGridMakerLibOld
+/build-examples
+/build-tests

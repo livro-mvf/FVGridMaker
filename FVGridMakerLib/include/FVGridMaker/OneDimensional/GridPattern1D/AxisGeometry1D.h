@@ -12,7 +12,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
-#include <string_view>
+#include <string>
 #include <vector>
 
 // ----------------------------------------------------------------------------
@@ -25,7 +25,7 @@ namespace fvgrid {
 struct AxisGeometry1D final {
     std::vector<Real> faces;
     std::vector<Real> centers;
-    std::string_view pattern_name;
+    std::string pattern_name;
 };
 
 }  // namespace fvgrid

@@ -2,22 +2,20 @@
 // SPDX-License-Identifier: MIT
 //
 // Exercicio Computacional 4.4
-// Titulo: Malha unidimensional simetrica com centros aleatorios.
+// Titulo: Malha simetrica definida pelo usuario.
 //
 // Objetivo:
-//   Construir uma malha unidimensional simetrica a partir de centros gerados
-//   pelo usuario, sem alterar a biblioteca FVGridMaker.
+//   Criar uma malha unidimensional simetrica fora da FVGridMakerLib e usar
+//   Custom1D para construir a Axis1D final validada pela biblioteca.
 //
 // Modelo numerico:
-//   Os centros sao sorteados na metade esquerda do dominio, espelhados em
-//   torno do ponto medio e usados por Custom1D para reconstruir a geometria
-//   da malha. As faces internas obedecem a regra ponderada
-//
-//       face[i] = 0.25 * center[i - 1] + 0.75 * center[i].
+//   Centros aleatorios sao sorteados na metade esquerda do dominio e
+//   espelhados na metade direita. As faces internas sao reconstruidas pela
+//   regra ponderada 25/75 entre centros vizinhos.
 //
 // Verificacoes:
-//   O programa confirma a simetria dos centros, a regra 25/75 para as faces
-//   internas e emite aviso quando algum espacamento fica abaixo da tolerancia.
+//   O programa confirma a simetria dos centros e a regra das faces ponderadas,
+//   imprime a razao dx_max/dx_min e resume as verificacoes automaticas.
 
 #include <algorithm>
 #include <cmath>
@@ -154,6 +152,7 @@ private:
 ) {
     const auto centros = malha.centers();
     const fvgrid::Real xmeio = 0.5 * (malha.xmin() + malha.xmax());
+
     bool passou = true;
 
     for (fvgrid::Size i = 0; i < centros.size(); ++i) {
@@ -163,13 +162,13 @@ private:
             break;
         }
 
-        const fvgrid::Real residual =
+        const fvgrid::Real residuo =
             std::abs((centros[i] + centros[j]) - 2.0 * xmeio);
 
-        if (residual > tolerancia) {
+        if (residuo > tolerancia) {
             std::cout << "  centros[" << i << "] + centros[" << j
                       << "] difere de 2*xmeio por "
-                << residual << '\n';
+                      << residuo << '\n';
             passou = false;
         }
     }
@@ -183,18 +182,19 @@ private:
 ) {
     const auto faces = malha.faces();
     const auto centros = malha.centers();
+
     bool passou = true;
 
     for (fvgrid::Size i = 1; i + 1 < faces.size(); ++i) {
         const fvgrid::Real face_esperada =
             0.25 * centros[i - 1] + 0.75 * centros[i];
 
-        const fvgrid::Real residual = std::abs(faces[i] - face_esperada);
+        const fvgrid::Real residuo = std::abs(faces[i] - face_esperada);
 
-        if (residual > tolerancia) {
+        if (residuo > tolerancia) {
             std::cout << "  face[" << i
                       << "] nao obedece a regra 25/75; residuo = "
-                      << residual << '\n';
+                      << residuo << '\n';
             passou = false;
         }
     }
@@ -202,24 +202,7 @@ private:
     return passou;
 }
 
-void avisar_espacamentos_pequenos(
-    const fvgrid::Axis1D& malha,
-    fvgrid::Real tolerancia
-) {
-    const auto dx_faces = malha.dx_faces();
-
-    for (fvgrid::Size i = 0; i < dx_faces.size(); ++i) {
-        if (dx_faces[i] < tolerancia) {
-            std::cout << "[AVISO] dx_faces[" << i << "] = "
-                      << dx_faces[i]
-                      << " e menor que a tolerancia "
-                      << tolerancia << '\n';
-        }
-    }
-}
-
-void imprimir_razao_de_espacamentos(const fvgrid::Axis1D& malha)
-{
+void imprimir_razao_de_espacamentos(const fvgrid::Axis1D& malha) {
     const auto dx = malha.dx_faces();
     const auto [min_it, max_it] = std::minmax_element(dx.begin(), dx.end());
 
@@ -260,12 +243,12 @@ void imprimir_mensagem_final()
 {
     std::cout << "\nAplicacoes e recomendacoes\n";
     std::cout << "--------------------------\n";
-    std::cout << "1. A classe MalhaSimetrica1D permanece no exercicio; ";
-    std::cout << "a biblioteca recebe apenas coordenadas e um padrao valido.\n";
-    std::cout << "2. Alterar a semente muda a distribuicao dos centros, ";
-    std::cout << "mas deve preservar a simetria imposta pelo algoritmo.\n";
-    std::cout << "3. A regra 25/75 ilustra como testar um padrao de faces ";
-    std::cout << "definido pelo usuario antes de reutiliza-lo em outros casos.\n";
+    std::cout << "1. A construcao especializada fica no exercicio, ";
+    std::cout << "mantendo a biblioteca focada em componentes reutilizaveis.\n";
+    std::cout << "2. A simetria dos centros pode ser usada para testar ";
+    std::cout << "malhas nao uniformes com propriedades geometricas impostas.\n";
+    std::cout << "3. A razao dx_max/dx_min ajuda a avaliar o grau de ";
+    std::cout << "nao uniformidade antes de resolver uma equacao numerica.\n";
 }
 
 } // namespace
@@ -274,12 +257,11 @@ int main()
 {
     try {
         const fvgrid::Length comprimento{1.0};
-        const fvgrid::NVol numero_de_volumes{9};
+        const fvgrid::NVol numero_de_volumes{21};
         const fvgrid::XInit x_inicial{0.0};
-        const fvgrid::Seed semente{1234};
+        const fvgrid::Seed semente{2026};
 
-        constexpr fvgrid::Real tolerancia = 1.0e-10;
-        constexpr fvgrid::Real tolerancia_espacamento_pequeno = 1.0e-2;
+        constexpr fvgrid::Real tolerancia = 1.0e-12;
 
         const MalhaSimetrica1D gerador{
             comprimento,
@@ -290,17 +272,13 @@ int main()
 
         const fvgrid::Axis1D malha = gerador.gerar();
 
-        std::cout << std::fixed << std::setprecision(6);
+        std::cout << std::fixed << std::setprecision(8);
         std::cout << "Exercicio Computacional 4.4\n";
-        std::cout << "Malha simetrica com centros aleatorios\n";
-        std::cout << "======================================\n\n";
+        std::cout << "Malha simetrica definida pelo usuario\n";
+        std::cout << "=====================================\n\n";
 
         std::cout << malha << '\n';
         imprimir_razao_de_espacamentos(malha);
-        avisar_espacamentos_pequenos(
-            malha,
-            tolerancia_espacamento_pequeno
-        );
 
         const unsigned status = verificar_malha(malha, tolerancia);
         imprimir_mensagem_final();

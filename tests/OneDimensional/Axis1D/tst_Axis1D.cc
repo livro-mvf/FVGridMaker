@@ -114,6 +114,16 @@ TEST(Axis1D, StoresCustomPatternName) {
     EXPECT_EQ(axis.pattern_name(), std::string_view{"CustomPattern1D"});
 }
 
+
+TEST(Axis1D, OwnsDynamicPatternName) {
+    Axis1D axis = [] {
+        std::string dynamic_name{"DynamicPattern1D"};
+        return Axis1D{{0.0, 0.5, 1.0}, dynamic_name};
+    }();
+
+    EXPECT_EQ(axis.pattern_name(), std::string_view{"DynamicPattern1D"});
+}
+
 TEST(Axis1D, StoresClassIdentity) {
     EXPECT_EQ(Axis1D::id().module(), std::string_view{"OneDimensional"});
     EXPECT_EQ(Axis1D::id().class_name(), std::string_view{"Axis1D"});

@@ -30,26 +30,24 @@ foreach(FVG_BOOK_SOURCE IN LISTS FVG_BOOK_SOURCES)
         NAME_WE
     )
 
-    get_filename_component(FVG_BOOK_DIRNAME
-        "${FVG_BOOK_RELATIVE_PATH}"
-        DIRECTORY
-    )
-
     string(REGEX REPLACE "^ex_" "" FVG_BOOK_NAME_TOKEN
         "${FVG_BOOK_NAME}"
     )
 
-    string(REPLACE "/" "_" FVG_BOOK_DIR_TOKEN
-        "${FVG_BOOK_DIRNAME}"
-    )
-
-    string(REPLACE "\\" "_" FVG_BOOK_DIR_TOKEN
-        "${FVG_BOOK_DIR_TOKEN}"
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" FVG_BOOK_NAME_TOKEN
+        "${FVG_BOOK_NAME_TOKEN}"
     )
 
     set(FVG_BOOK_TARGET
-        "cap_${FVG_BOOK_DIR_TOKEN}_${FVG_BOOK_NAME_TOKEN}"
+        "cap_${FVG_BOOK_NAME_TOKEN}"
     )
+
+    if(TARGET "${FVG_BOOK_TARGET}")
+        message(FATAL_ERROR
+            "Duplicate book/chapter target detected: ${FVG_BOOK_TARGET}. "
+            "Book/chapter executable names must be unique."
+        )
+    endif()
 
     add_executable("${FVG_BOOK_TARGET}"
         "${FVG_BOOK_SOURCE}"

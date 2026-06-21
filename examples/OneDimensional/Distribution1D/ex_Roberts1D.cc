@@ -20,7 +20,7 @@
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 int main() {
-    const fvgrid::Axis1D default_axis = fvgrid::Roberts1D::make(
+    const fvgrid::Axis1D malha = fvgrid::Roberts1D::make(
         fvgrid::NVol{12},
         fvgrid::Length{1.0},
         fvgrid::XInit{0.0},
@@ -44,7 +44,7 @@ int main() {
     );
 
     std::cout << "Roberts1D default volume-centred axis\n";
-    std::cout << default_axis << "\n\n";
+    std::cout << malha << "\n";
 
     std::cout << "Roberts1D explicit volume-centred axis\n";
     std::cout << volume_centered_axis << "\n\n";

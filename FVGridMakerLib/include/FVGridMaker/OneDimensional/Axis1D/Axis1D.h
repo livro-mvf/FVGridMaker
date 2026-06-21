@@ -13,16 +13,16 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <iosfwd>
-// #include <span>
-// #include <string_view>
-// #include <vector>
+#include <span>
+#include <string>
+#include <string_view>
+#include <vector>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-// #include <FVGridMaker/Core/ID.h>
-// #include <FVGridMaker/Core/Types.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
+#include <FVGridMaker/Core/ID.h>
+#include <FVGridMaker/Core/Types.h>
 
 namespace fvgrid {
 
@@ -79,7 +79,7 @@ private:
     std::vector<Real> dx_faces_;
     std::vector<Real> dx_centers_;
 
-    std::string_view pattern_name_ = VolumeCentered1D::name();
+    std::string pattern_name_{"VolumeCentered1D"};
 
     void validate_geometry() const;
     void rebuild_metrics();

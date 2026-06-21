@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <string>
 #include <algorithm>
 #include <utility>
 #include <vector>
@@ -99,7 +100,7 @@ AxisGeometry1D FaceCentered1D::complete_geometry(
     return AxisGeometry1D{
         std::move(faces),
         std::move(centers),
-        FaceCentered1D::name()
+        std::string{FaceCentered1D::name()}
     };
 }
 

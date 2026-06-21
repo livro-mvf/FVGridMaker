@@ -6,6 +6,9 @@
 // Author: FVGridMaker Team
 // License: MIT
 // ----------------------------------------------------------------------------
+#include <cmath>
+#include <numbers>
+#include <sstream>
 
 // ----------------------------------------------------------------------------
 // C++ standard library includes
@@ -18,6 +21,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
 
 // ----------------------------------------------------------------------------
@@ -282,6 +286,53 @@ TEST(StructuredGrid2D, RejectsInvalidFaceIndex) {
     }
 
     FAIL() << "StructuredGrid2D accepted an invalid face index.";
+}
+
+TEST(StructuredGrid2D, BuildsPolarGeometryFromTwoIndependentAxes) {
+    const Axis1D radius{std::vector<Real>{1.0, 2.0}};
+    const Axis1D angle{std::vector<Real>{0.0, std::numbers::pi / 2.0}};
+    const StructuredGrid2D grid{radius, angle, PolarCoordinates2D{}};
+
+    const PhysicalPoint2D point = grid.physical_face_point(1, 1);
+    EXPECT_NEAR(point.x, 0.0, 1.0e-14);
+    EXPECT_NEAR(point.y, 2.0, 1.0e-14);
+    EXPECT_NEAR(grid.cell_measure(0, 0), 3.0 * std::numbers::pi / 4.0, 1.0e-14);
+    EXPECT_EQ(grid.coordinate_system_name(), std::string_view{"Polar"});
+}
+
+TEST(StructuredGrid2D, AcceptsUserDefinedCoordinateTraits) {
+    const Axis1D q{std::vector<Real>{0.0, 1.0}};
+    const Axis1D s{std::vector<Real>{0.0, 2.0}};
+    const auto mapping = make_coordinate_mapping_2d(
+        "Parabolic", "q", "s",
+        [](Real first, Real second) {
+            return PhysicalPoint2D{first, second + first * first, 0.0};
+        },
+        [](CoordinateCell2D cell) {
+            return (cell.first_max - cell.first_min)
+                 * (cell.second_max - cell.second_min);
+        }
+    );
+    const StructuredGrid2D grid{q, s, mapping};
+
+    const PhysicalPoint2D point = grid.physical_face_point(1, 1);
+    EXPECT_DOUBLE_EQ(point.x, 1.0);
+    EXPECT_DOUBLE_EQ(point.y, 3.0);
+    EXPECT_EQ(grid.coordinate_system_name(), std::string_view{"Parabolic"});
+}
+
+TEST(StructuredGrid2D, PrintsCoordinateSystemAndIndependentAxes) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{0.0, 1.0}},
+        Axis1D{std::vector<Real>{0.0, 2.0}}
+    };
+    std::ostringstream output;
+    output << grid;
+    EXPECT_NE(output.str().find("Cartesian"), std::string::npos);
+    EXPECT_NE(
+        output.str().find("first independent Axis1D"),
+        std::string::npos
+    );
 }
 
 }  // namespace fvgrid

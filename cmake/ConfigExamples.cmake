@@ -43,36 +43,22 @@ foreach(FVG_EXAMPLE_SOURCE IN LISTS FVG_EXAMPLE_SOURCES)
         NAME_WE
     )
 
-    get_filename_component(FVG_EXAMPLE_RELATIVE_DIR
-        "${FVG_EXAMPLE_RELATIVE_PATH}"
-        DIRECTORY
-    )
-
     set(FVG_EXAMPLE_NAME_TOKEN "${FVG_EXAMPLE_NAME}")
 
     if(FVG_EXAMPLE_NAME_TOKEN MATCHES "^ex_(.+)$")
         set(FVG_EXAMPLE_NAME_TOKEN "${CMAKE_MATCH_1}")
     endif()
 
-    if(FVG_EXAMPLE_RELATIVE_DIR)
-        string(REPLACE "/" "_" FVG_EXAMPLE_DIR_TOKEN
-            "${FVG_EXAMPLE_RELATIVE_DIR}"
-        )
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" FVG_EXAMPLE_NAME_TOKEN
+        "${FVG_EXAMPLE_NAME_TOKEN}"
+    )
 
-        string(REPLACE "\\" "_" FVG_EXAMPLE_DIR_TOKEN
-            "${FVG_EXAMPLE_DIR_TOKEN}"
-        )
-
-        set(FVG_EXAMPLE_TARGET
-            "ex_${FVG_EXAMPLE_DIR_TOKEN}_${FVG_EXAMPLE_NAME_TOKEN}"
-        )
-    else()
-        set(FVG_EXAMPLE_TARGET "ex_${FVG_EXAMPLE_NAME_TOKEN}")
-    endif()
+    set(FVG_EXAMPLE_TARGET "ex_${FVG_EXAMPLE_NAME_TOKEN}")
 
     if(TARGET "${FVG_EXAMPLE_TARGET}")
         message(FATAL_ERROR
-            "Duplicate example target detected: ${FVG_EXAMPLE_TARGET}"
+            "Duplicate example target detected: ${FVG_EXAMPLE_TARGET}. "
+            "Example executable names must be unique."
         )
     endif()
 

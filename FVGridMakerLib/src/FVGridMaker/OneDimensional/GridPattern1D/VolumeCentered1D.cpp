@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -52,7 +53,7 @@ AxisGeometry1D VolumeCentered1D::complete_geometry(
     return AxisGeometry1D{
         std::move(faces),
         std::move(centers),
-        VolumeCentered1D::name()
+        std::string{VolumeCentered1D::name()}
     };
 }
 
