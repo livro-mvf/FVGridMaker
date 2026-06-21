@@ -26,13 +26,13 @@
 namespace fvgrid {
 
 TEST(Version, VersionNumbersAreAvailable) {
-    EXPECT_EQ(version_major(), 0);
-    EXPECT_EQ(version_minor(), 1);
+    EXPECT_EQ(version_major(), 1);
+    EXPECT_EQ(version_minor(), 0);
     EXPECT_EQ(version_patch(), 0);
 }
 
 TEST(Version, VersionStringIsAvailable) {
-    EXPECT_EQ(version_string(), std::string_view{"0.1.0"});
+    EXPECT_EQ(version_string(), std::string_view{"1.0.0"});
 }
 
 TEST(Version, RootVersionFunctionMatchesVersionString) {

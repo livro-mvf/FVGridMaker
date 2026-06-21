@@ -28,7 +28,7 @@ namespace fvgrid {
 
 class Axis1D final {
 public:
-    Axis1D() = default;
+    Axis1D() = delete;
 
     explicit Axis1D(std::vector<Real> faces);
 

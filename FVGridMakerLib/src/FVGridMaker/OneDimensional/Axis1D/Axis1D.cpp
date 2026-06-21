@@ -11,6 +11,7 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <ostream>
 #include <string>
@@ -108,6 +109,16 @@ void Axis1D::validate_geometry() const {
         error_catalog::kInvalidCenterCount,
         Axis1D::id()
     );
+
+    const bool faces_are_finite = std::ranges::all_of(faces_, [](Real value) {
+        return std::isfinite(value);
+    });
+    require(faces_are_finite, error_catalog::kInvalidArgument, Axis1D::id());
+
+    const bool centers_are_finite = std::ranges::all_of(centers_, [](Real value) {
+        return std::isfinite(value);
+    });
+    require(centers_are_finite, error_catalog::kInvalidArgument, Axis1D::id());
 
     const bool faces_strictly_increasing =
         std::ranges::adjacent_find(

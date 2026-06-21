@@ -46,3 +46,8 @@ Thumbs.db
 /FVGridMakerLibOld
 /build-examples
 /build-tests
+/build-docs
+/build-book
+/build-audit
+/build-coverage
+/build-sanitizers
