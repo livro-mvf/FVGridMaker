@@ -10,6 +10,7 @@
 #include <iosfwd>
 #include <string>
 #include <string_view>
+#include <span>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,7 @@
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
+#include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateMetrics2D.h>
 
 namespace fvgrid {
 
@@ -88,6 +90,11 @@ public:
     [[nodiscard]] Real cell_area(Size i, Size j) const;
     // Physical area/volume supplied by the coordinate trait.
     [[nodiscard]] Real cell_measure(Size i, Size j) const;
+    [[nodiscard]] Real first_face_measure(Size i, Size j) const;
+    [[nodiscard]] Real second_face_measure(Size i, Size j) const;
+    [[nodiscard]] std::span<const Real> cell_measures() const noexcept;
+    [[nodiscard]] std::span<const Real> first_face_measures() const noexcept;
+    [[nodiscard]] std::span<const Real> second_face_measures() const noexcept;
     [[nodiscard]] Real vertical_face_length(Size j) const;
     [[nodiscard]] Real horizontal_face_length(Size i) const;
     [[nodiscard]] PhysicalPoint2D physical_face_point(Size i, Size j) const;
@@ -101,6 +108,8 @@ private:
     bool vtk_rectilinear_{};
     std::vector<PhysicalPoint2D> physical_face_points_;
     std::vector<Real> cell_measures_;
+    std::vector<Real> first_face_measures_;
+    std::vector<Real> second_face_measures_;
 
     template <CoordinateMapping2D Mapping>
     void build_derived_geometry(const Mapping& mapping) {
@@ -127,6 +136,29 @@ private:
                 cell_measures_[j * num_cells_x() + i] = measure;
             }
         }
+        build_face_measures(mapping);
+    }
+
+    template <CoordinateMapping2D Mapping>
+    void build_face_measures(const Mapping& mapping) {
+        first_face_measures_.resize(num_faces_x()*num_cells_y());
+        for (Size j=0; j<num_cells_y(); ++j)
+            for (Size i=0; i<num_faces_x(); ++i) {
+                const Real value=coordinate_metrics::first_face_measure(
+                    mapping,x_face(i),y_face(j),y_face(j+1));
+                require(std::isfinite(value) && value>=Real{},
+                        error_catalog::kInvalidArgument,id());
+                first_face_measures_[j*num_faces_x()+i]=value;
+            }
+        second_face_measures_.resize(num_cells_x()*num_faces_y());
+        for (Size j=0; j<num_faces_y(); ++j)
+            for (Size i=0; i<num_cells_x(); ++i) {
+                const Real value=coordinate_metrics::second_face_measure(
+                    mapping,y_face(j),x_face(i),x_face(i+1));
+                require(std::isfinite(value) && value>=Real{},
+                        error_catalog::kInvalidArgument,id());
+                second_face_measures_[j*num_cells_x()+i]=value;
+            }
     }
 
     void validate_x_cell_index(Size i) const;

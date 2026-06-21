@@ -101,6 +101,25 @@ Real StructuredGrid2D::cell_measure(Size i, Size j) const {
     validate_cell_index(i, j);
     return cell_measures_[linear_cell_index(i, j)];
 }
+Real StructuredGrid2D::first_face_measure(Size i, Size j) const {
+    validate_x_face_index(i);
+    validate_y_cell_index(j);
+    return first_face_measures_[j*num_faces_x()+i];
+}
+Real StructuredGrid2D::second_face_measure(Size i, Size j) const {
+    validate_x_cell_index(i);
+    validate_y_face_index(j);
+    return second_face_measures_[j*num_cells_x()+i];
+}
+std::span<const Real> StructuredGrid2D::cell_measures() const noexcept {
+    return cell_measures_;
+}
+std::span<const Real> StructuredGrid2D::first_face_measures() const noexcept {
+    return first_face_measures_;
+}
+std::span<const Real> StructuredGrid2D::second_face_measures() const noexcept {
+    return second_face_measures_;
+}
 Real StructuredGrid2D::vertical_face_length(Size j) const {
     validate_y_cell_index(j);
     return y_cell_length(j);
