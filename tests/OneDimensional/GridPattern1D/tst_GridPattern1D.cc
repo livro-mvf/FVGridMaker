@@ -19,6 +19,8 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
@@ -108,7 +110,10 @@ TEST(GridPattern1D, VolumeCenteredCoordinatesAreCorrect) {
         VolumeCentered1D::primary_coordinates_name(),
         std::string_view{"faces"}
     );
-    EXPECT_EQ(VolumeCentered1D::secondary_coordinates(), std::string_view{"centers"});
+    EXPECT_EQ(
+        VolumeCentered1D::secondary_coordinates(),
+        std::string_view{"centers"}
+    );
     EXPECT_EQ(VolumeCentered1D::input_kind(), CoordinateKind1D::Faces);
 }
 
@@ -145,6 +150,53 @@ TEST(GridPattern1D, VolumeCenteredCompletesGeometryFromFaces) {
     EXPECT_DOUBLE_EQ(geometry.centers[2], 0.85);
 }
 
+TEST(GridPattern1D, VolumeCenteredMatchesCentersFromFacesWithHalfWeight) {
+    AxisGeometry1D volume_centered_geometry =
+        VolumeCentered1D::complete_geometry(
+            std::vector<Real>{0.0, 0.2, 0.7, 1.0},
+            Domain1D::none()
+        );
+
+    const CentersFromFaces1D generic_pattern{ConstantWeight1D{0.5}};
+
+    AxisGeometry1D generic_geometry = generic_pattern.complete_geometry(
+        std::vector<Real>{0.0, 0.2, 0.7, 1.0},
+        Domain1D::none()
+    );
+
+    EXPECT_EQ(
+        volume_centered_geometry.pattern_name,
+        std::string_view{"VolumeCentered1D"}
+    );
+    EXPECT_EQ(
+        generic_geometry.pattern_name,
+        std::string_view{"CentersFromFaces1D"}
+    );
+
+    ASSERT_EQ(
+        volume_centered_geometry.faces.size(),
+        generic_geometry.faces.size()
+    );
+    ASSERT_EQ(
+        volume_centered_geometry.centers.size(),
+        generic_geometry.centers.size()
+    );
+
+    for (Size i = 0; i < volume_centered_geometry.faces.size(); ++i) {
+        EXPECT_DOUBLE_EQ(
+            volume_centered_geometry.faces[i],
+            generic_geometry.faces[i]
+        );
+    }
+
+    for (Size i = 0; i < volume_centered_geometry.centers.size(); ++i) {
+        EXPECT_DOUBLE_EQ(
+            volume_centered_geometry.centers[i],
+            generic_geometry.centers[i]
+        );
+    }
+}
+
 TEST(GridPattern1D, FaceCenteredMetadataIsStable) {
     EXPECT_EQ(FaceCentered1D::name(), std::string_view{"FaceCentered1D"});
     EXPECT_EQ(
@@ -158,7 +210,10 @@ TEST(GridPattern1D, FaceCenteredCoordinatesAreCorrect) {
         FaceCentered1D::primary_coordinates_name(),
         std::string_view{"centers"}
     );
-    EXPECT_EQ(FaceCentered1D::secondary_coordinates(), std::string_view{"faces"});
+    EXPECT_EQ(
+        FaceCentered1D::secondary_coordinates(),
+        std::string_view{"faces"}
+    );
     EXPECT_EQ(FaceCentered1D::input_kind(), CoordinateKind1D::Centers);
 }
 

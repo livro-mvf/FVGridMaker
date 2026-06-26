@@ -19,41 +19,57 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 namespace fvgrid {
+namespace {
+
+[[nodiscard]] CentersFromFaces1D<ConstantWeight1D>
+make_midpoint_reconstructor() {
+    return CentersFromFaces1D{ConstantWeight1D{0.5}};
+}
+
+void validate_face_count_for_volume_centered(Size count) {
+    require<errors::grid::InvalidFaceCount>(
+        count >= static_cast<Size>(2),
+        VolumeCentered1D::id()
+    );
+}
+
+}  // namespace
 
 std::vector<Real> VolumeCentered1D::centers_from_faces(
     std::span<const Real> faces
 ) {
-    require<errors::grid::InvalidFaceCount>(
-        faces.size() >= 2,
-        VolumeCentered1D::id()
+    validate_face_count_for_volume_centered(faces.size());
+
+    std::vector<Real> face_values(faces.begin(), faces.end());
+
+    AxisGeometry1D geometry = make_midpoint_reconstructor().complete_geometry(
+        std::move(face_values),
+        Domain1D::none()
     );
 
-    const Size cell_count = faces.size() - 1;
-    std::vector<Real> centers(cell_count);
-
-    constexpr Real half = static_cast<Real>(0.5);
-
-    for (Size i = 0; i < cell_count; ++i) {
-        centers[i] = half * (faces[i] + faces[i + 1]);
-    }
-
-    return centers;
+    return std::move(geometry.centers);
 }
 
 AxisGeometry1D VolumeCentered1D::complete_geometry(
     std::vector<Real> faces,
-    Domain1D
+    Domain1D domain
 ) {
-    std::vector<Real> centers = centers_from_faces(faces);
+    validate_face_count_for_volume_centered(faces.size());
 
-    return AxisGeometry1D{
+    AxisGeometry1D geometry = make_midpoint_reconstructor().complete_geometry(
         std::move(faces),
-        std::move(centers),
-        std::string{VolumeCentered1D::name()}
-    };
+        domain
+    );
+
+    geometry.pattern_name = std::string{VolumeCentered1D::name()};
+
+    return geometry;
 }
 
 }  // namespace fvgrid
