@@ -18,9 +18,12 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Custom1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Coordinates1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FacesFromCenters1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 // ----------------------------------------------------------------------------
@@ -52,6 +55,28 @@ TEST(Custom1D, BuildsVolumeCenteredAxisFromFaceCoordinates) {
     EXPECT_DOUBLE_EQ(axis.centers()[0], 0.1);
     EXPECT_DOUBLE_EQ(axis.centers()[1], 0.45);
     EXPECT_DOUBLE_EQ(axis.centers()[2], 0.85);
+}
+
+TEST(Custom1D, BuildsCentersFromFacesAxisWithCustomWeight) {
+    const Axis1D axis = Custom1D::make(
+        Coordinates1D::faces(
+            std::vector<Real>{0.0, 0.2, 0.7, 1.0}
+        ),
+        CentersFromFaces1D{ConstantWeight1D{0.25}}
+    );
+
+    EXPECT_EQ(axis.pattern_name(), CentersFromFaces1D<ConstantWeight1D>::name());
+
+    ASSERT_EQ(axis.faces().size(), static_cast<Size>(4));
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[1], 0.2);
+    EXPECT_DOUBLE_EQ(axis.faces()[2], 0.7);
+    EXPECT_DOUBLE_EQ(axis.faces()[3], 1.0);
+
+    ASSERT_EQ(axis.centers().size(), static_cast<Size>(3));
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.05);
+    EXPECT_DOUBLE_EQ(axis.centers()[1], 0.325);
+    EXPECT_DOUBLE_EQ(axis.centers()[2], 0.775);
 }
 
 TEST(Custom1D, ComputesVolumeCenteredMetrics) {
@@ -96,6 +121,29 @@ TEST(Custom1D, BuildsFaceCenteredAxisFromCentreCoordinatesAndDomain) {
     EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
     EXPECT_DOUBLE_EQ(axis.faces()[1], 0.275);
     EXPECT_DOUBLE_EQ(axis.faces()[2], 0.65);
+    EXPECT_DOUBLE_EQ(axis.faces()[3], 1.0);
+}
+
+TEST(Custom1D, BuildsFacesFromCentersAxisWithCustomWeight) {
+    const Axis1D axis = Custom1D::make(
+        Coordinates1D::centers(
+            std::vector<Real>{0.1, 0.45, 0.85}
+        ),
+        FacesFromCenters1D{ConstantWeight1D{0.25}},
+        Domain1D::from_length(XInit{0.0}, Length{1.0})
+    );
+
+    EXPECT_EQ(axis.pattern_name(), FacesFromCenters1D<ConstantWeight1D>::name());
+
+    ASSERT_EQ(axis.centers().size(), static_cast<Size>(3));
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.1);
+    EXPECT_DOUBLE_EQ(axis.centers()[1], 0.45);
+    EXPECT_DOUBLE_EQ(axis.centers()[2], 0.85);
+
+    ASSERT_EQ(axis.faces().size(), static_cast<Size>(4));
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[1], 0.1875);
+    EXPECT_DOUBLE_EQ(axis.faces()[2], 0.55);
     EXPECT_DOUBLE_EQ(axis.faces()[3], 1.0);
 }
 
@@ -185,7 +233,7 @@ TEST(Custom1D, StoresClassIdentity) {
 
 TEST(Custom1D, RejectsCentersForVolumeCenteredPattern) {
     try {
-        const Axis1D axis = Custom1D::make(
+        [[maybe_unused]] const Axis1D axis = Custom1D::make(
             Coordinates1D::centers(
                 std::vector<Real>{0.1, 0.45, 0.85}
             ),
@@ -208,9 +256,34 @@ TEST(Custom1D, RejectsCentersForVolumeCenteredPattern) {
     FAIL() << "Custom1D accepted centers for a volume-centred pattern.";
 }
 
+TEST(Custom1D, RejectsCentersForCentersFromFacesPattern) {
+    try {
+        [[maybe_unused]] const Axis1D axis = Custom1D::make(
+            Coordinates1D::centers(
+                std::vector<Real>{0.1, 0.45, 0.85}
+            ),
+            CentersFromFaces1D{ConstantWeight1D{0.5}}
+        );
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.GRID.INVALID_COORDINATE_KIND"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
+        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Custom1D"});
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.1d.distribution.Custom1D"}
+        );
+        return;
+    }
+
+    FAIL() << "Custom1D accepted centers for a faces-to-centres pattern.";
+}
+
 TEST(Custom1D, RejectsFacesForFaceCenteredPattern) {
     try {
-        const Axis1D axis = Custom1D::make(
+        [[maybe_unused]] const Axis1D axis = Custom1D::make(
             Coordinates1D::faces(
                 std::vector<Real>{0.0, 0.2, 0.7, 1.0}
             ),
@@ -234,9 +307,35 @@ TEST(Custom1D, RejectsFacesForFaceCenteredPattern) {
     FAIL() << "Custom1D accepted faces for a face-centred pattern.";
 }
 
+TEST(Custom1D, RejectsFacesForFacesFromCentersPattern) {
+    try {
+        [[maybe_unused]] const Axis1D axis = Custom1D::make(
+            Coordinates1D::faces(
+                std::vector<Real>{0.0, 0.2, 0.7, 1.0}
+            ),
+            FacesFromCenters1D{ConstantWeight1D{0.5}},
+            Domain1D::from_length(XInit{0.0}, Length{1.0})
+        );
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.GRID.INVALID_COORDINATE_KIND"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
+        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Custom1D"});
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.1d.distribution.Custom1D"}
+        );
+        return;
+    }
+
+    FAIL() << "Custom1D accepted faces for a centres-to-faces pattern.";
+}
+
 TEST(Custom1D, RejectsMissingDomainForFaceCenteredPattern) {
     try {
-        const Axis1D axis = Custom1D::make(
+        [[maybe_unused]] const Axis1D axis = Custom1D::make(
             Coordinates1D::centers(
                 std::vector<Real>{0.1, 0.45, 0.85}
             ),
@@ -264,7 +363,7 @@ TEST(Custom1D, RejectsMissingDomainForFaceCenteredPattern) {
 
 TEST(Custom1D, RejectsNonIncreasingFaceCenteredCenters) {
     try {
-        const Axis1D axis = Custom1D::make(
+        [[maybe_unused]] const Axis1D axis = Custom1D::make(
             Coordinates1D::centers(
                 std::vector<Real>{0.1, 0.45, 0.45}
             ),

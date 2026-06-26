@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <concepts>
 #include <span>
 #include <utility>
 #include <vector>
@@ -21,6 +22,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 
 namespace fvgrid {
 
@@ -36,6 +38,15 @@ public:
 
     [[nodiscard]] CoordinateKind1D kind() const noexcept {
         return kind_;
+    }
+
+    template <PrimaryCoordinateTag1D Tag>
+    [[nodiscard]] bool has_tag() const noexcept {
+        if constexpr (std::same_as<Tag, FaceCoordinates1D>) {
+            return kind_ == CoordinateKind1D::Faces;
+        } else {
+            return kind_ == CoordinateKind1D::Centers;
+        }
     }
 
     [[nodiscard]] std::span<const Real> values() const noexcept {

@@ -12,11 +12,9 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
-#include <concepts>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <vector>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
@@ -27,26 +25,11 @@
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Coordinates1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 
 namespace fvgrid {
-
-template <class Pattern>
-concept AxisCompletionPattern1D =
-    requires(std::vector<Real> coordinates, Domain1D domain) {
-        {
-            std::remove_cvref_t<Pattern>::input_kind()
-        } -> std::same_as<CoordinateKind1D>;
-
-        {
-            std::remove_cvref_t<Pattern>::complete_geometry(
-                std::move(coordinates),
-                domain
-            )
-        } -> std::same_as<AxisGeometry1D>;
-    };
 
 class Custom1D final {
 public:
@@ -66,20 +49,23 @@ public:
         return id().class_id();
     }
 
-    template <AxisCompletionPattern1D Pattern>
+    template <GridPattern1D Pattern>
     [[nodiscard]] static Axis1D make(
         Coordinates1D coordinates,
-        Pattern&&,
+        Pattern&& pattern,
         Domain1D domain = Domain1D::none()
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
+        using CoordinateTag = typename PatternType::primary_coordinates;
 
         require<errors::grid::InvalidCoordinateKind>(
-            coordinates.kind() == PatternType::input_kind(),
+            coordinates.template has_tag<CoordinateTag>(),
             Custom1D::id()
         );
 
-        AxisGeometry1D geometry = PatternType::complete_geometry(
+        const auto& pattern_ref = pattern;
+
+        AxisGeometry1D geometry = pattern_ref.complete_geometry(
             coordinates.release_values(),
             domain
         );
@@ -92,7 +78,7 @@ public:
     }
 };
 
-template <AxisCompletionPattern1D Pattern>
+template <GridPattern1D Pattern>
 [[nodiscard]] Axis1D custom_axis_1d(
     Coordinates1D coordinates,
     Pattern&& pattern,
