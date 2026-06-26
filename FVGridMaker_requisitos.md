@@ -68,7 +68,7 @@ Internal;
 Future.
 ```
 
-### Stable Public API
+### 2.1. Stable Public API
 
 Os módulos estáveis são:
 
@@ -87,7 +87,7 @@ Axis1DCSVWriter.
 
 Esses módulos compõem a API principal da versão atual.
 
-### Experimental Public API
+### 2.2. Experimental Public API
 
 Os módulos experimentais são:
 
@@ -101,7 +101,7 @@ LegacyVTKRectilinearGrid2DWriter.
 
 Um módulo experimental pode ser exposto pelo header público e usado por exemplos, mas sua API ainda pode mudar antes da estabilização.
 
-### Future
+### 2.3. Future
 
 Funcionalidades futuras incluem:
 
@@ -115,11 +115,108 @@ testes de instalação e consumo externo;
 empacotamento de release.
 ```
 
-### Internal
+### 2.4. Internal
 
 São internos todos os detalhes auxiliares que não devem ser usados diretamente por usuários externos e que podem mudar sem aviso dentro da mesma série de versão.
 
-## 3. Vocabulário obrigatório
+## 3. Requisitos de versionamento
+
+A versão semântica da biblioteca deve ser definida em um único ponto canônico:
+
+```text
+CMakeLists.txt
+```
+
+A definição deve ser feita por meio de:
+
+```cmake
+project(FVGridMaker
+    VERSION X.Y.Z
+    LANGUAGES CXX
+)
+```
+
+Na versão atual, a versão semântica é:
+
+```text
+0.2.0
+```
+
+`Core/Version.h` deve expor a versão pública a partir das informações geradas pelo CMake.
+
+O header gerado pelo CMake deve ficar em:
+
+```text
+<build-dir>/generated/FVGridMaker/version.hpp
+```
+
+Esse header gerado deve conter:
+
+```text
+versão major;
+versão minor;
+versão patch;
+versão tweak;
+hash Git;
+branch Git;
+estado dirty;
+timestamp de build;
+data de build;
+versão semântica;
+versão completa.
+```
+
+A API pública de versionamento deve expor pelo menos:
+
+```text
+version_major();
+version_minor();
+version_patch();
+version_string();
+full_version_string();
+git_hash();
+git_branch();
+build_timestamp();
+build_date();
+is_development_build();
+is_tagged_release();
+```
+
+`version_string()` deve retornar apenas a versão semântica.
+
+Exemplo:
+
+```text
+0.2.0
+```
+
+`full_version_string()` pode retornar a versão com metadados Git.
+
+Exemplo:
+
+```text
+0.2.0+48fa0bd9e0c9-dirty
+```
+
+O sufixo `-dirty` indica que havia alterações locais não commitadas quando o CMake configurou a build.
+
+Comentários de cabeçalho de arquivos não devem duplicar número de versão. Quando houver campo `Version`, ele deve usar:
+
+```text
+Version: see <FVGridMaker/Core/Version.h>
+```
+
+Não usar em cabeçalhos de arquivos:
+
+```text
+Version: 0.1.0
+Version: 0.2.0
+Version: 1.0.0
+```
+
+Motivo: o número da versão pertence à configuração central do projeto, não a comentários repetidos em dezenas de arquivos.
+
+## 4. Vocabulário obrigatório
 
 Usar preferencialmente:
 
@@ -144,7 +241,7 @@ AxisGrid1D
 
 Observação: documentos antigos podiam usar `AxisGrid1D`; a nomenclatura atual da unidade 1D é `Axis1D`.
 
-## 4. Requisitos de arquitetura
+## 5. Requisitos de arquitetura
 
 ```text
 C++20;
@@ -185,7 +282,7 @@ CoordinateKind1D, que representa somente se as coordenadas primárias são
 faces ou centers.
 ```
 
-## 5. Identidade de classes
+## 6. Identidade de classes
 
 Toda classe ou componente nomeado que possa ser origem de erro deve expor identidade própria.
 
@@ -219,7 +316,7 @@ herança virtual obrigatória para identificação;
 macros do tipo DefineIdentity.
 ```
 
-## 6. Sistema de erros
+## 7. Sistema de erros
 
 O sistema de erros deve ser textual, extensível e sem `enum`.
 
@@ -276,7 +373,7 @@ Esse erro deve ser usado quando `Coordinates1D::kind()` não coincide com o `inp
 
 Os códigos YAML eventualmente existentes no sistema de erro devem ser tratados como candidatos à remoção ou restrição a exemplos antes de estabilizar a API pública. A biblioteca não deve depender desses códigos para funcionalidade interna.
 
-## 7. Requisitos de `Axis1D`
+## 8. Requisitos de `Axis1D`
 
 `Axis1D` é a unidade geométrica fundamental.
 
@@ -328,7 +425,7 @@ Definir formalmente se pattern_name representa o padrão geométrico original
 ou a procedência da operação que gerou o eixo.
 ```
 
-## 8. Requisitos de coordenadas primárias 1D
+## 9. Requisitos de coordenadas primárias 1D
 
 A entrada customizada de coordenadas deve ser explícita.
 
@@ -373,7 +470,7 @@ O usuário deve sempre informar se os dados primários são faces ou centers.
 Um padrão 1D deve aceitar exatamente um tipo de coordenada primária.
 ```
 
-## 9. Requisitos de domínio 1D
+## 10. Requisitos de domínio 1D
 
 O domínio físico 1D, quando necessário, deve ser representado por:
 
@@ -397,7 +494,7 @@ length();
 
 O domínio é obrigatório para reconstruções que precisam de fronteiras externas, como `FaceCentered1D`.
 
-## 10. Requisitos de `GridPattern1D`
+## 11. Requisitos de `GridPattern1D`
 
 `GridPattern1D` define a interpretação das coordenadas primárias e a reconstrução das secundárias.
 
@@ -422,7 +519,7 @@ centers;
 pattern_name.
 ```
 
-### `VolumeCentered1D`
+### 11.1. `VolumeCentered1D`
 
 ```text
 primary_coordinates   = faces
@@ -444,7 +541,7 @@ VolumeCentered1D::centers_from_faces()
 
 `VolumeCentered1D::complete_geometry()` deve receber faces e retornar faces + centers.
 
-### `FaceCentered1D`
+### 11.2. `FaceCentered1D`
 
 ```text
 primary_coordinates   = centers
@@ -468,7 +565,7 @@ FaceCentered1D::faces_from_centers()
 
 `FaceCentered1D::complete_geometry()` deve receber centers e `Domain1D` com fronteiras válidas, e retornar faces + centers.
 
-## 11. Requisitos de `Uniform1D`
+## 12. Requisitos de `Uniform1D`
 
 `Uniform1D` deve gerar coordenadas primárias uniformes de acordo com o padrão selecionado.
 
@@ -502,7 +599,7 @@ Fluxo:
 5. Axis1D calcula dx_faces e dx_centers.
 ```
 
-## 12. Requisitos de `Random1D`
+## 13. Requisitos de `Random1D`
 
 `Random1D` deve gerar coordenadas primárias aleatórias de acordo com o padrão selecionado.
 
@@ -535,7 +632,7 @@ normalizados. Essa estratégia não precisa ser idêntica ao procedimento de
 sortear faces internas independentes e depois ordená-las.
 ```
 
-## 13. Requisitos de `Roberts1D`
+## 14. Requisitos de `Roberts1D`
 
 `Roberts1D` deve gerar eixos 1D com concentração simétrica controlada por `Beta`.
 
@@ -562,7 +659,7 @@ A geração deve aceitar padrões compatíveis por template.
 
 `Roberts1D` deve permanecer independente de herança virtual.
 
-## 14. Requisitos de `Custom1D`
+## 15. Requisitos de `Custom1D`
 
 `Custom1D` deve construir `Axis1D` a partir de coordenadas primárias fornecidas pelo usuário.
 
@@ -600,7 +697,7 @@ Coordinates1D::centers(...) + VolumeCentered1D;
 Coordinates1D::faces(...)   + FaceCentered1D.
 ```
 
-## 15. Requisitos de `Operations1D`
+## 16. Requisitos de `Operations1D`
 
 `Operations1D` deve operar sobre eixos 1D já construídos e validados.
 
@@ -634,7 +731,7 @@ Decidir se clip_faces_to_interval() preserva pattern_name original ou usa
 um pattern_name próprio de operação.
 ```
 
-## 16. Requisitos de output 1D
+## 17. Requisitos de output 1D
 
 `Axis1DCSVWriter` deve exportar `Axis1D` para CSV.
 
@@ -651,7 +748,7 @@ emitir erro claro em falha de escrita.
 
 O formato CSV deve ser documentado no README ou na documentação técnica.
 
-## 17. Requisitos experimentais de 2D
+## 18. Requisitos experimentais de 2D
 
 O módulo 2D deve ser tratado como experimental enquanto sua API não for congelada.
 
@@ -691,7 +788,7 @@ ponteiro polimórfico obrigatório;
 estado global de sistema de coordenadas.
 ```
 
-## 18. Requisitos experimentais de sistemas de coordenadas 2D
+## 19. Requisitos experimentais de sistemas de coordenadas 2D
 
 Sistemas de coordenadas 2D devem fornecer, por traits ou objetos concretos:
 
@@ -727,7 +824,7 @@ precisão das métricas de face;
 testes analíticos.
 ```
 
-## 19. Requisitos experimentais de output 2D
+## 20. Requisitos experimentais de output 2D
 
 O writer VTK 2D deve permanecer experimental até que seu contrato seja fechado.
 
@@ -745,7 +842,7 @@ documentar limitações.
 
 O nome do writer deve corresponder exatamente ao formato exportado.
 
-## 20. Requisitos de exemplos
+## 21. Requisitos de exemplos
 
 Cada funcionalidade pública estável deve ter exemplo executável.
 
@@ -781,7 +878,7 @@ linha nvol tem xface e dxcenter;
 linha nvol não tem xcenter nem dxface.
 ```
 
-## 21. Requisitos de testes
+## 22. Requisitos de testes
 
 Toda classe nova deve ter GoogleTest.
 
@@ -840,7 +937,7 @@ cmake --build build-tests --target run_all_tests
 cmake --build build-examples --target run_all_examples
 ```
 
-## 22. Definition of Done do Gate 1
+## 23. Definition of Done do Gate 1
 
 O Gate 1 estará fechado quando:
 
@@ -856,3 +953,91 @@ nenhuma classe virtual tiver sido introduzida;
 nenhuma dependência externa tiver sido adicionada ao core;
 os comandos de build e teste passarem localmente.
 ```
+
+## 24. Definition of Done do Gate 2
+
+O Gate 2 estará fechado quando:
+
+```text
+CMakeLists.txt definir a versão semântica canônica da biblioteca;
+a versão semântica atual for 0.2.0;
+cmake/templates/version.hpp.in gerar metadados de versão no namespace fvgrid::build_info;
+FVGridMaker/Core/Version.h consumir o header gerado por CMake;
+Version.h não duplicar manualmente a versão semântica;
+version_string() retornar 0.2.0;
+full_version_string() retornar a versão completa com metadados quando disponíveis;
+version() continuar retornando a versão semântica para compatibilidade;
+tests/Core/tst_Version.cc testar a versão 0.2.0;
+git grep não encontrar Version: 0.1.0;
+git grep não encontrar Version: 1.0.0;
+git grep não encontrar 1.0.0 fora de contexto aceitável;
+exemplos compilarem;
+testes compilarem;
+ctest passar.
+```
+
+Comandos mínimos de validação do Gate 2:
+
+```bash
+git grep -n "Version: 0.1.0"
+git grep -n "Version: 1.0.0"
+git grep -n "1.0.0"
+
+rm -rf build-tests build-examples
+
+cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
+cmake --build build-tests --target run_all_tests
+
+cmake -S . -B build-examples -DBUILD_EXAMPLES=ON -DBUILD_TESTS=OFF
+cmake --build build-examples
+cmake --build build-examples --target run_all_examples
+```
+
+## 25. Definition of Done do Gate 3
+
+O Gate 3 estará fechado quando:
+
+```text
+Types.h incluir explicitamente todos os headers padrão necessários;
+Types.h continuar independente de qualquer módulo superior;
+StrongTypes.h continuar independente de qualquer módulo superior;
+StrongTypes.h não validar valores físicos ou geométricos;
+validações de NVol, Length, MinSpacing e Beta permanecerem nas fábricas correspondentes;
+StrongReal e StrongInteger forem final;
+StrongReal e StrongInteger não forem polimórficos;
+NVol, Length, XInit, XFinal, MinSpacing, Beta e Seed estiverem cobertos por testes;
+ID for final;
+ID não for polimórfico;
+ID continuar leve, copiável e constexpr;
+ID não depender de ErrorHandling;
+Version.h consumir apenas o header gerado pelo CMake e a biblioteca padrão;
+Version.h não depender de OneDimensional, TwoDimensional, Output, ErrorHandling, Examples ou Tests;
+Version.cc continuar contendo apenas a função de compatibilidade version();
+todos os cabeçalhos do Core usarem Version: see <FVGridMaker/Core/Version.h>;
+todos os testes de Core passarem;
+ctest passar para o bloco Core;
+a build completa de testes passar;
+a build completa de exemplos passar.
+```
+
+Comandos mínimos de validação do Gate 3:
+
+```bash
+git grep -n "Version: 0.1.0" FVGridMakerLib/include/FVGridMaker/Core tests/Core
+git grep -n "Version: 1.0.0" FVGridMakerLib/include/FVGridMaker/Core tests/Core
+
+rm -rf build-gate3-check
+
+cmake -S . -B build-gate3-check -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
+cmake --build build-gate3-check
+ctest --test-dir build-gate3-check --output-on-failure -R "Types|StrongTypes|ID|Version"
+ctest --test-dir build-gate3-check --output-on-failure
+
+rm -rf build-gate3-examples
+
+cmake -S . -B build-gate3-examples -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=ON
+cmake --build build-gate3-examples
+cmake --build build-gate3-examples --target run_all_examples
+

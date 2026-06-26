@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: tst_ID.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Tests the lightweight immutable identity type used by
 //              FVGridMaker classes.
 // Author: FVGridMaker Team
@@ -12,6 +12,7 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <string_view>
+#include <type_traits>
 #include <utility>
 
 // ----------------------------------------------------------------------------
@@ -44,6 +45,24 @@ TEST(ID, StoresModuleClassNameAndClassId) {
     EXPECT_EQ(id.module(), std::string_view{"OneDimensional"});
     EXPECT_EQ(id.class_name(), std::string_view{"Axis1D"});
     EXPECT_EQ(id.class_id(), std::string_view{"fvgrid.1d.axis.Axis1D"});
+}
+
+TEST(ID, IsFinalAndNotPolymorphic) {
+    static_assert(std::is_final_v<ID>);
+    static_assert(!std::is_polymorphic_v<ID>);
+
+    SUCCEED();
+}
+
+TEST(ID, IsLightweightValueType) {
+    static_assert(std::is_copy_constructible_v<ID>);
+    static_assert(std::is_copy_assignable_v<ID>);
+    static_assert(std::is_move_constructible_v<ID>);
+    static_assert(std::is_move_assignable_v<ID>);
+    static_assert(std::is_nothrow_copy_constructible_v<ID>);
+    static_assert(std::is_nothrow_move_constructible_v<ID>);
+
+    SUCCEED();
 }
 
 TEST(ID, IsCopyConstructible) {

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: tst_Types.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Tests the fundamental type aliases used by the FVGridMaker core.
 // Author: FVGridMaker Team
 // License: MIT

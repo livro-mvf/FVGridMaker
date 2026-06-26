@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: tst_StrongTypes.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Tests the strongly typed wrappers used by the FVGridMaker core.
 // Author: FVGridMaker Team
 // License: MIT
@@ -34,6 +34,20 @@ TEST(StrongInteger, StoresIntegerValue) {
     const StrongInteger<Size, NVolTag> value{42};
 
     EXPECT_EQ(value.value(), static_cast<Size>(42));
+}
+
+TEST(StrongTypes, WrappersAreNotPolymorphic) {
+    static_assert(!std::is_polymorphic_v<StrongReal<Real, LengthTag>>);
+    static_assert(!std::is_polymorphic_v<StrongInteger<Size, NVolTag>>);
+
+    SUCCEED();
+}
+
+TEST(StrongTypes, WrappersAreFinal) {
+    static_assert(std::is_final_v<StrongReal<Real, LengthTag>>);
+    static_assert(std::is_final_v<StrongInteger<Size, NVolTag>>);
+
+    SUCCEED();
 }
 
 TEST(StrongTypes, NVolUsesSize) {
@@ -76,6 +90,14 @@ TEST(StrongTypes, MinSpacingUsesReal) {
     EXPECT_DOUBLE_EQ(min_spacing.value(), 0.05);
 }
 
+TEST(StrongTypes, BetaUsesReal) {
+    const Beta beta{1.5};
+
+    static_assert(std::is_same_v<Beta::value_type, Real>);
+    static_assert(std::is_same_v<Beta::tag_type, BetaTag>);
+    EXPECT_DOUBLE_EQ(beta.value(), 1.5);
+}
+
 TEST(StrongTypes, SeedUsesUInt64) {
     const Seed seed{123456};
 
@@ -89,6 +111,8 @@ TEST(StrongTypes, DifferentStrongTypesAreDifferentTypes) {
     static_assert(!std::is_same_v<Length, XInit>);
     static_assert(!std::is_same_v<XInit, XFinal>);
     static_assert(!std::is_same_v<Length, MinSpacing>);
+    static_assert(!std::is_same_v<Length, Beta>);
+    static_assert(!std::is_same_v<Beta, MinSpacing>);
     static_assert(!std::is_same_v<Length, StrongReal<Real, XInitTag>>);
     static_assert(!std::is_same_v<NVol, StrongInteger<Size, SeedTag>>);
 

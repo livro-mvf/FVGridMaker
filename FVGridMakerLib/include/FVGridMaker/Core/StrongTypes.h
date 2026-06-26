@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: StrongTypes.h
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Defines strongly typed wrappers for scalar and integer
 //              configuration values used by the FVGridMaker core.
 // Author: FVGridMaker Team
@@ -71,3 +71,4 @@ using Beta = StrongReal<Real, BetaTag>;
 using Seed = StrongInteger<UInt64, SeedTag>;
 
 }  // namespace fvgrid
+

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Types.h
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Defines fundamental scalar, index and integer aliases used by
 //              the FVGridMaker core.
 // Author: FVGridMaker Team
@@ -13,6 +13,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <cstddef>
 #include <cstdint>
 
 namespace fvgrid {
@@ -33,3 +34,4 @@ using UInt32 = std::uint32_t;
 using UInt64 = std::uint64_t;
 
 }  // namespace fvgrid
+
