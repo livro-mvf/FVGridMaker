@@ -17,7 +17,9 @@
 namespace fvgrid {
 
 class ID final {
+
 public:
+
     constexpr ID() noexcept = default;
 
     constexpr ID(
@@ -42,9 +44,10 @@ public:
     }
 
 private:
-    std::string_view module_ = "Unknown";
-    std::string_view class_name_ = "Unknown";
-    std::string_view class_id_ = "fvgrid.unknown.Unknown";
+
+    std::string_view module_        = "Unknown";
+    std::string_view class_name_    = "Unknown";
+    std::string_view class_id_      = "fvgrid.unknown.Unknown";
 };
 
 }  // namespace fvgrid
