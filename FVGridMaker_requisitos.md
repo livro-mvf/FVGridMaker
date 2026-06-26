@@ -1,8 +1,8 @@
-# FVGridMaker - Requisitos Funcionais e Não Funcionais
+# FVGridMaker — Requisitos Funcionais e Não Funcionais
 
 Este documento consolida os requisitos atuais do FVGridMaker, restritos à geração, armazenamento, validação, inspeção, operação geométrica e exportação básica de grids estruturados.
 
-O FVGridMaker deve ser uma biblioteca independente para construção de grids estruturados compostos por eixos unidimensionais.
+O FVGridMaker é uma biblioteca independente, em C++20, para construção de grids estruturados compostos por eixos unidimensionais. A biblioteca não resolve equações diferenciais, não monta sistemas lineares e não representa campos físicos; ela fornece infraestrutura geométrica, validação, operações e saídas de conferência.
 
 ## 1. Escopo
 
@@ -55,6 +55,7 @@ YAML pode ser usado em exemplos ou aplicações externas.
 A biblioteca FVGridMakerLib não deve ter módulo YAML.
 A biblioteca FVGridMakerLib não deve depender de yaml-cpp.
 A biblioteca FVGridMakerLib não deve expor headers YAML.
+A biblioteca FVGridMakerLib não deve depender de códigos YAML no módulo ErrorHandling.
 ```
 
 ## 2. Classificação da API
@@ -101,7 +102,21 @@ LegacyVTKRectilinearGrid2DWriter.
 
 Um módulo experimental pode ser exposto pelo header público e usado por exemplos, mas sua API ainda pode mudar antes da estabilização.
 
-### 2.3. Future
+### 2.3. Internal
+
+São internos todos os detalhes auxiliares que não devem ser usados diretamente por usuários externos e que podem mudar sem aviso dentro da mesma série de versão.
+
+Exemplos atuais:
+
+```text
+helpers em namespace fvgrid::detail;
+headers em pastas Detail;
+rotinas auxiliares de travessia;
+detalhes de validação;
+implementações auxiliares de output.
+```
+
+### 2.4. Future
 
 Funcionalidades futuras incluem:
 
@@ -114,10 +129,6 @@ novos formatos de saída;
 testes de instalação e consumo externo;
 empacotamento de release.
 ```
-
-### 2.4. Internal
-
-São internos todos os detalhes auxiliares que não devem ser usados diretamente por usuários externos e que podem mudar sem aviso dentro da mesma série de versão.
 
 ## 3. Requisitos de versionamento
 
@@ -243,6 +254,8 @@ Observação: documentos antigos podiam usar `AxisGrid1D`; a nomenclatura atual 
 
 ## 5. Requisitos de arquitetura
 
+A arquitetura deve seguir:
+
 ```text
 C++20;
 Data-Oriented Design onde houver dados geométricos;
@@ -318,30 +331,56 @@ macros do tipo DefineIdentity.
 
 ## 7. Sistema de erros
 
-O sistema de erros deve ser textual, extensível e sem `enum`.
+O sistema de erros deve ser textual, extensível e sem `enum` central.
+
+A arquitetura atual do `ErrorHandling` deve usar descritores tipados por tag. Cada erro interno estável da biblioteca deve ser representado por um tipo leve, normalmente uma `struct final`, com metadados estáticos de código, mensagem e categoria.
 
 Componentes obrigatórios:
 
 ```text
-ErrorCodes       -> códigos textuais estáveis;
+BuiltInErrors    -> tags dos erros internos estáveis da FVGridMaker;
 ErrorDescriptor  -> code + message + category;
-ErrorCatalog     -> catálogo interno de erros FVGridMaker;
-ErrorRecord      -> registro completo;
+ErrorTraits      -> conceito e extração de descritores a partir de tags;
+ErrorContext     -> pares chave/valor para diagnóstico contextual;
+ErrorRecord      -> registro completo do erro;
 FVGridException  -> exceção base;
-ThrowError       -> throw_error() e require().
+ThrowError       -> throw_error() e require(), preferencialmente header-only.
+```
+
+Não usar na arquitetura atual:
+
+```text
+ErrorCodes.h;
+ErrorCatalog.h;
+enum central de erros;
+namespace error_code;
+namespace error_catalog;
+catálogo global de descritores.
 ```
 
 Uso interno preferencial:
 
 ```cpp
-require(
+require<errors::grid::InvalidNVol>(
     condition,
-    error_catalog::kInvalidNVol,
     Uniform1D::id()
 );
 ```
 
-Uso externo permitido:
+Uso interno com contexto:
+
+```cpp
+require<errors::grid::InvalidNVol>(
+    condition,
+    Uniform1D::id(),
+    {
+        make_error_context("nvol", std::to_string(nvol.value())),
+        make_error_context("expected", "> 0")
+    }
+);
+```
+
+Uso externo permitido com descritor próprio:
 
 ```cpp
 require(
@@ -351,7 +390,7 @@ require(
 );
 ```
 
-ou, para mensagem contextual:
+ou, para mensagem contextual sem tag própria:
 
 ```cpp
 require(
@@ -366,12 +405,12 @@ require(
 Erro obrigatório para incompatibilidade entre coordenada primária e padrão:
 
 ```text
-FVGRID.GRID.INVALID_COORDINATE_KIND
+errors::grid::InvalidCoordinateKind
 ```
 
 Esse erro deve ser usado quando `Coordinates1D::kind()` não coincide com o `input_kind()` declarado pelo padrão selecionado.
 
-Os códigos YAML eventualmente existentes no sistema de erro devem ser tratados como candidatos à remoção ou restrição a exemplos antes de estabilizar a API pública. A biblioteca não deve depender desses códigos para funcionalidade interna.
+Códigos YAML não pertencem ao núcleo da biblioteca. YAML pode existir em exemplos, aplicações externas ou ferramentas auxiliares, mas a biblioteca `FVGridMakerLib` não deve depender de códigos YAML no módulo `ErrorHandling`.
 
 ## 8. Requisitos de `Axis1D`
 
@@ -418,14 +457,48 @@ Essas métricas são geométricas e valem para qualquer padrão de grid quando `
 
 `Axis1D` não deve conter regra específica de reconstrução de padrão. Ele deve receber geometria completa já reconstruída por uma distribuição ou por um `GridPattern1D`.
 
-Ponto a decidir no Gate 5:
+Ponto a decidir em gate futuro:
 
 ```text
 Definir formalmente se pattern_name representa o padrão geométrico original
 ou a procedência da operação que gerou o eixo.
 ```
 
-## 9. Requisitos de coordenadas primárias 1D
+## 9. Formatação e serialização de `Axis1D`
+
+A travessia tabular de `Axis1D` deve ser centralizada em helper interno, usado tanto por:
+
+```text
+operator<<(std::ostream&, const Axis1D&);
+Axis1DCSVWriter::write(...).
+```
+
+O helper comum não deve definir o formato final da saída. Cada consumidor continua responsável por seu próprio contrato:
+
+```text
+operator<<        -> saída diagnóstica, humana, livre para inspeção;
+Axis1DCSVWriter   -> saída CSV tabular, estável, voltada a arquivo e pós-processamento.
+```
+
+O helper interno deve ficar em pasta `Detail`, respeitando o padrão de nomes de diretórios do projeto, e pode usar namespace interno minúsculo:
+
+```text
+FVGridMakerLib/include/FVGridMaker/OneDimensional/Axis1D/Detail/Axis1DRows.h
+namespace fvgrid::detail
+```
+
+O contrato de saída deve ser protegido por testes:
+
+```text
+operator<< contém cabeçalho humano esperado;
+operator<< imprime a última face sem centro e sem comprimento de célula;
+Axis1DCSVWriter escreve exatamente o cabeçalho i,xF,xC,Dx,dx;
+Axis1DCSVWriter escreve a última linha com campos vazios para xC e Dx.
+```
+
+Essa refatoração não deve fazer o CSV chamar `operator<<`, nem fazer `operator<<` chamar o escritor CSV, porque os contratos são diferentes.
+
+## 10. Requisitos de coordenadas primárias 1D
 
 A entrada customizada de coordenadas deve ser explícita.
 
@@ -460,71 +533,35 @@ Coordinates1D::centers(std::vector<Real>);
 ```text
 kind();
 values();
-release_values();
 ```
 
-Regra:
+Regras:
 
 ```text
-O usuário deve sempre informar se os dados primários são faces ou centers.
-Um padrão 1D deve aceitar exatamente um tipo de coordenada primária.
+Coordinates1D não deve reconstruir geometria;
+Coordinates1D não deve validar monotonicidade completa;
+Coordinates1D apenas identifica se a entrada primária são faces ou centers.
 ```
 
-## 10. Requisitos de domínio 1D
-
-O domínio físico 1D, quando necessário, deve ser representado por:
-
-```text
-Domain1D
-```
-
-`Domain1D` deve fornecer:
-
-```text
-Domain1D::none();
-Domain1D::from_length(XInit, Length);
-Domain1D::from_bounds(XInit, XFinal);
-has_bounds();
-xmin();
-xmax();
-length();
-```
-
-`Domain1D` deve ser leve, trivial de copiar e sem alocação dinâmica.
-
-O domínio é obrigatório para reconstruções que precisam de fronteiras externas, como `FaceCentered1D`.
+A reconstrução da geometria completa deve ser responsabilidade do padrão de grid selecionado.
 
 ## 11. Requisitos de `GridPattern1D`
 
-`GridPattern1D` define a interpretação das coordenadas primárias e a reconstrução das secundárias.
+Um `GridPattern1D` define como completar a geometria a partir das coordenadas primárias.
 
-Cada padrão deve declarar:
-
-```text
-input_kind();
-complete_geometry(...);
-```
-
-O retorno intermediário de `complete_geometry(...)` deve ser:
+Padrões atuais:
 
 ```text
-AxisGeometry1D
-```
-
-`AxisGeometry1D` deve conter:
-
-```text
-faces;
-centers;
-pattern_name.
+VolumeCentered1D;
+FaceCentered1D.
 ```
 
 ### 11.1. `VolumeCentered1D`
 
+Entrada primária esperada:
+
 ```text
-primary_coordinates   = faces
-secondary_coordinates = centers
-input_kind            = Faces
+faces
 ```
 
 Regra:
@@ -533,178 +570,145 @@ Regra:
 centers[i] = 0.5 * (faces[i] + faces[i + 1])
 ```
 
-A função responsável deve ser:
+Validações mínimas:
 
 ```text
-VolumeCentered1D::centers_from_faces()
+número de faces >= 2;
+faces estritamente crescentes;
+faces finitas.
 ```
-
-`VolumeCentered1D::complete_geometry()` deve receber faces e retornar faces + centers.
 
 ### 11.2. `FaceCentered1D`
 
-```text
-primary_coordinates   = centers
-secondary_coordinates = faces
-input_kind            = Centers
-```
-
-Regra:
+Entrada primária esperada:
 
 ```text
-face[0]     = x_min
-face[nvol]  = x_max
-face[i]     = 0.5 * (center[i - 1] + center[i])
+centers
 ```
 
-A função responsável deve ser:
+Regra para faces internas:
 
 ```text
-FaceCentered1D::faces_from_centers()
+faces[i] = 0.5 * (centers[i - 1] + centers[i])
 ```
 
-`FaceCentered1D::complete_geometry()` deve receber centers e `Domain1D` com fronteiras válidas, e retornar faces + centers.
+Faces externas exigem domínio com limites explícitos.
 
-## 12. Requisitos de `Uniform1D`
-
-`Uniform1D` deve gerar coordenadas primárias uniformes de acordo com o padrão selecionado.
-
-Entrada:
+Validações mínimas:
 
 ```text
-NVol
-Length
-XInit
+número de centers >= 1;
+centers estritamente crescentes;
+centers finitos;
+domínio com xmin e xmax;
+xmin < centers.front();
+centers.back() < xmax.
 ```
 
-Regra:
+## 12. Requisitos de domínio 1D
+
+O domínio 1D deve representar limites geométricos quando eles forem necessários para completar a malha.
+
+Requisitos:
 
 ```text
-Se o padrão aceita Faces:
-  Uniform1D gera faces uniformes.
-
-Se o padrão aceita Centers:
-  Uniform1D gera centers uniformes dentro do domínio.
+armazenar xmin;
+armazenar xmax;
+validar xmax > xmin quando limites forem usados;
+permitir consulta de bounds;
+permitir distinguir domínio com bounds de domínio não informado.
 ```
 
-A chamada sem padrão deve continuar funcionando como atalho para `VolumeCentered1D`.
+`FaceCentered1D` deve exigir domínio com bounds.
 
-Fluxo:
+`VolumeCentered1D` não deve exigir domínio externo quando as faces já são fornecidas.
+
+## 13. Requisitos de distribuições 1D
+
+Distribuições 1D são responsáveis por gerar coordenadas primárias e delegar a reconstrução completa ao padrão selecionado.
+
+Distribuições atuais:
 
 ```text
-1. Uniform1D calcula as coordenadas primárias.
-2. O padrão 1D calcula as coordenadas secundárias.
-3. Axis1D recebe faces + centers.
-4. Axis1D valida a geometria.
-5. Axis1D calcula dx_faces e dx_centers.
+Uniform1D;
+Random1D;
+Roberts1D;
+Custom1D.
 ```
 
-## 13. Requisitos de `Random1D`
+### 13.1. `Uniform1D`
 
-`Random1D` deve gerar coordenadas primárias aleatórias de acordo com o padrão selecionado.
-
-Entrada:
+Requisitos:
 
 ```text
-NVol
-Length
-XInit
-Seed
-MinSpacing opcional
-Pattern opcional
+receber NVol;
+receber Length;
+receber XInit;
+gerar faces uniformemente espaçadas por padrão;
+usar VolumeCentered1D por padrão;
+permitir padrão compatível quando aplicável;
+validar NVol > 0;
+validar Length > 0.
 ```
 
-Regras:
+### 13.2. `Random1D`
+
+Requisitos:
 
 ```text
-A geração deve ser reprodutível por Seed.
-A geração deve respeitar MinSpacing quando fornecido.
-MinSpacing deve ser não negativo.
-A soma dos espaçamentos deve reproduzir o comprimento do domínio.
-A chamada sem padrão deve usar VolumeCentered1D.
+receber NVol;
+receber Length;
+receber XInit;
+receber espaçamento mínimo opcional;
+gerar faces internas aleatórias;
+fixar faces externas;
+ordenar faces;
+validar NVol > 0;
+validar Length > 0;
+validar min_spacing >= 0;
+validar se min_spacing é possível para o domínio.
 ```
 
-Observação conceitual:
+A malha aleatória deve ser útil como teste de estresse geométrico.
+
+### 13.3. `Roberts1D`
+
+Requisitos:
 
 ```text
-Random1D gera uma partição aleatória do domínio por espaçamentos positivos
-normalizados. Essa estratégia não precisa ser idêntica ao procedimento de
-sortear faces internas independentes e depois ordená-las.
+gerar coordenadas por transformação de Roberts;
+validar NVol > 0;
+validar Length > 0;
+validar beta > 1.
 ```
 
-## 14. Requisitos de `Roberts1D`
+O erro para `beta` inválido deve pertencer ao domínio de grid.
 
-`Roberts1D` deve gerar eixos 1D com concentração simétrica controlada por `Beta`.
+### 13.4. `Custom1D`
 
-Entrada:
+Requisitos:
 
 ```text
-NVol
-Length
-XInit
-Beta
-Pattern opcional
+receber Coordinates1D;
+receber GridPattern1D compatível;
+validar compatibilidade entre CoordinateKind1D e input_kind() do padrão;
+delegar reconstrução ao padrão;
+não inferir silenciosamente se a entrada são faces ou centers.
 ```
 
-Regras:
+Quando houver incompatibilidade entre coordenada primária e padrão, usar:
 
 ```text
-NVol deve ser positivo.
-Length deve ser positivo.
-Beta deve ser maior que 1.
-A chamada sem padrão deve usar VolumeCentered1D.
-A geração deve respeitar o domínio [XInit, XInit + Length].
-A geração deve aceitar padrões compatíveis por template.
+errors::grid::InvalidCoordinateKind
 ```
 
-`Roberts1D` deve permanecer independente de herança virtual.
+## 14. Requisitos de operações 1D
 
-## 15. Requisitos de `Custom1D`
+`Operations1D` deve conter operações geométricas entre eixos 1D.
 
-`Custom1D` deve construir `Axis1D` a partir de coordenadas primárias fornecidas pelo usuário.
-
-Assinatura conceitual:
-
-```cpp
-Custom1D::make(
-    Coordinates1D coordinates,
-    Pattern pattern,
-    Domain1D domain = Domain1D::none()
-);
-```
-
-Regras:
+Operações atuais:
 
 ```text
-Custom1D não deve depender de padrões concretos.
-Custom1D deve verificar coordinates.kind() contra Pattern::input_kind().
-Custom1D deve rejeitar combinações incompatíveis.
-Custom1D deve chamar Pattern::complete_geometry().
-Custom1D deve construir Axis1D a partir de AxisGeometry1D.
-```
-
-Casos implementados:
-
-```text
-Coordinates1D::faces(...)   + VolumeCentered1D -> centers reconstruídos;
-Coordinates1D::centers(...) + FaceCentered1D   -> faces reconstruídas.
-```
-
-Casos rejeitados:
-
-```text
-Coordinates1D::centers(...) + VolumeCentered1D;
-Coordinates1D::faces(...)   + FaceCentered1D.
-```
-
-## 16. Requisitos de `Operations1D`
-
-`Operations1D` deve operar sobre eixos 1D já construídos e validados.
-
-Funções esperadas:
-
-```text
-validate_tolerance();
 same_pattern();
 require_same_pattern();
 domain_interval();
@@ -717,327 +721,529 @@ clip_faces_to_interval();
 Regras:
 
 ```text
-Operations1D não deve gerar distribuições primárias.
-Operations1D não deve modificar eixos existentes.
-Operations1D pode retornar novos Axis1D quando a operação criar nova geometria.
-Operations1D deve validar tolerâncias.
-Operations1D deve rejeitar interseções vazias quando a operação exigir intervalo não vazio.
+tolerância deve ser finita e não negativa;
+operações não devem alterar eixos de entrada;
+resultados devem ser novos objetos;
+interseção vazia deve ser representável;
+operações que exigem intervalo não vazio devem lançar erro tipado.
 ```
 
-Ponto a decidir no Gate 8:
+Erros esperados:
 
 ```text
-Decidir se clip_faces_to_interval() preserva pattern_name original ou usa
-um pattern_name próprio de operação.
+errors::operation::InvalidTolerance;
+errors::operation::IncompatibleGridPatterns;
+errors::operation::EmptyGridIntersection.
 ```
 
-## 17. Requisitos de output 1D
+Ponto a decidir em gate futuro:
 
-`Axis1DCSVWriter` deve exportar `Axis1D` para CSV.
+```text
+Definir se clip_faces_to_interval deve preservar pattern_name original,
+usar pattern_name específico de operação ou registrar ambas as informações.
+```
+
+## 15. Requisitos de output
+
+O módulo de output deve ser separado do core geométrico.
+
+Requisitos gerais:
+
+```text
+não introduzir dependência do core em output;
+não alterar objetos geométricos durante escrita;
+usar std::ostream quando possível;
+ter overload para arquivo quando aplicável;
+criar diretórios pais quando necessário;
+lançar erro tipado em falha de abertura;
+lançar erro tipado em falha de escrita.
+```
+
+Erros esperados:
+
+```text
+errors::output::FileOpenFailed;
+errors::output::FileWriteFailed.
+```
+
+### 15.1. CSV 1D
+
+`Axis1DCSVWriter` deve escrever saída tabular estável.
+
+Cabeçalho obrigatório:
+
+```text
+i,xF,xC,Dx,dx
+```
+
+Interpretação:
+
+```text
+i   -> índice da linha;
+xF  -> coordenada da face;
+xC  -> coordenada do centro, quando houver;
+Dx  -> comprimento do volume, quando houver;
+dx  -> distância associada aos centros.
+```
+
+A última linha representa a última face. Portanto, ela não possui centro nem comprimento de célula.
+
+Exemplo conceitual para duas células:
+
+```text
+0,0,0.5,1,0.5
+1,1,2,2,1.5
+2,3,,,1
+```
+
+### 15.2. Saída humana de `Axis1D`
+
+`operator<<(std::ostream&, const Axis1D&)` deve produzir saída diagnóstica legível.
+
+Deve conter:
+
+```text
+nome Axis1D;
+pattern_name;
+número de faces;
+número de células;
+xmin;
+xmax;
+length;
+tabela com xface[i], xcenter[i], dxface[i], dxcenter[i].
+```
+
+A última face deve ser impressa sem centro e sem comprimento de célula.
+
+Essa saída é diagnóstica e não deve ser usada como formato estável de dados.
+
+### 15.3. VTK 2D experimental
+
+`LegacyVTKRectilinearGrid2DWriter` é experimental.
 
 Requisitos:
 
 ```text
-escrever em std::ostream;
-escrever em arquivo;
-criar diretórios pais quando necessário;
-usar precisão suficiente para double;
-emitir erro claro em falha de abertura;
-emitir erro claro em falha de escrita.
+escrever VTK Legacy ASCII;
+usar DATASET RECTILINEAR_GRID quando o sistema permitir;
+usar DATASET STRUCTURED_GRID quando necessário;
+escrever coordenadas de pontos;
+escrever cell_area como CELL_DATA;
+lançar erro tipado em falha de abertura ou escrita.
 ```
 
-O formato CSV deve ser documentado no README ou na documentação técnica.
+O escritor VTK 2D ainda não é Stable Public API.
 
-## 18. Requisitos experimentais de 2D
+## 16. Requisitos de grids estruturados 2D
 
-O módulo 2D deve ser tratado como experimental enquanto sua API não for congelada.
+`StructuredGrid2D` é experimental.
 
-`StructuredGrid2D` deve compor dois `Axis1D` independentes.
-
-Requisitos mínimos:
+Deve ser composto por dois eixos 1D independentes:
 
 ```text
-armazenar primeiro eixo;
-armazenar segundo eixo;
-fornecer número de células em cada direção;
-fornecer número total de células;
-fornecer número de faces em cada direção;
-fornecer indexação linear;
-fornecer coordenadas de faces;
-fornecer coordenadas de centros;
-fornecer medidas computacionais;
-fornecer medidas físicas por traits de coordenadas;
-validar índices de consulta.
+first_axis;
+second_axis.
 ```
 
-A extensão para diferentes sistemas de coordenadas deve usar:
+Deve fornecer:
 
 ```text
-traits;
-concepts;
-templates;
-factories;
-composição por valor.
+num_cells_x();
+num_cells_y();
+num_cells();
+num_faces_x();
+num_faces_y();
+xmin();
+xmax();
+ymin();
+ymax();
+length_x();
+length_y();
+x_face();
+y_face();
+x_center();
+y_center();
+x_cell_length();
+y_cell_length();
+cell_area();
+cell_measure();
+physical_face_point();
 ```
 
-Não usar:
+Deve validar índices com erro tipado:
 
 ```text
-classe base virtual para sistemas de coordenadas;
-ponteiro polimórfico obrigatório;
-estado global de sistema de coordenadas.
+errors::core::OutOfRange
 ```
 
-## 19. Requisitos experimentais de sistemas de coordenadas 2D
-
-Sistemas de coordenadas 2D devem fornecer, por traits ou objetos concretos:
+Deve armazenar ou calcular:
 
 ```text
-name();
-first_coordinate_name();
-second_coordinate_name();
-vtk_rectilinear();
-map(first, second);
-cell_measure(cell);
+cell_measures;
+first_face_measures;
+second_face_measures;
+physical_face_points.
 ```
 
-Métricas adicionais podem ser fornecidas por funções especializadas ou fallback geométrico.
+A API 2D pode mudar antes de estabilização.
 
-Sistemas atualmente previstos ou experimentais:
+## 17. Requisitos de sistemas de coordenadas 2D
+
+Sistemas de coordenadas 2D são experimentais.
+
+Objetivo:
 
 ```text
-CartesianCoordinates2D;
-PolarCoordinates2D;
-AxisymmetricCoordinates2D;
-SphericalAxisymmetricCoordinates2D;
-FunctionalCoordinateMapping2D.
+permitir composição 2D por eixos lógicos;
+permitir mapeamento para coordenadas físicas;
+permitir cálculo de métricas geométricas;
+permitir futura extensão para sistemas não cartesianos.
 ```
 
-Antes de estabilizar o módulo, devem ser revisados:
+O sistema cartesiano 2D deve ser o padrão estável de referência conceitual, embora o módulo 2D ainda esteja classificado como experimental.
+
+Regras:
 
 ```text
-nomes físicos das coordenadas;
-validade dos domínios;
-positividade das medidas;
-compatibilidade com VTK;
-precisão das métricas de face;
-testes analíticos.
+mapeamentos devem ser explícitos;
+métricas devem ser validadas;
+medidas de célula devem ser finitas e positivas;
+medidas de face devem ser finitas e não negativas.
 ```
 
-## 20. Requisitos experimentais de output 2D
+## 18. Requisitos de testes
 
-O writer VTK 2D deve permanecer experimental até que seu contrato seja fechado.
+Todo módulo estável deve ter testes unitários.
 
-Antes de estabilizar:
+Os testes devem cobrir:
 
 ```text
-decidir se o writer exporta apenas VTK RectilinearGrid;
-decidir se grids não retangulares devem ser rejeitados;
-testar dimensões;
-testar número de pontos;
-testar número de células;
-testar arquivo mínimo legível;
-documentar limitações.
+construção válida;
+validação de entradas inválidas;
+mensagens/códigos de erro quando fizer sentido;
+identidade de classes;
+contratos de saída;
+casos de borda.
 ```
 
-O nome do writer deve corresponder exatamente ao formato exportado.
-
-## 21. Requisitos de exemplos
-
-Cada funcionalidade pública estável deve ter exemplo executável.
-
-Exemplos obrigatórios para API estável:
+Para `ErrorHandling`, os testes devem cobrir:
 
 ```text
-Minimal;
-ErrorHandling;
-Axis1D;
-Uniform1D;
-Random1D;
-Roberts1D;
-Custom1D;
-Operations1D;
-Axis1DCSVWriter.
+BuiltInErrors;
+ErrorDescriptor;
+ErrorTraits;
+ErrorContext;
+ErrorRecord;
+FVGridException;
+ThrowError.
 ```
 
-Exemplos recomendados para API experimental:
+Não deve haver testes ativos para:
 
 ```text
-StructuredGrid2D;
-CoordinateSystems2D;
-VTK2D.
+ErrorCodes.h;
+ErrorCatalog.h;
+namespace error_code;
+namespace error_catalog.
 ```
 
-Exemplos futuros podem usar YAML, desde que YAML fique restrito ao diretório `examples/` e não entre em `FVGridMakerLib`.
-
-Regra de impressão para eixos 1D:
+Para `Axis1D`, os testes devem cobrir:
 
 ```text
-linhas 0..nvol-1 têm xface, xcenter, dxface, dxcenter;
-linha nvol tem xface e dxcenter;
-linha nvol não tem xcenter nem dxface.
+faces;
+centers;
+dx_faces;
+dx_centers;
+cell_lengths como alias;
+bounds;
+length;
+pattern_name;
+validação geométrica;
+operator<<.
 ```
 
-## 22. Requisitos de testes
-
-Toda classe nova deve ter GoogleTest.
-
-Testes obrigatórios para API estável:
+Para CSV, os testes devem cobrir:
 
 ```text
-tst_ID
-tst_Types
-tst_StrongTypes
-tst_Version
-tst_ErrorCodes
-tst_ErrorCatalog
-tst_ErrorRecord
-tst_FVGridException
-tst_ThrowError
-tst_Coordinates1D
-tst_Domain1D
-tst_GridPattern1D
-tst_Axis1D
-tst_Uniform1D
-tst_Random1D
-tst_Roberts1D
-tst_Custom1D
-tst_Operations1D
-tst_Axis1DCSVWriter
+cabeçalho exato;
+linhas de células;
+última face com campos vazios;
+criação de diretório pai;
+falha de stream;
+falha ao escrever em diretório.
 ```
 
-Testes recomendados para API experimental:
+## 19. Requisitos de exemplos
+
+Exemplos devem compilar com a API pública atual.
+
+Regras:
 
 ```text
-tst_StructuredGrid2D
-tst_CoordinateSystem2D
-tst_CoordinateMetrics2D
-tst_LegacyVTKRectilinearGrid2DWriter
+não usar headers removidos;
+não usar APIs antigas;
+não usar ErrorCodes.h;
+não usar ErrorCatalog.h;
+não usar namespace error_code;
+não usar namespace error_catalog;
+usar erros tipados quando exemplificar ErrorHandling.
 ```
 
-Todo bloco deve ser fechado com:
+Exemplos podem usar YAML apenas como aplicação externa, desde que isso não introduza dependência em `FVGridMakerLib`.
 
-```bash
-cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
-cmake --build build-tests
-ctest --test-dir build-tests --output-on-failure
-```
+## 20. Requisitos de documentação
 
-E, quando houver exemplo público:
+A documentação deve refletir apenas a arquitetura atual.
 
-```bash
-cmake -S . -B build-examples -DBUILD_EXAMPLES=ON -DBUILD_TESTS=OFF
-cmake --build build-examples
-```
-
-Se os targets agregados estiverem disponíveis:
-
-```bash
-cmake --build build-tests --target run_all_tests
-cmake --build build-examples --target run_all_examples
-```
-
-## 23. Definition of Done do Gate 1
-
-O Gate 1 estará fechado quando:
+Documentos que devem permanecer sincronizados:
 
 ```text
-FVGridMaker.h separar claramente API estável e API experimental;
-README.md listar a mesma classificação;
-FVGridMaker_requisitos.md listar a mesma classificação;
-nenhum módulo experimental for apresentado como estável;
-YAML continuar fora de FVGridMakerLib;
-2D e VTK permanecerem experimentais até revisão específica;
-o roadmap conter apenas itens ainda não estabilizados;
-nenhuma classe virtual tiver sido introduzida;
-nenhuma dependência externa tiver sido adicionada ao core;
-os comandos de build e teste passarem localmente.
+README.md;
+FVGridMaker_requisitos.md;
+FVGridMaker_tree.md;
+FVGridMaker_cronograma_por_gates.md.
 ```
 
-## 24. Definition of Done do Gate 2
+A documentação não deve apresentar APIs removidas como atuais.
 
-O Gate 2 estará fechado quando:
+Termos obsoletos devem ser removidos ou explicitamente marcados como históricos:
 
 ```text
-CMakeLists.txt definir a versão semântica canônica da biblioteca;
-a versão semântica atual for 0.2.0;
-cmake/templates/version.hpp.in gerar metadados de versão no namespace fvgrid::build_info;
-FVGridMaker/Core/Version.h consumir o header gerado por CMake;
-Version.h não duplicar manualmente a versão semântica;
-version_string() retornar 0.2.0;
-full_version_string() retornar a versão completa com metadados quando disponíveis;
-version() continuar retornando a versão semântica para compatibilidade;
-tests/Core/tst_Version.cc testar a versão 0.2.0;
-git grep não encontrar Version: 0.1.0;
-git grep não encontrar Version: 1.0.0;
-git grep não encontrar 1.0.0 fora de contexto aceitável;
-exemplos compilarem;
-testes compilarem;
-ctest passar.
+AxisGrid1D;
+ErrorCodes;
+ErrorCatalog;
+error_code;
+error_catalog;
+YAML interno à biblioteca.
 ```
 
-Comandos mínimos de validação do Gate 2:
+## 21. Requisitos de build
 
-```bash
-git grep -n "Version: 0.1.0"
-git grep -n "Version: 1.0.0"
-git grep -n "1.0.0"
+O projeto deve ser construído por CMake.
 
-rm -rf build-tests build-examples
-
-cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
-cmake --build build-tests
-ctest --test-dir build-tests --output-on-failure
-cmake --build build-tests --target run_all_tests
-
-cmake -S . -B build-examples -DBUILD_EXAMPLES=ON -DBUILD_TESTS=OFF
-cmake --build build-examples
-cmake --build build-examples --target run_all_examples
-```
-
-## 25. Definition of Done do Gate 3
-
-O Gate 3 estará fechado quando:
+Requisitos:
 
 ```text
-Types.h incluir explicitamente todos os headers padrão necessários;
-Types.h continuar independente de qualquer módulo superior;
-StrongTypes.h continuar independente de qualquer módulo superior;
-StrongTypes.h não validar valores físicos ou geométricos;
-validações de NVol, Length, MinSpacing e Beta permanecerem nas fábricas correspondentes;
-StrongReal e StrongInteger forem final;
-StrongReal e StrongInteger não forem polimórficos;
-NVol, Length, XInit, XFinal, MinSpacing, Beta e Seed estiverem cobertos por testes;
-ID for final;
-ID não for polimórfico;
-ID continuar leve, copiável e constexpr;
-ID não depender de ErrorHandling;
-Version.h consumir apenas o header gerado pelo CMake e a biblioteca padrão;
-Version.h não depender de OneDimensional, TwoDimensional, Output, ErrorHandling, Examples ou Tests;
-Version.cc continuar contendo apenas a função de compatibilidade version();
-todos os cabeçalhos do Core usarem Version: see <FVGridMaker/Core/Version.h>;
-todos os testes de Core passarem;
-ctest passar para o bloco Core;
-a build completa de testes passar;
-a build completa de exemplos passar.
+C++20;
+biblioteca FVGridMakerLib independente;
+testes opcionais por flag de build;
+exemplos opcionais por flag de build;
+sem dependência obrigatória de yaml-cpp;
+sem dependência obrigatória de bibliotecas geométricas externas.
 ```
 
-Comandos mínimos de validação do Gate 3:
+O build deve gerar:
 
-```bash
-git grep -n "Version: 0.1.0" FVGridMakerLib/include/FVGridMaker/Core tests/Core
-git grep -n "Version: 1.0.0" FVGridMakerLib/include/FVGridMaker/Core tests/Core
+```text
+biblioteca FVGridMaker;
+exemplos;
+testes unitários;
+alvos auxiliares de execução de testes.
+```
 
-rm -rf build-gate3-check
+Alvos de teste devem permitir:
 
-cmake -S . -B build-gate3-check -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
-cmake --build build-gate3-check
-ctest --test-dir build-gate3-check --output-on-failure -R "Types|StrongTypes|ID|Version"
-ctest --test-dir build-gate3-check --output-on-failure
+```text
+rodar teste individual;
+rodar todos os testes.
+```
 
-rm -rf build-gate3-examples
+## 22. Requisitos de desempenho
 
-cmake -S . -B build-gate3-examples -DBUILD_TESTS=OFF -DBUILD_EXAMPLES=ON
-cmake --build build-gate3-examples
-cmake --build build-gate3-examples --target run_all_examples
+A biblioteca deve evitar custos desnecessários em hot paths.
 
+Regras:
+
+```text
+armazenar dados geométricos em vetores contíguos;
+expor leitura por std::span;
+evitar alocação em consultas simples;
+evitar virtual dispatch no core;
+preferir funções pequenas e inline quando apropriado;
+evitar cópia desnecessária de vetores grandes;
+preservar move semantics em construtores.
+```
+
+A clareza da API pública não deve justificar custos evitáveis em rotinas fundamentais.
+
+## 23. Requisitos de estilo
+
+Código deve usar:
+
+```text
+comentários em inglês;
+nomes de API em inglês;
+mensagens de erro em inglês;
+arquivos organizados por módulo;
+pastas de módulo com inicial maiúscula, seguindo o padrão atual do projeto.
+```
+
+Namespaces internos podem usar minúsculas, como:
+
+```text
+fvgrid::detail
+```
+
+Pastas internas devem seguir o padrão visual do projeto:
+
+```text
+Detail
+```
+
+## 24. Estado dos gates
+
+### Gate 1 — Escopo público
+
+Estado:
+
+```text
+concluído.
+```
+
+Resultado:
+
+```text
+API pública classificada;
+Core, ErrorHandling, OneDimensional e CSV definidos como estáveis;
+TwoDimensional e VTK definidos como experimentais;
+YAML removido do núcleo da biblioteca.
+```
+
+### Gate 2 — Versionamento
+
+Estado:
+
+```text
+concluído.
+```
+
+Resultado:
+
+```text
+versão canônica em CMake;
+Core/Version.h expõe versão pública;
+headers não devem duplicar versão literal.
+```
+
+### Gate 3 — Core
+
+Estado:
+
+```text
+concluído.
+```
+
+Resultado:
+
+```text
+Types;
+StrongTypes;
+ID;
+Version;
+identidade sem enum central.
+```
+
+### Gate 4 — ErrorHandling
+
+Estado:
+
+```text
+concluído.
+```
+
+Resultado:
+
+```text
+ErrorHandling refatorado para erros tipados;
+BuiltInErrors substitui catálogo global;
+ErrorCodes.h removido;
+ErrorCatalog.h removido;
+ThrowError.h header-only;
+testes e exemplos migrados.
+```
+
+### Gate 5 — Output/Formatting
+
+Estado:
+
+```text
+concluído.
+```
+
+Resultado:
+
+```text
+travessia tabular de Axis1D centralizada;
+operator<< e Axis1DCSVWriter usam helper comum;
+contrato humano protegido por teste;
+contrato CSV protegido por teste.
+```
+
+## 25. Próximos gates candidatos
+
+### Gate 6 — Documentação e limpeza de artefatos antigos
+
+Objetivo:
+
+```text
+sincronizar README.md;
+sincronizar FVGridMaker_tree.md;
+sincronizar FVGridMaker_cronograma_por_gates.md;
+remover referências antigas a ErrorCodes/ErrorCatalog;
+remover referências antigas a AxisGrid1D;
+garantir que a documentação pública descreve a arquitetura atual.
+```
+
+### Gate futuro — Semântica de pattern_name
+
+Objetivo:
+
+```text
+definir se pattern_name representa o padrão geométrico original;
+definir se pattern_name representa a operação que gerou o eixo;
+definir como preservar histórico de operações, se necessário.
+```
+
+### Gate futuro — Estabilização 2D
+
+Objetivo:
+
+```text
+decidir se StructuredGrid2D será promovido a Stable Public API;
+consolidar sistemas de coordenadas 2D;
+consolidar métricas 2D;
+reforçar testes de VTK 2D;
+definir contratos de output 2D.
+```
+
+### Gate futuro — Consumo externo
+
+Objetivo:
+
+```text
+testar instalação;
+testar find_package;
+testar uso por projeto externo mínimo;
+validar headers públicos;
+validar exportação de targets CMake.
+```
+
+## 26. Critério de aceitação global
+
+Um gate só deve ser considerado fechado quando:
+
+```text
+biblioteca compila;
+exemplos compilam;
+testes passam;
+documentação relevante é atualizada;
+git está limpo ou com alterações intencionais prontas para commit.
+```
+
+Para mudanças arquiteturais, também exigir:
+
+```text
+remoção de APIs antigas do fluxo ativo;
+testes cobrindo o novo contrato;
+documentação explicitando a decisão de projeto.
+```
