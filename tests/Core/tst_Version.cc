@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: tst_Version.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Tests the version constants and accessors used by FVGridMaker.
 // Author: FVGridMaker Team
 // License: MIT
@@ -26,13 +26,18 @@
 namespace fvgrid {
 
 TEST(Version, VersionNumbersAreAvailable) {
-    EXPECT_EQ(version_major(), 1);
-    EXPECT_EQ(version_minor(), 0);
+    EXPECT_EQ(version_major(), 0);
+    EXPECT_EQ(version_minor(), 2);
     EXPECT_EQ(version_patch(), 0);
 }
 
 TEST(Version, VersionStringIsAvailable) {
-    EXPECT_EQ(version_string(), std::string_view{"1.0.0"});
+    EXPECT_EQ(version_string(), std::string_view{"0.2.0"});
+}
+
+TEST(Version, FullVersionStringIsAvailable) {
+    EXPECT_FALSE(full_version_string().empty());
+    EXPECT_TRUE(full_version_string().starts_with(version_string()));
 }
 
 TEST(Version, RootVersionFunctionMatchesVersionString) {
@@ -44,6 +49,25 @@ TEST(Version, VersionConstantsMatchAccessors) {
     EXPECT_EQ(kVersionMinor, version_minor());
     EXPECT_EQ(kVersionPatch, version_patch());
     EXPECT_EQ(kVersionString, version_string());
+    EXPECT_EQ(kFullVersionString, full_version_string());
+}
+
+TEST(Version, GitMetadataAccessorsAreAvailable) {
+    EXPECT_FALSE(git_hash().empty());
+    EXPECT_FALSE(git_branch().empty());
+}
+
+TEST(Version, BuildMetadataAccessorsAreAvailable) {
+    EXPECT_FALSE(build_timestamp().empty());
+    EXPECT_FALSE(build_date().empty());
+}
+
+TEST(Version, BuildClassificationAccessorsAreCallable) {
+    [[maybe_unused]] const bool development_build = is_development_build();
+    [[maybe_unused]] const bool tagged_release = is_tagged_release();
+
+    SUCCEED();
 }
 
 }  // namespace fvgrid
+

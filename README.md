@@ -1,3 +1,4 @@
+````markdown
 # FVGridMaker
 
 FVGridMaker is a C++20 library for building structured finite-volume grids.
@@ -14,7 +15,7 @@ Stable API:
 Experimental API:
   TwoDimensional
   VTK 2D output
-```
+````
 
 The one-dimensional API is the stable core of the library. It provides typed grid-generation inputs, one-dimensional axis storage, grid-pattern reconstruction rules, deterministic and random one-dimensional coordinate distributions, interval operations and CSV output.
 
@@ -127,6 +128,70 @@ separate grid geometry storage from grid-pattern reconstruction rules;
 keep grid metrics explicit and stored in dedicated arrays;
 keep examples small, executable and suitable for documentation;
 keep configuration parsers outside the library core.
+```
+
+## Versioning
+
+The semantic version of FVGridMaker is defined in one canonical location:
+
+```text
+CMakeLists.txt
+```
+
+through the CMake project declaration:
+
+```cmake
+project(FVGridMaker
+    VERSION X.Y.Z
+    LANGUAGES CXX
+)
+```
+
+The public version accessors are declared in:
+
+```text
+FVGridMaker/Core/Version.h
+```
+
+CMake generates build-time version metadata in:
+
+```text
+<build-dir>/generated/FVGridMaker/version.hpp
+```
+
+The public semantic version identifies the API release:
+
+```cpp
+fvgrid::version_string()
+fvgrid::version_major()
+fvgrid::version_minor()
+fvgrid::version_patch()
+```
+
+The full version string may include Git metadata for development builds:
+
+```cpp
+fvgrid::full_version_string()
+```
+
+For example, a development build may report:
+
+```text
+0.2.0+48fa0bd9e0c9-dirty
+```
+
+The semantic version remains:
+
+```text
+0.2.0
+```
+
+The suffix `-dirty` means the working tree contained local uncommitted changes when CMake configured the build.
+
+Source and header file comments must not duplicate numerical version values. When a file header contains a `Version` field, it should use:
+
+```text
+Version: see <FVGridMaker/Core/Version.h>
 ```
 
 ## Repository layout
@@ -799,7 +864,7 @@ Source files should use the standard FVGridMaker header:
 // ----------------------------------------------------------------------------
 // File: <FileName>
 // Project: FVGridMaker
-// Version: <version>
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: <short description>
 // Author: FVGridMaker Team
 // License: MIT
@@ -872,7 +937,6 @@ An experimental public API header should compile and be testable, but its interf
 Near-term planned work:
 
 ```text
-stabilise versioning;
 finalise pattern_name semantics;
 complete 2D API review;
 complete VTK writer review;
@@ -884,3 +948,6 @@ prepare a release candidate.
 ## License
 
 MIT License.
+
+```
+```
