@@ -40,18 +40,32 @@
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 
 // ----------------------------------------------------------------------------
-// Stable public API: One-dimensional grids
+// Stable public API: One-dimensional axes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 
+// ----------------------------------------------------------------------------
+// Stable public API: One-dimensional grid patterns
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
+// ----------------------------------------------------------------------------
+// Stable public API: One-dimensional distributions
+// ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/Distribution1D/Custom1D.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Random1D.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Roberts1D.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Uniform1D.h>
 
+// ----------------------------------------------------------------------------
+// Stable public API: One-dimensional operations
+// ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 
 // ----------------------------------------------------------------------------
