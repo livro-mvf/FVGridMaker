@@ -23,11 +23,14 @@
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
 namespace fvgrid {
 
 struct VolumeCentered1D final {
+    using primary_coordinates = FaceCoordinates1D;
+
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
             "OneDimensional",
@@ -44,7 +47,7 @@ struct VolumeCentered1D final {
         return id().class_id();
     }
 
-    [[nodiscard]] static constexpr std::string_view primary_coordinates()
+    [[nodiscard]] static constexpr std::string_view primary_coordinates_name()
         noexcept {
         return "faces";
     }

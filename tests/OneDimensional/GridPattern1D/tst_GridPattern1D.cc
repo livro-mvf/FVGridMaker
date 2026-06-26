@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <concepts>
 #include <string_view>
 #include <vector>
 
@@ -17,6 +18,7 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
@@ -37,9 +39,21 @@ TEST(GridPattern1D, VolumeCenteredMetadataIsStable) {
 }
 
 TEST(GridPattern1D, VolumeCenteredCoordinatesAreCorrect) {
-    EXPECT_EQ(VolumeCentered1D::primary_coordinates(), std::string_view{"faces"});
+    EXPECT_EQ(
+        VolumeCentered1D::primary_coordinates_name(),
+        std::string_view{"faces"}
+    );
     EXPECT_EQ(VolumeCentered1D::secondary_coordinates(), std::string_view{"centers"});
     EXPECT_EQ(VolumeCentered1D::input_kind(), CoordinateKind1D::Faces);
+}
+
+TEST(GridPattern1D, VolumeCenteredDeclaresPrimaryCoordinateTag) {
+    EXPECT_TRUE(
+        (std::same_as<
+            typename VolumeCentered1D::primary_coordinates,
+            FaceCoordinates1D
+        >)
+    );
 }
 
 TEST(GridPattern1D, VolumeCenteredCompletesGeometryFromFaces) {
@@ -71,9 +85,21 @@ TEST(GridPattern1D, FaceCenteredMetadataIsStable) {
 }
 
 TEST(GridPattern1D, FaceCenteredCoordinatesAreCorrect) {
-    EXPECT_EQ(FaceCentered1D::primary_coordinates(), std::string_view{"centers"});
+    EXPECT_EQ(
+        FaceCentered1D::primary_coordinates_name(),
+        std::string_view{"centers"}
+    );
     EXPECT_EQ(FaceCentered1D::secondary_coordinates(), std::string_view{"faces"});
     EXPECT_EQ(FaceCentered1D::input_kind(), CoordinateKind1D::Centers);
+}
+
+TEST(GridPattern1D, FaceCenteredDeclaresPrimaryCoordinateTag) {
+    EXPECT_TRUE(
+        (std::same_as<
+            typename FaceCentered1D::primary_coordinates,
+            CenterCoordinates1D
+        >)
+    );
 }
 
 TEST(GridPattern1D, FaceCenteredCompletesGeometryFromCenters) {
@@ -94,6 +120,22 @@ TEST(GridPattern1D, FaceCenteredCompletesGeometryFromCenters) {
     EXPECT_DOUBLE_EQ(geometry.faces[1], 0.275);
     EXPECT_DOUBLE_EQ(geometry.faces[2], 0.65);
     EXPECT_DOUBLE_EQ(geometry.faces[3], 1.0);
+}
+
+TEST(GridPattern1D, BuiltInPatternsDeclarePrimaryCoordinateTags) {
+    EXPECT_TRUE(
+        (std::same_as<
+            typename VolumeCentered1D::primary_coordinates,
+            FaceCoordinates1D
+        >)
+    );
+
+    EXPECT_TRUE(
+        (std::same_as<
+            typename FaceCentered1D::primary_coordinates,
+            CenterCoordinates1D
+        >)
+    );
 }
 
 }  // namespace fvgrid

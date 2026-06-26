@@ -23,11 +23,14 @@
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
 namespace fvgrid {
 
 struct FaceCentered1D final {
+    using primary_coordinates = CenterCoordinates1D;
+
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
             "OneDimensional",
@@ -44,7 +47,7 @@ struct FaceCentered1D final {
         return id().class_id();
     }
 
-    [[nodiscard]] static constexpr std::string_view primary_coordinates()
+    [[nodiscard]] static constexpr std::string_view primary_coordinates_name()
         noexcept {
         return "centers";
     }
@@ -73,7 +76,8 @@ struct FaceCentered1D final {
         const Real deta = static_cast<Real>(1.0) / static_cast<Real>(cell_count);
 
         for (Size i = 0; i < cell_count; ++i) {
-            centers[i] = map((static_cast<Real>(i) + static_cast<Real>(0.5)) * deta);
+            centers[i] =
+                map((static_cast<Real>(i) + static_cast<Real>(0.5)) * deta);
         }
 
         return centers;
