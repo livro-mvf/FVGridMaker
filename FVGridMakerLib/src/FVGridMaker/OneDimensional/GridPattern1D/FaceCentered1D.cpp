@@ -20,22 +20,38 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FacesFromCenters1D.h>
 
 namespace fvgrid {
+namespace {
 
-std::vector<Real> FaceCentered1D::faces_from_centers(
+[[nodiscard]] FacesFromCenters1D<ConstantWeight1D>
+make_midpoint_reconstructor() {
+    return FacesFromCenters1D{ConstantWeight1D{0.5}};
+}
+
+void validate_domain_for_face_centered(Domain1D domain) {
+    require<errors::core::InvalidArgument>(
+        domain.has_bounds(),
+        FaceCentered1D::id()
+    );
+
+    require<errors::grid::InvalidLength>(
+        domain.xmax() > domain.xmin(),
+        FaceCentered1D::id()
+    );
+}
+
+void validate_centers_for_face_centered(
     std::span<const Real> centers,
     Real x_min,
     Real x_max
 ) {
     require<errors::grid::InvalidCenterCount>(
         !centers.empty(),
-        FaceCentered1D::id()
-    );
-
-    require<errors::grid::InvalidLength>(
-        x_max > x_min,
         FaceCentered1D::id()
     );
 
@@ -61,41 +77,55 @@ std::vector<Real> FaceCentered1D::faces_from_centers(
         centers.back() < x_max,
         FaceCentered1D::id()
     );
+}
 
-    const Size cell_count = centers.size();
+}  // namespace
 
-    std::vector<Real> faces(cell_count + 1);
+std::vector<Real> FaceCentered1D::faces_from_centers(
+    std::span<const Real> centers,
+    Real x_min,
+    Real x_max
+) {
+    validate_domain_for_face_centered(
+        Domain1D::from_bounds(XInit{x_min}, XFinal{x_max})
+    );
 
-    faces.front() = x_min;
-    faces.back() = x_max;
+    validate_centers_for_face_centered(
+        centers,
+        x_min,
+        x_max
+    );
 
-    for (Size i = 1; i < cell_count; ++i) {
-        faces[i] = static_cast<Real>(0.5) * (centers[i - 1] + centers[i]);
-    }
+    std::vector<Real> center_values(centers.begin(), centers.end());
 
-    return faces;
+    AxisGeometry1D geometry = make_midpoint_reconstructor().complete_geometry(
+        std::move(center_values),
+        Domain1D::from_bounds(XInit{x_min}, XFinal{x_max})
+    );
+
+    return std::move(geometry.faces);
 }
 
 AxisGeometry1D FaceCentered1D::complete_geometry(
     std::vector<Real> centers,
     Domain1D domain
 ) {
-    require<errors::core::InvalidArgument>(
-        domain.has_bounds(),
-        FaceCentered1D::id()
-    );
+    validate_domain_for_face_centered(domain);
 
-    std::vector<Real> faces = faces_from_centers(
+    validate_centers_for_face_centered(
         centers,
         domain.xmin(),
         domain.xmax()
     );
 
-    return AxisGeometry1D{
-        std::move(faces),
+    AxisGeometry1D geometry = make_midpoint_reconstructor().complete_geometry(
         std::move(centers),
-        std::string{FaceCentered1D::name()}
-    };
+        domain
+    );
+
+    geometry.pattern_name = std::string{FaceCentered1D::name()};
+
+    return geometry;
 }
 
 }  // namespace fvgrid

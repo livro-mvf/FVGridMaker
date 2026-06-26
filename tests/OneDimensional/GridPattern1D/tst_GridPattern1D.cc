@@ -25,6 +25,7 @@
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FacesFromCenters1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
@@ -248,6 +249,53 @@ TEST(GridPattern1D, FaceCenteredCompletesGeometryFromCenters) {
     EXPECT_DOUBLE_EQ(geometry.faces[1], 0.275);
     EXPECT_DOUBLE_EQ(geometry.faces[2], 0.65);
     EXPECT_DOUBLE_EQ(geometry.faces[3], 1.0);
+}
+
+TEST(GridPattern1D, FaceCenteredMatchesFacesFromCentersWithHalfWeight) {
+    AxisGeometry1D face_centered_geometry =
+        FaceCentered1D::complete_geometry(
+            std::vector<Real>{0.1, 0.45, 0.85},
+            Domain1D::from_length(XInit{0.0}, Length{1.0})
+        );
+
+    const FacesFromCenters1D generic_pattern{ConstantWeight1D{0.5}};
+
+    AxisGeometry1D generic_geometry = generic_pattern.complete_geometry(
+        std::vector<Real>{0.1, 0.45, 0.85},
+        Domain1D::from_length(XInit{0.0}, Length{1.0})
+    );
+
+    EXPECT_EQ(
+        face_centered_geometry.pattern_name,
+        std::string_view{"FaceCentered1D"}
+    );
+    EXPECT_EQ(
+        generic_geometry.pattern_name,
+        std::string_view{"FacesFromCenters1D"}
+    );
+
+    ASSERT_EQ(
+        face_centered_geometry.faces.size(),
+        generic_geometry.faces.size()
+    );
+    ASSERT_EQ(
+        face_centered_geometry.centers.size(),
+        generic_geometry.centers.size()
+    );
+
+    for (Size i = 0; i < face_centered_geometry.faces.size(); ++i) {
+        EXPECT_DOUBLE_EQ(
+            face_centered_geometry.faces[i],
+            generic_geometry.faces[i]
+        );
+    }
+
+    for (Size i = 0; i < face_centered_geometry.centers.size(); ++i) {
+        EXPECT_DOUBLE_EQ(
+            face_centered_geometry.centers[i],
+            generic_geometry.centers[i]
+        );
+    }
 }
 
 TEST(GridPattern1D, BuiltInPatternsDeclarePrimaryCoordinateTags) {
