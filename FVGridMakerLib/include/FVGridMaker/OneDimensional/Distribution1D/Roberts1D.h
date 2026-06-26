@@ -13,6 +13,7 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <cmath>
+#include <concepts>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -26,7 +27,9 @@
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 
 namespace fvgrid {
 
@@ -56,12 +59,13 @@ public:
     );
 
     template <class Pattern>
+        requires GridPattern1D<std::remove_cvref_t<Pattern>>
     [[nodiscard]] static Axis1D make(
         NVol nvol,
         Length length,
         XInit xinit,
         Beta beta,
-        Pattern&&
+        Pattern&& pattern
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
 
@@ -75,12 +79,14 @@ public:
         };
 
         std::vector<Real> primary_coordinates =
-            PatternType::primary_coordinates_from_map(
+            build_primary_coordinates<PatternType>(
                 nvol.value(),
                 map
             );
 
-        AxisGeometry1D geometry = PatternType::complete_geometry(
+        const auto& pattern_ref = pattern;
+
+        AxisGeometry1D geometry = pattern_ref.complete_geometry(
             std::move(primary_coordinates),
             domain
         );
@@ -103,6 +109,37 @@ private:
         Real eta,
         Real beta
     );
+
+    template <class PatternType, class CoordinateMap>
+    [[nodiscard]] static std::vector<Real> build_primary_coordinates(
+        Size cell_count,
+        CoordinateMap&& map
+    ) {
+        using CoordinateTag = typename PatternType::primary_coordinates;
+
+        if constexpr (std::same_as<CoordinateTag, FaceCoordinates1D>) {
+            std::vector<Real> faces(cell_count + static_cast<Size>(1));
+            const Real deta =
+                static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+
+            for (Size i = 0; i <= cell_count; ++i) {
+                faces[i] = map(static_cast<Real>(i) * deta);
+            }
+
+            return faces;
+        } else {
+            std::vector<Real> centers(cell_count);
+            const Real deta =
+                static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+
+            for (Size i = 0; i < cell_count; ++i) {
+                centers[i] =
+                    map((static_cast<Real>(i) + static_cast<Real>(0.5)) * deta);
+            }
+
+            return centers;
+        }
+    }
 };
 
 [[nodiscard]] Axis1D roberts_axis_1d(
@@ -113,6 +150,7 @@ private:
 );
 
 template <class Pattern>
+    requires GridPattern1D<std::remove_cvref_t<Pattern>>
 [[nodiscard]] Axis1D roberts_axis_1d(
     NVol nvol,
     Length length,

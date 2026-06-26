@@ -61,7 +61,7 @@ void Random1D::validate_input(
     NVol nvol,
     Length length,
     MinSpacing min_spacing,
-    CoordinateKind1D input_kind
+    Size interval_count
 ) {
     require<errors::grid::InvalidNVol>(
         nvol.value() > 0,
@@ -77,11 +77,6 @@ void Random1D::validate_input(
         min_spacing.value() >= static_cast<Real>(0.0),
         Random1D::id()
     );
-
-    const Size interval_count =
-        input_kind == CoordinateKind1D::Faces
-            ? nvol.value()
-            : nvol.value() + static_cast<Size>(1);
 
     const Real required_minimum =
         min_spacing.value() * static_cast<Real>(interval_count);

@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <concepts>
 #include <random>
 #include <string_view>
 #include <type_traits>
@@ -26,8 +27,9 @@
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 
 namespace fvgrid {
 
@@ -65,12 +67,13 @@ public:
     );
 
     template <class Pattern>
+        requires GridPattern1D<std::remove_cvref_t<Pattern>>
     [[nodiscard]] static Axis1D make(
         NVol nvol,
         Length length,
         XInit xinit,
         Seed seed,
-        Pattern&&
+        Pattern&& pattern
     ) {
         return make(
             nvol,
@@ -78,18 +81,19 @@ public:
             xinit,
             seed,
             MinSpacing{static_cast<Real>(0.0)},
-            std::remove_cvref_t<Pattern>{}
+            std::forward<Pattern>(pattern)
         );
     }
 
     template <class Pattern>
+        requires GridPattern1D<std::remove_cvref_t<Pattern>>
     [[nodiscard]] static Axis1D make(
         NVol nvol,
         Length length,
         XInit xinit,
         Seed seed,
         MinSpacing min_spacing,
-        Pattern&&
+        Pattern&& pattern
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
 
@@ -97,7 +101,7 @@ public:
             nvol,
             length,
             min_spacing,
-            PatternType::input_kind()
+            interval_count_for_pattern<PatternType>(nvol)
         );
 
         const Domain1D domain = Domain1D::from_length(
@@ -116,7 +120,9 @@ public:
                 random_engine
             );
 
-        AxisGeometry1D geometry = PatternType::complete_geometry(
+        const auto& pattern_ref = pattern;
+
+        AxisGeometry1D geometry = pattern_ref.complete_geometry(
             std::move(primary_coordinates),
             domain
         );
@@ -133,7 +139,7 @@ private:
         NVol nvol,
         Length length,
         MinSpacing min_spacing,
-        CoordinateKind1D input_kind
+        Size interval_count
     );
 
     [[nodiscard]] static std::vector<Real> build_random_partition(
@@ -144,6 +150,17 @@ private:
     );
 
     template <class PatternType>
+    [[nodiscard]] static Size interval_count_for_pattern(NVol nvol) {
+        using CoordinateTag = typename PatternType::primary_coordinates;
+
+        if constexpr (std::same_as<CoordinateTag, FaceCoordinates1D>) {
+            return nvol.value();
+        } else {
+            return nvol.value() + static_cast<Size>(1);
+        }
+    }
+
+    template <class PatternType>
     [[nodiscard]] static std::vector<Real> build_primary_coordinates(
         NVol nvol,
         Length length,
@@ -151,10 +168,12 @@ private:
         MinSpacing min_spacing,
         std::mt19937_64& random_engine
     ) {
+        using CoordinateTag = typename PatternType::primary_coordinates;
+
         const Size cell_count = nvol.value();
         const Real x0 = xinit.value();
 
-        if constexpr (PatternType::input_kind() == CoordinateKind1D::Faces) {
+        if constexpr (std::same_as<CoordinateTag, FaceCoordinates1D>) {
             const std::vector<Real> widths = build_random_partition(
                 cell_count,
                 length.value(),
@@ -162,18 +181,18 @@ private:
                 random_engine
             );
 
-            std::vector<Real> faces(cell_count + 1);
+            std::vector<Real> faces(cell_count + static_cast<Size>(1));
             faces[0] = x0;
 
             for (Size i = 0; i < cell_count; ++i) {
-                faces[i + 1] = faces[i] + widths[i];
+                faces[i + static_cast<Size>(1)] = faces[i] + widths[i];
             }
 
             faces[cell_count] = x0 + length.value();
 
             return faces;
         } else {
-            const Size gap_count = cell_count + 1;
+            const Size gap_count = cell_count + static_cast<Size>(1);
 
             const std::vector<Real> gaps = build_random_partition(
                 gap_count,
@@ -212,6 +231,7 @@ private:
 );
 
 template <class Pattern>
+    requires GridPattern1D<std::remove_cvref_t<Pattern>>
 [[nodiscard]] Axis1D random_axis_1d(
     NVol nvol,
     Length length,
@@ -229,6 +249,7 @@ template <class Pattern>
 }
 
 template <class Pattern>
+    requires GridPattern1D<std::remove_cvref_t<Pattern>>
 [[nodiscard]] Axis1D random_axis_1d(
     NVol nvol,
     Length length,
