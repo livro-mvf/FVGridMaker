@@ -23,6 +23,7 @@
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/Axis1D/Detail/Axis1DRows.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 namespace fvgrid {
@@ -189,13 +190,6 @@ void Axis1D::rebuild_metrics() {
 }
 
 std::ostream& operator<<(std::ostream& os, const Axis1D& axis) {
-    const auto faces = axis.faces();
-    const auto centers = axis.centers();
-    const auto dx_faces = axis.dx_faces();
-    const auto dx_centers = axis.dx_centers();
-
-    const Size nvol = axis.num_cells();
-
     os << "Axis1D\n";
     os << "pattern         : " << axis.pattern_name() << '\n';
     os << "number of faces : " << axis.num_faces() << '\n';
@@ -214,20 +208,34 @@ std::ostream& operator<<(std::ostream& os, const Axis1D& axis) {
 
     os << std::string(70, '-') << '\n';
 
-    for (Size i = 0; i < nvol; ++i) {
-        os << std::setw(6) << i
-           << std::setw(16) << faces[i]
-           << std::setw(16) << centers[i]
-           << std::setw(16) << dx_faces[i]
-           << std::setw(16) << dx_centers[i]
-           << '\n';
-    }
+    detail::for_each_axis1d_row(
+        axis,
+        [&os](
+            Size index,
+            Real face,
+            Real center,
+            Real dx_face,
+            Real dx_center,
+            bool has_cell_data
+        ) {
+            os << std::setw(6) << index
+               << std::setw(16) << face;
 
-    os << std::setw(6) << nvol
-       << std::setw(16) << faces[nvol]
-       << std::setw(16) << ""
-       << std::setw(16) << ""
-       << std::setw(16) << dx_centers[nvol];
+            if (has_cell_data) {
+                os << std::setw(16) << center
+                   << std::setw(16) << dx_face;
+            } else {
+                os << std::setw(16) << ""
+                   << std::setw(16) << "";
+            }
+
+            os << std::setw(16) << dx_center;
+
+            if (has_cell_data) {
+                os << '\n';
+            }
+        }
+    );
 
     return os;
 }

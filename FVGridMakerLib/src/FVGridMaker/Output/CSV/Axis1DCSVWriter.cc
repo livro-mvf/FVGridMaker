@@ -21,6 +21,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
+#include <FVGridMaker/OneDimensional/Axis1D/Detail/Axis1DRows.h>
 #include <FVGridMaker/Output/CSV/Axis1DCSVWriter.h>
 
 namespace fvgrid {
@@ -32,19 +33,29 @@ void Axis1DCSVWriter::write(
     output << std::setprecision(17);
     output << "i,xF,xC,Dx,dx\n";
 
-    const Size nvol = axis.num_cells();
+    detail::for_each_axis1d_row(
+        axis,
+        [&output](
+            Size index,
+            Real face,
+            Real center,
+            Real dx_face,
+            Real dx_center,
+            bool has_cell_data
+        ) {
+            output << index << ','
+                   << face << ',';
 
-    for (Size i = 0; i < nvol; ++i) {
-        output << i << ','
-               << axis.faces()[i] << ','
-               << axis.centers()[i] << ','
-               << axis.cell_lengths()[i] << ','
-               << axis.dx_centers()[i] << '\n';
-    }
+            if (has_cell_data) {
+                output << center << ','
+                       << dx_face << ',';
+            } else {
+                output << ",,";
+            }
 
-    output << nvol << ','
-           << axis.faces()[nvol] << ",,,"
-           << axis.dx_centers()[nvol] << '\n';
+            output << dx_center << '\n';
+        }
+    );
 
     output.flush();
 
