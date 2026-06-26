@@ -1,50 +1,133 @@
 # FVGridMaker
 
-FVGridMaker is a C++20 library for building structured finite-volume grids. The current implementation focuses on one-dimensional structured grids and establishes the core infrastructure that will later support two-dimensional and three-dimensional grid construction, metric evaluation, external configuration examples and export utilities.
+FVGridMaker is a C++20 library for building structured finite-volume grids.
 
-The library is being developed with an emphasis on clear numerical semantics, data-oriented storage, explicit grid-pattern rules and robust error diagnostics.
+The current release scope is divided into two API groups:
 
-## Current scope
+```text
+Stable API:
+  Core
+  ErrorHandling
+  OneDimensional
+  Axis1D CSV output
 
-FVGridMaker currently provides the foundation for structured finite-volume grid generation.
+Experimental API:
+  TwoDimensional
+  VTK 2D output
+```
 
-Implemented components include:
+The one-dimensional API is the stable core of the library. It provides typed grid-generation inputs, one-dimensional axis storage, grid-pattern reconstruction rules, deterministic and random one-dimensional coordinate distributions, interval operations and CSV output.
 
-- project bootstrap and CMake integration;
-- core scalar, index and strongly typed configuration values;
-- immutable class/component identity through `ID`;
-- descriptor-based error handling without enum-based error catalogues;
-- one-dimensional grid-pattern descriptors;
-- typed one-dimensional primary-coordinate input through `Coordinates1D`;
-- one-dimensional domain description through `Domain1D`;
-- one-dimensional axis storage through `Axis1D`;
-- volume-centred uniform one-dimensional grid generation through `Uniform1D`;
-- pattern-aware uniform one-dimensional grid generation through `Uniform1D`;
-- pattern-aware random one-dimensional grid generation through `Random1D`;
-- generic custom one-dimensional axis generation through `Custom1D`;
-- volume-centred reconstruction from faces through `VolumeCentered1D`;
-- face-centred reconstruction from centres through `FaceCentered1D`;
-- examples and tests for the implemented components.
+The two-dimensional API is available as an experimental public API. It provides tensor-product structured grids built from two independent `Axis1D` objects, coordinate-system traits, physical metric evaluation and basic VTK output. Experimental APIs are compiled and tested, but their interface may still change before the next stable release.
 
-`Uniform1D` and `Random1D` generate primary coordinates according to the selected grid pattern. `VolumeCentered1D` receives face coordinates and reconstructs centre coordinates. `FaceCentered1D` receives centre coordinates and reconstructs face coordinates using the physical domain.
+FVGridMaker is developed with an emphasis on clear numerical semantics, data-oriented storage, explicit grid-pattern rules, robust error diagnostics and a small public API.
+
+## Scope
+
+FVGridMaker is intended to handle:
+
+```text
+structured finite-volume grids;
+one-dimensional axes;
+tensor-product multidimensional grids built from one-dimensional axes;
+face coordinates;
+cell-centre coordinates;
+face-to-face spacings;
+centre-to-centre spacings;
+geometric validation;
+secondary-coordinate reconstruction from primary coordinates;
+custom one-dimensional axis construction;
+basic output for inspection and post-processing.
+```
+
+FVGridMaker is not intended to handle:
+
+```text
+differential equations;
+physical fields;
+physical boundary conditions;
+diffusion operators;
+advection operators;
+source-term linearisation;
+matrix assembly;
+linear solvers;
+time integration;
+Voronoi meshes;
+Delaunay triangulations;
+CGAL-based geometry;
+unstructured meshes;
+internal YAML parsing.
+```
 
 YAML support is not part of `FVGridMakerLib`. YAML may be used by examples or external applications, but the library itself must not depend on YAML, `yaml-cpp` or any other configuration parser.
+
+## API status
+
+### Stable public API
+
+The stable public API currently includes:
+
+```text
+Core
+ErrorHandling
+Axis1D
+GridPattern1D
+Uniform1D
+Random1D
+Roberts1D
+Custom1D
+Operations1D
+Axis1DCSVWriter
+```
+
+Stable public modules should remain source-compatible within the same minor release series unless a documented breaking change is introduced.
+
+### Experimental public API
+
+The experimental public API currently includes:
+
+```text
+CoordinateSystem2D
+CoordinateMetrics2D
+CoordinateMappingFactory2D
+StructuredGrid2D
+LegacyVTKRectilinearGrid2DWriter
+```
+
+Experimental modules are available to users and examples, but their API may still change before stabilisation.
+
+### Future work
+
+Future work may include:
+
+```text
+three-dimensional structured grids;
+external YAML examples;
+binary output;
+additional coordinate mappings;
+additional output formats;
+stronger installation and packaging tests.
+```
 
 ## Design principles
 
 FVGridMaker follows these design rules:
 
-- use C++20;
-- keep public APIs independent of external geometry backends;
-- favour contiguous storage and data-oriented design;
-- avoid runtime polymorphism in core grid and metric paths;
-- avoid enum-based closed catalogues for extensible concepts;
-- allow small closed enums only for non-extensible structural choices;
-- use textual, stable identifiers for errors and class identity;
-- separate grid geometry storage from grid-pattern reconstruction rules;
-- keep grid metrics explicit and stored in dedicated arrays;
-- keep examples small, executable and suitable for documentation;
-- keep configuration parsers, including YAML, outside the library core.
+```text
+use C++20;
+favour contiguous storage and data-oriented design;
+expose read-only array views through std::span;
+avoid runtime polymorphism in core grid and metric paths;
+avoid virtual classes in the core API;
+use concepts, traits, templates, factories and value composition for extension;
+avoid enum-based catalogues for extensible concepts;
+allow small closed enums only for non-extensible structural choices;
+use textual, stable identifiers for errors and class identity;
+separate grid geometry storage from grid-pattern reconstruction rules;
+keep grid metrics explicit and stored in dedicated arrays;
+keep examples small, executable and suitable for documentation;
+keep configuration parsers outside the library core.
+```
 
 ## Repository layout
 
@@ -54,13 +137,7 @@ The active implementation is located in:
 FVGridMakerLib/
 ```
 
-The previous implementation, when present, is kept only for reference in:
-
-```text
-FVGridMakerLibOld/
-```
-
-The current source tree is organised as:
+The current source tree is organised around these modules:
 
 ```text
 FVGridMakerLib/
@@ -88,6 +165,7 @@ FVGridMakerLib/
       Distribution1D/
         Custom1D.h
         Random1D.h
+        Roberts1D.h
         Uniform1D.h
 
       GridPattern1D/
@@ -98,29 +176,32 @@ FVGridMakerLib/
         FaceCentered1D.h
         VolumeCentered1D.h
 
+      Operations1D/
+        AxisInterval1D.h
+        Operations1D.h
+
+    TwoDimensional/
+      CoordinateSystem2D/
+        CoordinateMappingFactory2D.h
+        CoordinateMetrics2D.h
+        CoordinateSystem2D.h
+
+      StructuredGrid2D/
+        StructuredGrid2D.h
+
+    Output/
+      CSV/
+        Axis1DCSVWriter.h
+
+      VTK/
+        LegacyVTKRectilinearGrid2DWriter.h
+
   src/FVGridMaker/
-    FVGridMaker.cc
-
     Core/
-      ID.cc
-      Version.cc
-
     ErrorHandling/
-      FVGridException.cc
-      ThrowError.cc
-
     OneDimensional/
-      Axis1D/
-        Axis1D.cpp
-
-      Distribution1D/
-        Custom1D.cc
-        Random1D.cc
-        Uniform1D.cc
-
-      GridPattern1D/
-        FaceCentered1D.cpp
-        VolumeCentered1D.cpp
+    TwoDimensional/
+    Output/
 ```
 
 Examples are located in:
@@ -135,17 +216,25 @@ Tests are located in:
 tests/
 ```
 
+Book-related examples and exercises, when present, are located in:
+
+```text
+capitulos/
+```
+
 ## Core module
 
-The `Core` module currently provides:
+The `Core` module provides:
 
-- `Real`;
-- `Index`;
-- `Size`;
-- fixed-width integer aliases;
-- strongly typed configuration values;
-- version constants and accessors;
-- immutable class identity through `ID`.
+```text
+Real;
+Index;
+Size;
+fixed-width integer aliases;
+strongly typed configuration values;
+version constants and accessors;
+immutable component identity through ID.
+```
 
 Important strong types include:
 
@@ -155,10 +244,11 @@ fvgrid::Length
 fvgrid::XInit
 fvgrid::XFinal
 fvgrid::MinSpacing
+fvgrid::Beta
 fvgrid::Seed
 ```
 
-These types are intentionally not aliases of raw numerical types. They prevent accidental argument swaps in grid-generation functions.
+These types are intentionally not aliases of raw numerical types. They reduce accidental argument swaps in grid-generation functions.
 
 Example:
 
@@ -172,7 +262,7 @@ const fvgrid::Axis1D axis = fvgrid::Uniform1D::make(
 
 ## Class identity
 
-Every relevant class-like component should expose a stable identity.
+Every relevant class-like component that can be the source of an error should expose a stable identity.
 
 The identity is represented by:
 
@@ -200,7 +290,7 @@ This identity is used by the error-handling system to identify where an error oc
 
 ## Error handling
 
-FVGridMaker uses descriptor-based error handling without enum-based catalogues.
+FVGridMaker uses descriptor-based error handling without enum-based error catalogues.
 
 The main components are:
 
@@ -224,7 +314,7 @@ Built-in textual error codes are defined in:
 fvgrid::error_code
 ```
 
-The design is intentionally based on `std::string_view` identifiers, not enums. This allows external projects to define their own error codes and descriptors without modifying FVGridMaker internals.
+The design is intentionally based on textual identifiers, not enums. This allows external projects to define their own error codes and descriptors without modifying FVGridMaker internals.
 
 A diagnostic record stores:
 
@@ -319,7 +409,7 @@ fvgrid::Domain1D::from_bounds(
 
 ## One-dimensional grid patterns
 
-The current grid-pattern descriptors are:
+The current one-dimensional grid-pattern descriptors are:
 
 ```cpp
 fvgrid::VolumeCentered1D
@@ -394,6 +484,7 @@ faces
 centres
 dx_faces
 dx_centers
+pattern_name
 ```
 
 The arrays have the following sizes:
@@ -421,11 +512,15 @@ dx_centers[nvol] = faces[nvol] - centres[nvol - 1]
 
 `Axis1D` also validates:
 
-- face count;
-- centre count;
-- strictly increasing faces;
-- strictly increasing centres;
-- centre coordinates inside the physical domain.
+```text
+face count;
+centre count;
+finite face coordinates;
+finite centre coordinates;
+strictly increasing faces;
+strictly increasing centres;
+centre coordinates inside the physical domain.
+```
 
 `Axis1D` supports formatted stream output:
 
@@ -437,7 +532,7 @@ std::cout << axis << '\n';
 
 `Uniform1D` generates uniform primary coordinates and delegates secondary-coordinate reconstruction to the selected grid pattern.
 
-The default construction remains volume-centred:
+The default construction is volume-centred:
 
 ```cpp
 const fvgrid::Axis1D axis = fvgrid::Uniform1D::make(
@@ -498,37 +593,40 @@ const fvgrid::Axis1D axis = fvgrid::Random1D::make(
 );
 ```
 
-The explicit pattern-aware overloads are:
-
-```cpp
-const fvgrid::Axis1D axis = fvgrid::Random1D::make(
-    fvgrid::NVol{8},
-    fvgrid::Length{1.0},
-    fvgrid::XInit{0.0},
-    fvgrid::Seed{1234},
-    fvgrid::MinSpacing{0.05},
-    fvgrid::VolumeCentered1D{}
-);
-```
-
-and
-
-```cpp
-const fvgrid::Axis1D axis = fvgrid::Random1D::make(
-    fvgrid::NVol{8},
-    fvgrid::Length{1.0},
-    fvgrid::XInit{0.0},
-    fvgrid::Seed{1234},
-    fvgrid::MinSpacing{0.05},
-    fvgrid::FaceCentered1D{}
-);
-```
-
 For `VolumeCentered1D`, `Random1D` generates random face coordinates.
 
 For `FaceCentered1D`, `Random1D` generates random centre coordinates inside the domain.
 
-In both cases, the final geometry is stored in `Axis1D`.
+`Random1D` uses seed-based reproducibility. Its random construction partitions the domain length into positive random spacings, optionally constrained by a minimum spacing.
+
+## Roberts1D
+
+`Roberts1D` generates one-dimensional stretched axes using a Roberts-type coordinate transformation.
+
+The default construction is volume-centred:
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Roberts1D::make(
+    fvgrid::NVol{16},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::Beta{1.5}
+);
+```
+
+`Beta` controls the stretching intensity and must be greater than one.
+
+Explicit grid patterns are also supported:
+
+```cpp
+const fvgrid::Axis1D axis = fvgrid::Roberts1D::make(
+    fvgrid::NVol{16},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0},
+    fvgrid::Beta{1.5},
+    fvgrid::FaceCentered1D{}
+);
+```
 
 ## Custom1D
 
@@ -576,25 +674,73 @@ Coordinates1D::centers(...) + VolumeCentered1D
 Coordinates1D::faces(...)   + FaceCentered1D
 ```
 
-## YAML examples
+## Operations1D
 
-YAML is not part of `FVGridMakerLib`.
+`Operations1D` provides geometric operations on completed `Axis1D` objects.
 
-Future YAML examples must live under `examples/` and must behave like external applications. They may depend on `yaml-cpp`, but only their own example targets may link against it.
+Current operations include:
 
-A YAML example should parse a configuration file and translate it into public FVGridMaker API calls, such as:
-
-```cpp
-fvgrid::Uniform1D::make(...)
-fvgrid::Random1D::make(...)
-fvgrid::Custom1D::make(...)
-fvgrid::Coordinates1D::faces(...)
-fvgrid::Coordinates1D::centers(...)
-fvgrid::Domain1D::from_length(...)
-fvgrid::Domain1D::from_bounds(...)
+```text
+same_pattern()
+require_same_pattern()
+domain_interval()
+intersection()
+require_interval_intersection()
+unique_sorted_coordinates()
+clip_faces_to_interval()
 ```
 
-The library target `FVGridMaker` must not include or link against YAML dependencies.
+`Operations1D` does not generate primary distributions. It operates on axes that have already been built and validated.
+
+## Axis1D CSV output
+
+`Axis1DCSVWriter` writes an `Axis1D` to CSV for inspection and post-processing.
+
+Typical use:
+
+```cpp
+fvgrid::Axis1DCSVWriter::write(axis, "axis.csv");
+```
+
+The output contains face coordinates, centre coordinates and one-dimensional spacings.
+
+## Experimental 2D API
+
+The experimental 2D API builds structured two-dimensional grids from two independent `Axis1D` objects.
+
+The main class is:
+
+```cpp
+fvgrid::StructuredGrid2D
+```
+
+A Cartesian grid can be built from two axes:
+
+```cpp
+const fvgrid::Axis1D x_axis = fvgrid::Uniform1D::make(
+    fvgrid::NVol{4},
+    fvgrid::Length{1.0},
+    fvgrid::XInit{0.0}
+);
+
+const fvgrid::Axis1D y_axis = fvgrid::Uniform1D::make(
+    fvgrid::NVol{3},
+    fvgrid::Length{2.0},
+    fvgrid::XInit{0.0}
+);
+
+const fvgrid::StructuredGrid2D grid{x_axis, y_axis};
+```
+
+Coordinate-system traits may be used to define the physical interpretation of the two independent coordinates. Current experimental coordinate systems include Cartesian, polar, axisymmetric and user-defined functional mappings.
+
+The 2D API is available, but it is still classified as experimental.
+
+## Experimental VTK output
+
+The VTK writer is currently classified as experimental.
+
+It is intended for exporting structured two-dimensional grids for inspection in external tools such as ParaView. Its exact public contract should be finalised before it is promoted to the stable API.
 
 ## Building
 
@@ -614,117 +760,35 @@ make
 
 ## Running examples
 
-Available examples include:
+Examples are enabled by default.
+
+A typical example build is:
 
 ```bash
-make run_ex_Minimal
-make run_ex_ErrorHandling
-make run_ex_Axis1D
-make run_ex_Uniform1D
-make run_ex_Random1D
-make run_ex_Custom1D
+cmake -S . -B build-examples -DBUILD_EXAMPLES=ON -DBUILD_TESTS=OFF
+cmake --build build-examples
 ```
 
-All examples can be run with:
+If the generated project contains `run_all_examples`, all examples can be run with:
 
 ```bash
-make run_all_examples
-```
-
-The `Uniform1D`, `Random1D` and `Custom1D` examples print generated one-dimensional grids as tables with:
-
-```text
-i
-xface[i]
-xcenter[i]
-dxface[i]
-dxcenter[i]
+cmake --build build-examples --target run_all_examples
 ```
 
 ## Running tests
 
-Individual tests can be executed through the generated `run_tst_*` targets.
-
-Important current tests include:
+Tests are disabled by default. Enable them explicitly:
 
 ```bash
-make run_tst_ID
-make run_tst_Types
-make run_tst_StrongTypes
-make run_tst_Version
-make run_tst_ErrorCodes
-make run_tst_ErrorCatalog
-make run_tst_ErrorRecord
-make run_tst_FVGridException
-make run_tst_ThrowError
-make run_tst_Coordinates1D
-make run_tst_Domain1D
-make run_tst_GridPattern1D
-make run_tst_Axis1D
-make run_tst_Uniform1D
-make run_tst_Random1D
-make run_tst_Custom1D
+cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
+cmake --build build-tests
+ctest --test-dir build-tests --output-on-failure
 ```
 
-The complete test suite can be run with:
+If the generated project contains `run_all_tests`, all test executables can also be run with:
 
 ```bash
-ctest --output-on-failure
-```
-
-or through the project target:
-
-```bash
-make run_all_tests
-```
-
-## Current implementation status
-
-Implemented and validated:
-
-```text
-Core
-ErrorHandling
-GridPattern1D metadata
-CoordinateKind1D
-Coordinates1D
-Domain1D
-AxisGeometry1D
-VolumeCentered1D centre reconstruction
-FaceCentered1D face reconstruction
-Axis1D geometry and metric storage
-Uniform1D pattern-aware generation
-Random1D pattern-aware generation
-Custom1D primary-coordinate construction
-Minimal examples
-Unit tests
-```
-
-Current `Uniform1D` status:
-
-```text
-volume-centred default path       : implemented
-explicit VolumeCentered1D path    : implemented
-explicit FaceCentered1D path      : implemented
-```
-
-Current `Random1D` status:
-
-```text
-volume-centred default path       : implemented
-explicit VolumeCentered1D path    : implemented
-explicit FaceCentered1D path      : implemented
-seed-based reproducibility        : implemented
-minimum spacing control           : implemented
-```
-
-Current `Custom1D` status:
-
-```text
-input from faces with VolumeCentered1D   : implemented
-input from centers with FaceCentered1D   : implemented
-coordinate-kind validation              : implemented
-domain-aware face reconstruction         : implemented
+cmake --build build-tests --target run_all_tests
 ```
 
 ## Development conventions
@@ -735,7 +799,7 @@ Source files should use the standard FVGridMaker header:
 // ----------------------------------------------------------------------------
 // File: <FileName>
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: <version>
 // Description: <short description>
 // Author: FVGridMaker Team
 // License: MIT
@@ -778,20 +842,43 @@ fvgrid::require(
 );
 ```
 
-Do not introduce enum-based error codes.
+Do not introduce enum-based error codes. For new error types, add textual codes and descriptors instead.
 
-For new error types, add textual codes and descriptors instead.
+## Public API inclusion rule
+
+A header should be included in `FVGridMaker.h` only after it has been classified as one of:
+
+```text
+Stable public API
+Experimental public API
+```
+
+A stable public API header should have:
+
+```text
+tests;
+at least one usage path in examples or documentation;
+stable naming;
+stable error behaviour;
+no virtual class requirement;
+no YAML dependency;
+no external geometry backend dependency.
+```
+
+An experimental public API header should compile and be testable, but its interface may still change.
 
 ## Roadmap
 
 Near-term planned work:
 
 ```text
-1. Add Operations1D.
-2. Add coordinate-system metric modules.
-3. Add structured 2D grid composition.
-4. Add output/export utilities.
-5. Add external YAML examples.
+stabilise versioning;
+finalise pattern_name semantics;
+complete 2D API review;
+complete VTK writer review;
+add installation and consumer-project tests;
+update manual and registration documentation;
+prepare a release candidate.
 ```
 
 ## License

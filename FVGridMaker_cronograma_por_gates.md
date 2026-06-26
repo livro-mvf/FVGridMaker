@@ -1,660 +1,672 @@
-FVGridMaker - Cronograma por Gates
+A base factual para o cronograma é esta: o projeto já declara como princípios **C++20**, armazenamento contíguo, `std::span`, ausência de polimorfismo em hot paths, ausência de enums para conceitos extensíveis e separação entre core, YAML, output, testes e documentação.  O header público, porém, já expõe módulos além do 1D básico, incluindo `Roberts1D`, `Operations1D`, CSV, VTK e 2D.  Então o cronograma abaixo organiza o fechamento por dependência técnica, não por data.
 
-Este documento define o cronograma técnico atual do FVGridMaker. O avanço deve ocorrer por gates de qualidade, não por calendário.
+# Cronograma técnico para encerramento da programação da FVGridMaker
 
-Regra geral:
+## Princípios fixos do fechamento
 
-```text
-Só avançamos para o próximo bloco quando o bloco anterior estiver compilando,
-testado com GoogleTest, executável por CTest, documentado minimamente e com
-exemplos funcionais quando a funcionalidade for pública.
-```
+A FVGridMaker deve ser encerrada como uma biblioteca C++20 para geração, armazenamento, validação, operação e exportação de grids estruturados para volumes finitos.
 
-## 1. Regras formais de avanço
+As decisões arquiteturais fixas são:
 
 ```text
-1. Nenhum bloco novo começa com teste quebrado.
-2. Nenhum bloco novo começa com exemplo quebrado.
-3. Nenhum bloco novo começa com documentação essencial ausente.
-4. Nenhuma funcionalidade pública entra sem exemplo.
-5. Nenhuma regra geométrica entra sem teste numérico.
-6. Nenhuma distribution nova entra sem teste de invariantes.
-7. Nenhum grid pattern novo entra sem teste.
-8. Nenhuma operation nova entra sem teste.
-9. Nenhum output entra sem arquivo de referência simples.
-10. Nenhum erro esperado entra sem código textual testado.
-11. Nenhum módulo periférico pode criar dependência reversa no núcleo.
-12. Nenhuma categoria extensível deve ser implementada com enum.
-13. Toda classe que possa ser origem de erro deve expor ID próprio.
-14. require() deve receber ErrorDescriptor + ID sempre que possível.
+1. Data-Oriented Design nos caminhos geométricos e numéricos.
+2. Armazenamento contíguo em std::vector.
+3. Exposição de leitura por std::span.
+4. Ausência de classes virtuais no core.
+5. Ausência de herança dinâmica em hot paths.
+6. Uso de classes final, funções livres, factories, concepts e traits.
+7. Separação entre armazenamento geométrico e regra de construção.
+8. Separação entre biblioteca, exemplos, testes, documentação e ferramentas externas.
+9. Nenhuma dependência YAML dentro de FVGridMakerLib.
+10. API pública pequena, estável e coerente com a documentação.
 ```
 
-Observação sobre enums:
+## Gate 1, estabilização do escopo público
+
+Objetivo: decidir exatamente o que entra na versão final da biblioteca.
+
+Atividades:
 
 ```text
-Enums são proibidos para categorias extensíveis, como padrões de grid,
-tipos de erro ou IDs de classe.
-
-Enums pequenos são aceitáveis para escolhas estruturais fechadas. O caso
-atual é CoordinateKind1D, que representa apenas se os dados primários são
-faces ou centers.
+1. Definir se a versão final será 1D apenas, 1D + 2D experimental, ou 1D + 2D oficial.
+2. Classificar cada módulo como público, experimental ou interno.
+3. Revisar FVGridMaker.h para exportar apenas o que deve ser API pública.
+4. Decidir se Roberts1D, Operations1D, CSV, VTK e StructuredGrid2D entram como módulos oficiais.
+5. Remover do umbrella header qualquer módulo que ainda não esteja pronto para ser usado externamente.
+6. Atualizar README para refletir exatamente o escopo implementado.
+7. Atualizar FVGridMaker_requisitos.md para deixar de tratar como futuro o que já está implementado.
 ```
 
-Observação sobre YAML:
+Critério de fechamento:
 
 ```text
-YAML não pertence à biblioteca FVGridMakerLib.
-
-A biblioteca não deve incluir yaml-cpp.
-A biblioteca não deve linkar contra yaml-cpp.
-Nenhum header público da biblioteca deve incluir YAML.
-Nenhuma classe do núcleo deve saber que YAML existe.
-
-YAML pode e deve aparecer futuramente em exemplos, como demonstração de
-uso externo da API pública.
+O header público, o README, os requisitos e os exemplos dizem a mesma coisa sobre o que a biblioteca faz.
 ```
 
-## 2. Status resumido
+Dependências liberadas:
 
 ```text
-Bloco 0  - Fundação do projeto                         CONCLUÍDO
-Bloco 1  - Core                                         CONCLUÍDO
-Bloco 2  - ErrorHandling                                CONCLUÍDO
-Bloco 3  - GridPattern1D básico                         CONCLUÍDO
-Bloco 4  - Axis1D                                       CONCLUÍDO
-Bloco 5  - Uniform1D volume-centred                     CONCLUÍDO
-Bloco 6  - Output textual via operator<<                CONCLUÍDO
-Bloco 7  - Custom1D from primary coordinates            CONCLUÍDO
-Bloco 8  - Distribution1D pattern-aware                 PENDENTE
-Bloco 9  - Random1D                                     PENDENTE
-Bloco 10 - Operations1D                                 PENDENTE
-Bloco 11 - CoordinateSystem                             PENDENTE
-Bloco 12 - StructuredGrid2D                             PENDENTE
-Bloco 13 - Output/export básico                         PENDENTE
-Bloco 14 - Exemplos externos com YAML                   PENDENTE
+Depois deste gate, é possível fechar a API sem continuar movendo classes entre público, experimental e interno.
 ```
 
-## Blocos concluídos
+## Gate 2, correção de versionamento e identidade do projeto
 
-## Bloco 0 - Fundação do projeto
+Objetivo: eliminar ambiguidade entre versão de CMake, cabeçalhos, documentação e release.
 
-Objetivo: criar um projeto mínimo, compilável e testável.
-
-Entregas:
+Atividades:
 
 ```text
-estrutura inicial do projeto;
-FVGridMakerLib/ como nova biblioteca;
-FVGridMakerLibOld/ preservada como legado e fora do build;
-README inicial;
-LICENSE MIT;
-.gitignore;
-.clang-format;
-exemplo mínimo;
-teste mínimo;
-alvos run_ex_Minimal e run_tst_Minimal.
+1. Escolher a versão real da biblioteca.
+2. Corrigir project(... VERSION ...) no CMake.
+3. Corrigir os cabeçalhos que ainda indicam versão diferente.
+4. Padronizar Version.h, version.hpp gerado e função fvgrid::version().
+5. Definir se a versão será 0.x ou 1.0.0.
+6. Garantir que o target info imprima versão, hash Git e estado dirty corretamente.
+7. Remover scripts ou mecanismos de release que estejam desatualizados.
 ```
 
-Gate de saída:
+Recomendação:
 
 ```text
-make run_ex_Minimal passa;
-make run_tst_Minimal passa;
-ctest --output-on-failure passa.
+Não usar 1.0.0 se a API ainda estiver em consolidação.
+Usar 0.2.0 ou 0.3.0 se 1D, Roberts, Operations, CSV e parte 2D forem incluídos.
 ```
 
-Status: concluído.
-
-## Bloco 1 - Core
-
-Objetivo: criar a fundação tipada da biblioteca.
-
-Entregas:
+Critério de fechamento:
 
 ```text
-Types.h;
-StrongTypes.h;
-Version.h;
-ID.h;
-Version.cc;
-ID.cc;
-testes de Types, StrongTypes, Version e ID.
+Toda referência de versão no projeto aponta para a mesma versão semântica.
 ```
 
-Decisão atual sobre `ID`:
+Dependências liberadas:
 
 ```text
-ID é um valor imutável com module, class_name e class_id.
-Não há enum de classes.
-Não há herança virtual para identificação.
-Não há macro DefineIdentity.
-Toda classe deve expor sua própria identidade quando relevante.
+Depois deste gate, pode-se preparar release, documentação técnica e pacote de registro sem contradição.
 ```
 
-Gate de saída:
+## Gate 3, fechamento do Core
+
+Objetivo: estabilizar os tipos fundamentais, identidade e sistema de erro.
+
+Atividades:
 
 ```text
-make run_tst_ID passa;
-make run_tst_Types passa;
-make run_tst_StrongTypes passa;
-make run_tst_Version passa;
-ctest --output-on-failure passa.
+1. Revisar Types.h.
+2. Revisar StrongTypes.h.
+3. Revisar ID.h.
+4. Revisar Version.h.
+5. Confirmar que Real, Size e Index são suficientes para todos os módulos atuais.
+6. Confirmar que NVol, Length, XInit, XFinal, MinSpacing, Beta e Seed cobrem as entradas públicas.
+7. Decidir se strong types validam somente tipo ou também valor.
+8. Manter validação de valor nas fábricas, salvo motivo forte para mover validação para os próprios strong types.
+9. Limpar comentários mortos em headers e fontes.
 ```
 
-Status: concluído.
-
-## Bloco 2 - ErrorHandling
-
-Objetivo: criar um sistema de erro padronizado, textual, extensível e sem `enum`.
-
-Entregas:
+Critério de fechamento:
 
 ```text
-ErrorCodes.h;
-ErrorDescriptor.h;
-ErrorCatalog.h;
-ErrorRecord.h;
-FVGridException.h/.cc;
-ThrowError.h/.cc;
-exemplo Ex_ErrorHandling;
-testes de ErrorCodes, ErrorCatalog, ErrorRecord, FVGridException e ThrowError.
+Core não depende de OneDimensional, TwoDimensional, Output, Tests, Examples ou Docs.
 ```
 
-Decisões:
+Dependências liberadas:
 
 ```text
-códigos de erro são std::string_view;
-mensagens padrão vivem em ErrorCatalog;
-ErrorDescriptor contém code, message e category;
-ErrorRecord contém code, message, category, ID source e source_location;
-FVGridException formata diagnóstico completo;
-require() deve preferir ErrorDescriptor + ID;
-erros externos podem usar descritores próprios sem registrar enum.
+Axis1D, distribuições 1D, operações, 2D e output passam a depender de uma fundação estável.
 ```
 
-Uso interno preferencial:
+## Gate 4, fechamento do sistema de erros
 
-```cpp
-require(
-    condition,
-    error_catalog::kInvalidFaceCount,
-    Axis1D::id()
-);
-```
+Objetivo: estabilizar diagnóstico, exceções e contratos de erro.
 
-Gate de saída:
+Atividades:
 
 ```text
-make run_tst_ErrorCodes passa;
-make run_tst_ErrorCatalog passa;
-make run_tst_ErrorRecord passa;
-make run_tst_FVGridException passa;
-make run_tst_ThrowError passa;
-make run_ex_ErrorHandling passa;
-ctest --output-on-failure passa.
+1. Revisar ErrorCodes.
+2. Revisar ErrorDescriptor.
+3. Revisar ErrorCatalog.
+4. Revisar ErrorRecord.
+5. Revisar FVGridException.
+6. Revisar throw_error() e require().
+7. Remover códigos de erro que pertençam a YAML ou exemplos, se não forem usados pelo core.
+8. Garantir que toda classe capaz de lançar erro exponha id().
+9. Confirmar que source_location está correto em todos os caminhos relevantes.
+10. Padronizar mensagens em inglês.
 ```
 
-Status: concluído.
-
-## Bloco 3 - GridPattern1D básico
-
-Objetivo: criar descritores de padrão 1D e regras iniciais de reconstrução.
-
-Entregas:
+Critério de fechamento:
 
 ```text
-VolumeCentered1D.h/.cpp;
-FaceCentered1D.h/.cpp;
-tst_GridPattern1D.cc.
+Todo erro lançado pela biblioteca produz código textual estável, categoria, mensagem, classe de origem e localização.
 ```
 
-Regras atuais:
+Dependências liberadas:
 
 ```text
-VolumeCentered1D:
-  primary_coordinates   = faces
-  secondary_coordinates = centers
-  input_kind            = Faces
-  centers_from_faces(faces)
-
-FaceCentered1D:
-  primary_coordinates   = centers
-  secondary_coordinates = faces
-  input_kind            = Centers
-  faces_from_centers(centers, x_min, x_max)
+Todos os módulos avançados podem usar diagnóstico consistente sem criar sistemas próprios de erro.
 ```
 
-Observação: `Uniform1D` permanece restrito ao caminho volume-centred. A reconstrução face-centred já existe em `FaceCentered1D` e é usada por `Custom1D`.
+## Gate 5, fechamento de Axis1D
 
-Gate de saída:
+Objetivo: estabilizar a unidade geométrica fundamental.
+
+Atividades:
 
 ```text
-make run_tst_GridPattern1D passa;
-ctest --output-on-failure passa.
+1. Revisar construtores de Axis1D.
+2. Decidir formalmente o significado de pattern_name.
+3. Evitar que pattern_name prometa uma regra geométrica que não foi realmente usada.
+4. Considerar remover ou renomear Axis1D(faces, pattern_name).
+5. Manter Axis1D como armazenamento de geometria completa, não como fábrica de padrões.
+6. Garantir validação de faces, centers, finitude, monotonicidade e interioridade dos centros.
+7. Confirmar tamanhos:
+   faces      = nvol + 1
+   centers    = nvol
+   dx_faces   = nvol
+   dx_centers = nvol + 1
+8. Confirmar que cell_lengths() é alias de leitura para dx_faces().
+9. Padronizar saída operator<<.
+10. Completar testes de borda para NaN, infinito e domínios degenerados.
 ```
 
-Status: concluído.
-
-## Bloco 4 - Axis1D
-
-Objetivo: criar a representação geométrica 1D fundamental.
-
-Entregas:
+Critério de fechamento:
 
 ```text
-Axis1D.h/.cpp;
-tst_Axis1D.cc;
-ex_Axis1D.cc.
+Axis1D só armazena geometria validada e não contém regra específica de geração, exceto se houver construtor explicitamente documentado para isso.
 ```
 
-`Axis1D` armazena:
+Dependências liberadas:
 
 ```text
-faces       tamanho nvol + 1;
-centers     tamanho nvol;
-dx_faces    tamanho nvol;
-dx_centers  tamanho nvol + 1;
-pattern_name.
+Uniform1D, Random1D, Roberts1D, Custom1D, Operations1D, CSV e StructuredGrid2D passam a depender de um eixo fechado.
 ```
 
-Métricas:
+## Gate 6, fechamento dos padrões 1D
+
+Objetivo: estabilizar VolumeCentered1D, FaceCentered1D e o contrato de GridPattern1D.
+
+Atividades:
 
 ```text
-dxface[i]       = xface[i + 1] - xface[i]
-dxcenter[0]     = xcenter[0] - xface[0]
-dxcenter[i]     = xcenter[i] - xcenter[i - 1]
-dxcenter[nvol]  = xface[nvol] - xcenter[nvol - 1]
+1. Revisar CoordinateKind1D.
+2. Revisar Coordinates1D.
+3. Revisar Domain1D.
+4. Revisar AxisGeometry1D.
+5. Revisar VolumeCentered1D.
+6. Revisar FaceCentered1D.
+7. Criar ou consolidar um concept para padrões 1D.
+8. Exigir input_kind() e complete_geometry().
+9. Decidir se name(), primary_coordinates() e secondary_coordinates() também serão obrigatórios.
+10. Garantir que FaceCentered1D rejeite ausência de domínio quando precisar de fronteiras.
+11. Garantir que VolumeCentered1D não dependa de domínio quando não precisar dele.
 ```
 
-Decisão arquitetural:
+Critério de fechamento:
 
 ```text
-Axis1D armazena geometria completa e calcula métricas gerais.
-Axis1D não deve conter regras específicas de reconstrução de padrões.
-VolumeCentered1D calcula centers a partir de faces.
-FaceCentered1D calcula faces a partir de centers e domínio físico.
+Um novo padrão 1D pode ser adicionado sem modificar Uniform1D, Random1D ou Custom1D, desde que satisfaça o concept exigido.
 ```
 
-Gate de saída:
+Dependências liberadas:
 
 ```text
-make run_tst_Axis1D passa;
-make run_ex_Axis1D passa;
-ctest --output-on-failure passa.
+As distribuições 1D podem ser fechadas com traits/concepts em vez de herança virtual.
 ```
 
-Status: concluído.
+## Gate 7, fechamento das distribuições 1D
 
-## Bloco 5 - Uniform1D volume-centred
+Objetivo: estabilizar as formas de geração de eixos 1D.
 
-Objetivo: criar geração uniforme 1D no caminho volume-centred.
-
-Entregas:
+Atividades:
 
 ```text
-Uniform1D.h/.cc;
-tst_Uniform1D.cc;
-ex_Uniform1D.cc.
+1. Revisar Uniform1D.
+2. Revisar Random1D.
+3. Revisar Roberts1D.
+4. Revisar Custom1D.
+5. Confirmar que todas as distribuições aceitam padrões por template, não por ponteiros para base virtual.
+6. Confirmar que a chamada sem padrão usa VolumeCentered1D como padrão.
+7. Documentar a interpretação estatística de Random1D.
+8. Documentar a fórmula e o domínio de validade de Roberts1D.
+9. Confirmar que Roberts1D usa beta > 1.
+10. Confirmar que Random1D respeita min_spacing.
+11. Confirmar reprodutibilidade por Seed.
+12. Adicionar testes para casos extremos:
+    nvol = 1
+    length muito pequeno
+    min_spacing no limite exato
+    beta próximo de 1
+    beta grande
 ```
 
-Regra implementada:
+Critério de fechamento:
 
 ```text
-1. Uniform1D recebe NVol, Length e XInit.
-2. Uniform1D gera faces uniformes.
-3. VolumeCentered1D calcula centers a partir das faces.
-4. Axis1D recebe faces + centers.
-5. Axis1D calcula dx_faces e dx_centers.
+Uniform1D, Random1D, Roberts1D e Custom1D geram Axis1D válido para padrões compatíveis sem conhecer classes derivadas ou bases virtuais.
 ```
 
-Exemplo público:
+Dependências liberadas:
 
 ```text
-make run_ex_Uniform1D
+Operations1D, exemplos 1D, CSV 1D e composição 2D podem ser finalizados sobre geradores estáveis.
 ```
 
-A saída deve mostrar uma tabela com:
+## Gate 8, fechamento de Operations1D
+
+Objetivo: consolidar operações geométricas sobre eixos já construídos.
+
+Atividades:
 
 ```text
-i, xface[i], xcenter[i], dxface[i], dxcenter[i]
+1. Revisar AxisInterval1D.
+2. Revisar Operations1D.
+3. Confirmar semântica de empty, point e interval.
+4. Confirmar tolerância em intersection().
+5. Confirmar comportamento de require_interval_intersection().
+6. Confirmar unique_sorted_coordinates() com tolerância zero e tolerância positiva.
+7. Revisar clip_faces_to_interval().
+8. Decidir se o eixo recortado deve preservar pattern_name original ou receber pattern_name próprio.
+9. Adicionar testes de interseção sem sobreposição, interseção pontual e interseção com tolerância.
+10. Adicionar testes de clipping com faces exatamente nas fronteiras do intervalo.
 ```
 
-Gate de saída:
+Critério de fechamento:
 
 ```text
-make run_tst_Uniform1D passa;
-make run_ex_Uniform1D passa;
-make run_tst_GridPattern1D passa;
-make run_tst_Axis1D passa;
-ctest --output-on-failure passa.
+Operations1D opera somente sobre Axis1D validado e sempre retorna resultados geométricos bem definidos.
 ```
 
-Status: concluído.
-
-## Bloco 6 - Output textual via operator<<
-
-Objetivo: permitir impressão simples de `Axis1D`.
-
-Uso:
-
-```cpp
-std::cout << axis << '\n';
-```
-
-Entregas:
+Dependências liberadas:
 
 ```text
-operator<<(std::ostream&, const Axis1D&);
-teste de streaming em tst_Axis1D.cc;
-exemplos públicos simplificados para usar std::cout << axis.
+Operações de composição, comparação e recorte passam a poder ser usadas por exemplos, output e futuras rotinas 2D.
 ```
 
-Gate de saída:
+## Gate 9, fechamento de Output 1D
+
+Objetivo: estabilizar exportação simples de eixos.
+
+Atividades:
 
 ```text
-make run_tst_Axis1D passa;
-make run_ex_Axis1D passa;
-make run_ex_Uniform1D passa;
-ctest --output-on-failure passa.
+1. Revisar Axis1DCSVWriter.
+2. Decidir nomes finais das colunas.
+3. Padronizar precisão numérica.
+4. Garantir que diretórios sejam criados quando necessário.
+5. Garantir erro claro quando arquivo não puder ser aberto ou escrito.
+6. Adicionar teste de escrita em stream.
+7. Adicionar teste de escrita em arquivo temporário.
+8. Documentar o formato CSV.
 ```
 
-Status: concluído.
-
-## Bloco 7 - Custom1D from primary coordinates
-
-Objetivo: estabilizar a construção customizada de `Axis1D` a partir de coordenadas primárias fornecidas pelo usuário.
-
-Decisão arquitetural:
+Critério de fechamento:
 
 ```text
-O usuário fornece exatamente um tipo de coordenada primária.
-
-VolumeCentered1D:
-  entrada: faces;
-  saída reconstruída: centers.
-
-FaceCentered1D:
-  entrada: centers;
-  saída reconstruída: faces;
-  domínio físico obrigatório.
-
-Cada GridPattern1D declara exatamente um input_kind.
-Custom1D não depende de padrões concretos.
-Custom1D valida se o tipo de coordenada fornecido é compatível com o padrão.
+Um Axis1D pode ser exportado para CSV de forma reprodutível, documentada e testada.
 ```
 
-Entregas:
+Dependências liberadas:
 
 ```text
-CoordinateKind1D.h;
-Coordinates1D.h;
-Domain1D.h;
-AxisGeometry1D.h;
-Custom1D.h/.cc;
-XFinal em StrongTypes.h;
-erro textual FVGRID.GRID.INVALID_COORDINATE_KIND;
-VolumeCentered1D::input_kind();
-VolumeCentered1D::complete_geometry();
-FaceCentered1D::input_kind();
-FaceCentered1D::complete_geometry();
-tst_Coordinates1D.cc;
-tst_Domain1D.cc;
-tst_Custom1D.cc;
-atualização de tst_StrongTypes.cc;
-atualização de tst_ErrorCodes.cc;
-atualização de tst_ErrorCatalog.cc;
-atualização de tst_GridPattern1D.cc;
-ex_Custom1D.cc.
+Exemplos, documentação e material do livro podem usar saída CSV como formato de conferência.
 ```
 
-Gate executado:
+## Gate 10, fechamento dos traits de coordenadas 2D
+
+Objetivo: estabilizar o contrato matemático para sistemas de coordenadas 2D.
+
+Atividades:
 
 ```text
-make run_tst_StrongTypes passa;
-make run_tst_ErrorCodes passa;
-make run_tst_ErrorCatalog passa;
-make run_tst_Coordinates1D passa;
-make run_tst_Domain1D passa;
-make run_tst_GridPattern1D passa;
-make run_tst_Custom1D passa;
-make run_ex_Custom1D passa;
-make run_all_tests passa;
-make run_all_examples passa.
+1. Revisar CoordinateSystem2D.
+2. Revisar CoordinateMetrics2D.
+3. Separar claramente:
+   mapeamento computacional -> físico
+   medida de célula
+   medida da primeira família de faces
+   medida da segunda família de faces
+4. Confirmar traits para cartesiano.
+5. Confirmar traits para polar.
+6. Confirmar traits para axisimétrico cilíndrico.
+7. Confirmar traits para axisimétrico esférico, se permanecer no escopo.
+8. Verificar se nomes first/second são suficientes ou se convém usar coordinate tags.
+9. Evitar std::function em hot paths.
+10. Manter FunctionalCoordinateMapping2D como template concreto, sem virtual.
+11. Testar medidas analíticas contra casos conhecidos.
+12. Melhorar formatação e estilo dos headers 2D.
 ```
 
-Status: concluído.
-
-## Próximos blocos recomendados
-
-## Bloco 8 - Distribution1D pattern-aware
-
-Objetivo: revisar `Distribution1D` para que distribuições gerem coordenadas primárias compatíveis com o padrão escolhido.
-
-Decisão arquitetural:
+Critério de fechamento:
 
 ```text
-Distribution1D gera coordenadas primárias.
-GridPattern1D reconstrói coordenadas secundárias.
-Axis1D armazena geometria completa e calcula métricas.
+Um sistema de coordenadas 2D é definido por traits/concepts, não por classe base virtual.
 ```
 
-Escopo inicial:
+Dependências liberadas:
 
 ```text
-Uniform1D deve preservar a chamada antiga:
-  Uniform1D::make(NVol, Length, XInit)
-
-Essa chamada continua sendo volume-centred por padrão.
-
-Uniform1D deve aceitar padrão explícito:
-  Uniform1D::make(NVol, Length, XInit, VolumeCentered1D{})
-  Uniform1D::make(NVol, Length, XInit, FaceCentered1D{})
-
-Se o padrão aceita Faces:
-  Uniform1D gera faces uniformes.
-
-Se o padrão aceita Centers:
-  Uniform1D gera centers uniformes dentro do domínio.
-
-Depois disso, o padrão completa a geometria.
+StructuredGrid2D pode calcular medidas físicas sem depender de polimorfismo dinâmico.
 ```
 
-Entregas previstas:
+## Gate 11, fechamento de StructuredGrid2D
+
+Objetivo: estabilizar composição bidimensional por dois Axis1D independentes.
+
+Atividades:
 
 ```text
-Uniform1D.h atualizado;
-Uniform1D.cc atualizado;
-tst_Uniform1D.cc atualizado;
-ex_Uniform1D.cc atualizado.
+1. Revisar StructuredGrid2D.
+2. Confirmar indexação linear row-major.
+3. Confirmar nomes x_axis/y_axis versus first_axis/second_axis.
+4. Decidir se x_axis/y_axis devem existir apenas para cartesiano ou como aliases genéricos.
+5. Revisar armazenamento de physical_face_points.
+6. Revisar cell_measures.
+7. Revisar first_face_measures e second_face_measures.
+8. Garantir validação de índices em todas as consultas.
+9. Garantir que medidas físicas sejam positivas ou não negativas conforme o caso.
+10. Testar cartesiano uniforme e não uniforme.
+11. Testar polar com domínio radial positivo.
+12. Testar axisimétrico.
+13. Testar mapeamento funcional definido pelo usuário.
+14. Padronizar estilo de código para o mesmo padrão do módulo 1D.
 ```
 
-Gate de saída:
+Critério de fechamento:
 
 ```text
-make run_tst_Uniform1D passa;
-make run_tst_GridPattern1D passa;
-make run_tst_Custom1D passa;
-make run_tst_Axis1D passa;
-make run_ex_Uniform1D passa;
-make run_all_tests passa;
-make run_all_examples passa.
+StructuredGrid2D representa uma malha estruturada 2D por produto tensorial de dois Axis1D e calcula métricas sem herança virtual.
 ```
 
-Status: pendente.
-
-## Bloco 9 - Random1D
-
-Objetivo: criar distribuição 1D aleatória/controlada.
-
-Pontos pendentes:
+Dependências liberadas:
 
 ```text
-seed;
-monotonicidade;
-controle de mínimo espaçamento;
-uso de GridPattern1D quando a coordenada primária variar;
-testes de reprodutibilidade.
+Exportação VTK 2D e exemplos 2D podem ser fechados sobre uma malha estável.
 ```
 
-Gate de saída:
+## Gate 12, fechamento de Output 2D
+
+Objetivo: estabilizar exportação de grids 2D.
+
+Atividades:
 
 ```text
-make run_tst_Random1D passa;
-make run_ex_Random1D passa;
-make run_all_tests passa;
-make run_all_examples passa.
+1. Revisar LegacyVTKRectilinearGrid2DWriter.
+2. Decidir se o writer suporta apenas grids VTK rectilinear ou também grids curvilíneos.
+3. Se suportar apenas rectilinear, rejeitar explicitamente mapeamentos não retangulares.
+4. Se suportar curvilíneo, renomear writer e ajustar formato VTK.
+5. Adicionar teste de arquivo VTK mínimo.
+6. Adicionar teste para dimensões e número de pontos/células.
+7. Adicionar teste para rejeição de grid incompatível.
+8. Documentar limitações do formato.
 ```
 
-Status: pendente.
-
-## Bloco 10 - Operations1D
-
-Objetivo: operações entre eixos 1D.
-
-Inclui:
+Critério de fechamento:
 
 ```text
-intersecção geométrica;
-merge/soma de eixos;
-remoção de duplicatas;
-remoção de volumes pequenos;
-validação de padrões compatíveis.
+A saída VTK exporta apenas o que o nome do writer promete, sem aceitar silenciosamente geometrias incompatíveis.
 ```
 
-Regra já decidida:
+Dependências liberadas:
 
 ```text
-A intersecção geométrica entre duas grades não pode ser vazia.
-Pode ser um ponto/faces coincidentes.
-Pode ser um intervalo.
+Exemplos visuais e documentação de uso com ParaView podem ser finalizados.
 ```
 
-Gate de saída:
+## Gate 13, exemplos oficiais
+
+Objetivo: garantir que cada funcionalidade pública tenha exemplo mínimo.
+
+Atividades:
 
 ```text
-make run_tst_Operations1D passa;
-make run_ex_Operations1D passa;
-make run_all_tests passa;
-make run_all_examples passa.
+1. Revisar examples/README.md.
+2. Criar exemplo mínimo de Axis1D.
+3. Criar exemplo de Uniform1D.
+4. Criar exemplo de Random1D.
+5. Criar exemplo de Roberts1D.
+6. Criar exemplo de Custom1D.
+7. Criar exemplo de Operations1D.
+8. Criar exemplo de CSV 1D.
+9. Criar exemplo de StructuredGrid2D cartesiano.
+10. Criar exemplo de StructuredGrid2D polar, se polar for oficial.
+11. Criar exemplo de VTK 2D, se VTK for oficial.
+12. Remover exemplos que dependam de API experimental não documentada.
+13. Garantir que exemplos sejam pequenos e adequados ao livro.
 ```
 
-Status: pendente.
-
-## Bloco 11 - CoordinateSystem
-
-Objetivo: calcular medidas geométricas físicas a partir de eixos estruturados.
-
-Decisão:
+Critério de fechamento:
 
 ```text
-CoordinateSystem não gera grid.
-CoordinateSystem interpreta eixos e calcula medidas.
-Deve ser extensível e sem enum central.
+Todo recurso público tem pelo menos um exemplo curto, compilável e executável.
 ```
 
-Gate de saída:
+Dependências liberadas:
 
 ```text
-make run_tst_CoordinateSystem passa;
-make run_ex_CoordinateSystem passa;
-make run_all_tests passa;
-make run_all_examples passa.
+Documentação do usuário pode referenciar exemplos reais em vez de pseudocódigo.
 ```
 
-Status: pendente.
+## Gate 14, testes e gates de qualidade
 
-## Bloco 12 - StructuredGrid2D
+Objetivo: fechar a biblioteca com evidência objetiva de funcionamento.
 
-Objetivo: compor dois `Axis1D` em uma grade estruturada 2D.
-
-Dependências:
+Atividades:
 
 ```text
-Axis1D estável;
-CoordinateSystem básico;
-regras de indexação 2D;
-medidas geométricas.
+1. Rodar build de testes.
+2. Rodar ctest.
+3. Rodar build de exemplos.
+4. Rodar exemplos oficiais.
+5. Rodar sanitizers em Debug.
+6. Rodar build Release.
+7. Rodar Valgrind quando aplicável.
+8. Criar teste de instalação.
+9. Criar teste de uso externo com find_package(FVGridMaker).
+10. Adicionar GitHub Actions, se ainda não houver.
+11. Testar pelo menos GCC e Clang.
+12. Registrar no README os comandos oficiais de verificação.
 ```
 
-Gate de saída:
+Critério de fechamento:
 
 ```text
-make run_tst_StructuredGrid2D passa;
-make run_ex_StructuredGrid2D passa;
-make run_all_tests passa;
-make run_all_examples passa.
+A biblioteca compila, testa, instala e pode ser consumida por um projeto externo mínimo.
 ```
 
-Status: pendente.
-
-## Bloco 13 - Output/export básico
-
-Objetivo: criar uma primeira camada de saída persistente para inspeção externa.
-
-Decisão arquitetural:
+Dependências liberadas:
 
 ```text
-Output é periférico.
-Output não deve criar dependência reversa no núcleo.
-Output não deve modificar grids.
-Output deve ler Axis1D ou StructuredGrid2D e escrever arquivos.
+A versão pode ser considerada candidata a release e a registro.
 ```
 
-Escopo inicial recomendado:
+## Gate 15, instalação e empacotamento CMake
+
+Objetivo: permitir uso externo limpo.
+
+Atividades:
 
 ```text
-CSV para Axis1D;
-CSV para StructuredGrid2D apenas se Bloco 12 estiver concluído;
-formato simples, estável e testável;
-arquivo de referência pequeno.
+1. Revisar ConfigInstall.cmake.
+2. Revisar FVGridMakerConfig.cmake.in.
+3. Confirmar instalação de headers.
+4. Confirmar instalação do target exportado.
+5. Confirmar namespace FVGridMaker::FVGridMaker.
+6. Confirmar version file.
+7. Criar exemplo externo mínimo:
+   find_package(FVGridMaker REQUIRED)
+   target_link_libraries(app PRIVATE FVGridMaker::FVGridMaker)
+8. Testar instalação local em prefixo temporário.
+9. Testar consumo externo fora da árvore do repositório.
 ```
 
-Gate de saída:
+Critério de fechamento:
 
 ```text
-make run_tst_CsvAxis1DWriter passa;
-make run_ex_CsvAxis1DWriter passa;
-make run_all_tests passa;
-make run_all_examples passa.
+Um usuário externo consegue instalar e usar a biblioteca sem conhecer a árvore interna do repositório.
 ```
 
-Status: pendente.
-
-## Bloco 14 - Exemplos externos com YAML
-
-Objetivo: mostrar como uma aplicação externa pode ler configuração YAML e construir objetos da FVGridMaker usando apenas a API pública.
-
-Regra arquitetural:
+Dependências liberadas:
 
 ```text
-YAML não pertence à biblioteca FVGridMakerLib.
-
-A biblioteca não deve incluir yaml-cpp.
-A biblioteca não deve depender de YAML em CMake.
-Nenhum header público da biblioteca deve incluir YAML.
-Nenhuma classe do núcleo deve saber que YAML existe.
-
-O exemplo YAML deve converter configuração externa em chamadas públicas como:
-  Uniform1D::make(...)
-  Custom1D::make(...)
-  Coordinates1D::faces(...)
-  Coordinates1D::centers(...)
-  Domain1D::from_length(...)
+Manual técnico e release passam a poder descrever instalação real.
 ```
 
-Local recomendado:
+## Gate 16, documentação técnica
+
+Objetivo: alinhar documentação com código final.
+
+Atividades:
 
 ```text
-examples/YAML/ex_YamlInput.cc
-examples/YAML/example_uniform.yaml
-examples/YAML/example_custom.yaml
+1. Atualizar README.
+2. Atualizar requisitos.
+3. Atualizar árvore do projeto.
+4. Atualizar documentação de build.
+5. Atualizar documentação de testes.
+6. Atualizar documentação de exemplos.
+7. Escrever manual técnico curto.
+8. Escrever seção de arquitetura.
+9. Escrever seção de API 1D.
+10. Escrever seção de API 2D, se entrar no escopo.
+11. Escrever seção de output, se entrar no escopo.
+12. Documentar explicitamente limitações conhecidas.
+13. Documentar que não há classes virtuais no core.
+14. Documentar o uso de concepts, traits e factories.
 ```
 
-Gate de saída:
+Critério de fechamento:
 
 ```text
-make run_ex_YamlInput passa, quando BUILD_YAML_EXAMPLES=ON e yaml-cpp existir;
-make run_all_examples passa sem exigir YAML quando BUILD_YAML_EXAMPLES=OFF.
+A documentação descreve apenas funcionalidades existentes, testadas e públicas.
 ```
 
-Status: pendente.
+Dependências liberadas:
+
+```text
+A biblioteca fica pronta para release, registro e uso como material de apoio do livro.
+```
+
+## Gate 17, limpeza final de repositório
+
+Objetivo: remover ruído antes de congelar a versão.
+
+Atividades:
+
+```text
+1. Remover arquivos antigos que não entram no pacote final.
+2. Remover diretórios experimentais não usados.
+3. Garantir que scripts locais estejam no .gitignore, se não forem parte do projeto.
+4. Remover comentários mortos.
+5. Padronizar cabeçalhos de arquivos.
+6. Padronizar nomes de arquivos .cc, .cpp ou .cxx.
+7. Padronizar includes.
+8. Rodar formatação, se houver ferramenta adotada.
+9. Revisar licença.
+10. Revisar autoria.
+```
+
+Critério de fechamento:
+
+```text
+O repositório contém apenas código, exemplos, testes e documentação que pertencem à versão final.
+```
+
+Dependências liberadas:
+
+```text
+Pode-se criar tag, ZIP, hash e pacote de registro.
+```
+
+## Gate 18, candidato a release
+
+Objetivo: congelar uma versão tecnicamente coerente.
+
+Atividades:
+
+```text
+1. Criar branch de release.
+2. Rodar todos os gates de build, teste, exemplo e instalação.
+3. Corrigir apenas bugs bloqueadores.
+4. Atualizar changelog, se existir.
+5. Definir tag.
+6. Criar pacote fonte.
+7. Conferir se o pacote contém apenas arquivos desejados.
+8. Só depois gerar hash, quando for o momento do registro.
+```
+
+Critério de fechamento:
+
+```text
+A versão candidata pode ser reconstruída, testada, instalada e documentada de forma reprodutível.
+```
+
+## Ordem resumida de execução
+
+A ordem recomendada é:
+
+```text
+1. Escopo público
+2. Versionamento
+3. Core
+4. Sistema de erros
+5. Axis1D
+6. GridPattern1D
+7. Distribuições 1D
+8. Operations1D
+9. Output 1D
+10. Coordinate traits 2D
+11. StructuredGrid2D
+12. Output 2D
+13. Exemplos oficiais
+14. Testes e qualidade
+15. Instalação e empacotamento
+16. Documentação técnica
+17. Limpeza de repositório
+18. Candidato a release
+```
+
+## Regra de dependência principal
+
+Nenhuma classe avançada deve ser fechada antes de seus contratos inferiores estarem estáveis.
+
+```text
+Core
+  -> ErrorHandling
+      -> Axis1D
+          -> GridPattern1D
+              -> Distributions1D
+                  -> Operations1D
+                      -> Output1D
+
+Axis1D + CoordinateSystem2D traits
+  -> StructuredGrid2D
+      -> Output2D
+```
+
+## Regra arquitetural final
+
+Nenhum novo recurso deve introduzir:
+
+```text
+1. classe base virtual;
+2. ponteiro para interface polimórfica no core;
+3. herança obrigatória para extensão;
+4. armazenamento fragmentado em hot path;
+5. dependência YAML dentro de FVGridMakerLib;
+6. enum para famílias extensíveis;
+7. API pública maior que a necessária.
+```
+
+Quando for necessário variar comportamento, usar preferencialmente:
+
+```text
+1. concepts;
+2. traits;
+3. templates;
+4. factories;
+5. funções livres;
+6. classes final pequenas;
+7. composição por valor;
+8. armazenamento contíguo.
+```
+
+Eu colocaria como prioridade imediata os **Gates 1 a 5**. Eles destravam todo o restante. Sem fechar escopo, versão, core, erros e `Axis1D`, qualquer ajuste em `2D`, `VTK` ou documentação final pode precisar ser refeito.
