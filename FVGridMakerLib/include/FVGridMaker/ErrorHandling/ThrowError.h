@@ -196,6 +196,7 @@ template <ErrorDescriptorProvider Error>
     );
 }
 
+
 template <ErrorDescriptorProvider Error>
 [[noreturn]] void throw_error(
     ID source,
