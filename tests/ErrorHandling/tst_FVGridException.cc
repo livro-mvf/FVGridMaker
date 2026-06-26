@@ -81,6 +81,7 @@ TEST(FVGridException, WhatContainsStructuredInformation) {
 
     const std::string message{exception.what()};
 
+    
     EXPECT_NE(message.find("[FVGRID.TEST.FORMAT]"), std::string::npos);
     EXPECT_NE(message.find("format test message"), std::string::npos);
     EXPECT_NE(message.find("category: Test"), std::string::npos);

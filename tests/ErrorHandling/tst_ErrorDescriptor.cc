@@ -25,6 +25,7 @@
 
 namespace fvgrid {
 
+    
 TEST(ErrorDescriptor, StoresCodeMessageAndCategory) {
     constexpr ErrorDescriptor descriptor{
         .code = "FVGRID.TEST.ERROR",

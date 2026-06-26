@@ -25,6 +25,7 @@
 // ----------------------------------------------------------------------------
 #include <gtest/gtest.h>
 
+
 namespace fvgrid {
 
 TEST(ErrorContext, StoresKeyAndValue) {

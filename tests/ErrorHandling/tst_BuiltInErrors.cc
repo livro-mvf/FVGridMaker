@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 #include <gtest/gtest.h>
 
+
 namespace fvgrid {
 
 TEST(BuiltInErrors, CoreErrorsAreStable) {

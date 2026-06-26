@@ -132,6 +132,7 @@ TEST(ThrowError, RuntimeThrowErrorStoresExplicitSourceLocation) {
     FAIL() << "throw_error did not throw FVGridException.";
 }
 
+
 TEST(ThrowError, TypedThrowErrorStoresBuiltInDescriptor) {
     try {
         throw_error<errors::grid::InvalidNVol>(test_id());

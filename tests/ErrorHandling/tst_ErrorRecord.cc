@@ -25,6 +25,7 @@
 
 namespace fvgrid {
 
+    
 TEST(ErrorRecord, StoresCodeMessageCategoryContextAndSource) {
     const ErrorRecord record{
         .code = "FVGRID.TEST.ERROR",
