@@ -1,31 +1,16 @@
-````markdown
 # FVGridMaker
 
 FVGridMaker is a C++20 library for building structured finite-volume grids.
 
-The current release scope is divided into two API groups:
+The stable one-dimensional API is the core of the project. It provides typed grid-generation inputs, one-dimensional axis storage, grid-pattern reconstruction rules, deterministic and random one-dimensional coordinate distributions, interval operations and CSV output.
 
-```text
-Stable API:
-  Core
-  ErrorHandling
-  OneDimensional
-  Axis1D CSV output
-
-Experimental API:
-  TwoDimensional
-  VTK 2D output
-````
-
-The one-dimensional API is the stable core of the library. It provides typed grid-generation inputs, one-dimensional axis storage, grid-pattern reconstruction rules, deterministic and random one-dimensional coordinate distributions, interval operations and CSV output.
-
-The two-dimensional API is available as an experimental public API. It provides tensor-product structured grids built from two independent `Axis1D` objects, coordinate-system traits, physical metric evaluation and basic VTK output. Experimental APIs are compiled and tested, but their interface may still change before the next stable release.
+The two-dimensional API is currently experimental. It provides tensor-product structured grids built from two independent `Axis1D` objects, coordinate-system traits, physical metric evaluation and basic VTK output. Experimental APIs are compiled and tested, but their interface may still change before stabilisation.
 
 FVGridMaker is developed with an emphasis on clear numerical semantics, data-oriented storage, explicit grid-pattern rules, robust error diagnostics and a small public API.
 
 ## Scope
 
-FVGridMaker is intended to handle:
+FVGridMaker handles:
 
 ```text
 structured finite-volume grids;
@@ -38,10 +23,13 @@ centre-to-centre spacings;
 geometric validation;
 secondary-coordinate reconstruction from primary coordinates;
 custom one-dimensional axis construction;
-basic output for inspection and post-processing.
+basic one-dimensional operations;
+CSV output for one-dimensional axes;
+experimental two-dimensional structured grids;
+experimental VTK output for two-dimensional grids.
 ```
 
-FVGridMaker is not intended to handle:
+FVGridMaker does not handle:
 
 ```text
 differential equations;
@@ -97,19 +85,6 @@ LegacyVTKRectilinearGrid2DWriter
 
 Experimental modules are available to users and examples, but their API may still change before stabilisation.
 
-### Future work
-
-Future work may include:
-
-```text
-three-dimensional structured grids;
-external YAML examples;
-binary output;
-additional coordinate mappings;
-additional output formats;
-stronger installation and packaging tests.
-```
-
 ## Design principles
 
 FVGridMaker follows these design rules:
@@ -123,7 +98,7 @@ avoid virtual classes in the core API;
 use concepts, traits, templates, factories and value composition for extension;
 avoid enum-based catalogues for extensible concepts;
 allow small closed enums only for non-extensible structural choices;
-use textual, stable identifiers for errors and class identity;
+use textual stable identifiers for errors and class identity;
 separate grid geometry storage from grid-pattern reconstruction rules;
 keep grid metrics explicit and stored in dedicated arrays;
 keep examples small, executable and suitable for documentation;
@@ -174,20 +149,6 @@ The full version string may include Git metadata for development builds:
 fvgrid::full_version_string()
 ```
 
-For example, a development build may report:
-
-```text
-0.2.0+48fa0bd9e0c9-dirty
-```
-
-The semantic version remains:
-
-```text
-0.2.0
-```
-
-The suffix `-dirty` means the working tree contained local uncommitted changes when CMake configured the build.
-
 Source and header file comments must not duplicate numerical version values. When a file header contains a `Version` field, it should use:
 
 ```text
@@ -200,73 +161,6 @@ The active implementation is located in:
 
 ```text
 FVGridMakerLib/
-```
-
-The current source tree is organised around these modules:
-
-```text
-FVGridMakerLib/
-  include/FVGridMaker/
-    FVGridMaker.h
-
-    Core/
-      ID.h
-      StrongTypes.h
-      Types.h
-      Version.h
-
-    ErrorHandling/
-      ErrorCatalog.h
-      ErrorCodes.h
-      ErrorDescriptor.h
-      ErrorRecord.h
-      FVGridException.h
-      ThrowError.h
-
-    OneDimensional/
-      Axis1D/
-        Axis1D.h
-
-      Distribution1D/
-        Custom1D.h
-        Random1D.h
-        Roberts1D.h
-        Uniform1D.h
-
-      GridPattern1D/
-        AxisGeometry1D.h
-        CoordinateKind1D.h
-        Coordinates1D.h
-        Domain1D.h
-        FaceCentered1D.h
-        VolumeCentered1D.h
-
-      Operations1D/
-        AxisInterval1D.h
-        Operations1D.h
-
-    TwoDimensional/
-      CoordinateSystem2D/
-        CoordinateMappingFactory2D.h
-        CoordinateMetrics2D.h
-        CoordinateSystem2D.h
-
-      StructuredGrid2D/
-        StructuredGrid2D.h
-
-    Output/
-      CSV/
-        Axis1DCSVWriter.h
-
-      VTK/
-        LegacyVTKRectilinearGrid2DWriter.h
-
-  src/FVGridMaker/
-    Core/
-    ErrorHandling/
-    OneDimensional/
-    TwoDimensional/
-    Output/
 ```
 
 Examples are located in:
@@ -285,6 +179,12 @@ Book-related examples and exercises, when present, are located in:
 
 ```text
 capitulos/
+```
+
+The active reference tree is maintained in:
+
+```text
+FVGridMaker_tree.md
 ```
 
 ## Core module
@@ -355,57 +255,81 @@ This identity is used by the error-handling system to identify where an error oc
 
 ## Error handling
 
-FVGridMaker uses descriptor-based error handling without enum-based error catalogues.
+FVGridMaker uses typed, descriptor-based error handling without a central enum and without a global catalogue object.
 
 The main components are:
 
 ```cpp
 fvgrid::ErrorDescriptor
 fvgrid::ErrorRecord
+fvgrid::ErrorContext
 fvgrid::FVGridException
 fvgrid::throw_error()
 fvgrid::require()
 ```
 
-Built-in error descriptors are defined in:
+Built-in library errors are represented by lightweight tags in:
 
 ```cpp
-fvgrid::error_catalog
+fvgrid::errors
 ```
 
-Built-in textual error codes are defined in:
+Typical internal use:
 
 ```cpp
-fvgrid::error_code
-```
-
-The design is intentionally based on textual identifiers, not enums. This allows external projects to define their own error codes and descriptors without modifying FVGridMaker internals.
-
-A diagnostic record stores:
-
-```text
-code
-message
-category
-source ID
-source location
-```
-
-Example use:
-
-```cpp
-fvgrid::require(
+fvgrid::require<fvgrid::errors::grid::InvalidNVol>(
     condition,
-    fvgrid::error_catalog::kInvalidArgument,
-    fvgrid::ID{
-        "Examples",
-        "MyExample",
-        "fvgrid.examples.MyExample"
+    fvgrid::Uniform1D::id()
+);
+```
+
+Contextual diagnostics can include key/value pairs:
+
+```cpp
+fvgrid::require<fvgrid::errors::grid::InvalidNVol>(
+    condition,
+    fvgrid::Uniform1D::id(),
+    {
+        fvgrid::make_error_context("nvol", "0"),
+        fvgrid::make_error_context("expected", "> 0")
     }
 );
 ```
 
+External projects can still provide their own descriptors:
+
+```cpp
+fvgrid::require(
+    condition,
+    user_descriptor,
+    UserClass::id()
+);
+```
+
+or create an ad hoc descriptor at the call site:
+
+```cpp
+fvgrid::require(
+    condition,
+    "USER.CODE.INVALID_VALUE",
+    "Context-specific diagnostic message.",
+    "UserCategory",
+    UserClass::id()
+);
+```
+
 When an error is thrown, `FVGridException` carries the full `ErrorRecord`.
+
+A diagnostic record stores:
+
+```text
+code;
+message;
+category;
+context;
+source ID;
+source location.
+```
 
 ## One-dimensional coordinate input
 
@@ -575,7 +499,7 @@ dx_centers[i]    = centres[i] - centres[i - 1], for 1 <= i < nvol
 dx_centers[nvol] = faces[nvol] - centres[nvol - 1]
 ```
 
-`Axis1D` also validates:
+`Axis1D` validates:
 
 ```text
 face count;
@@ -587,11 +511,13 @@ strictly increasing centres;
 centre coordinates inside the physical domain.
 ```
 
-`Axis1D` supports formatted stream output:
+`Axis1D` supports formatted diagnostic stream output:
 
 ```cpp
 std::cout << axis << '\n';
 ```
+
+The tabular traversal used by stream output and CSV output is centralized in an internal helper. The two output formats remain independent: stream output is human-readable diagnostics, while CSV is a stable tabular format for post-processing.
 
 ## Uniform1D
 
@@ -767,7 +693,21 @@ Typical use:
 fvgrid::Axis1DCSVWriter::write(axis, "axis.csv");
 ```
 
-The output contains face coordinates, centre coordinates and one-dimensional spacings.
+The required header is:
+
+```text
+i,xF,xC,Dx,dx
+```
+
+The output contains face coordinates, centre coordinates and one-dimensional spacings. The last line represents the final face and therefore has empty fields for centre coordinate and cell length.
+
+Example for two cells:
+
+```text
+0,0,0.5,1,0.5
+1,1,2,2,1.5
+2,3,,,1
+```
 
 ## Experimental 2D API
 
@@ -887,67 +827,4 @@ Include sections should follow this order:
 // ----------------------------------------------------------------------------
 ```
 
-Code and comments are written in English.
-
-## Error-handling convention
-
-New FVGridMaker classes that can report errors should expose an identity:
-
-```cpp
-[[nodiscard]] static constexpr fvgrid::ID id() noexcept;
-```
-
-Errors should be raised through:
-
-```cpp
-fvgrid::require(
-    condition,
-    fvgrid::error_catalog::<descriptor>,
-    ClassName::id()
-);
-```
-
-Do not introduce enum-based error codes. For new error types, add textual codes and descriptors instead.
-
-## Public API inclusion rule
-
-A header should be included in `FVGridMaker.h` only after it has been classified as one of:
-
-```text
-Stable public API
-Experimental public API
-```
-
-A stable public API header should have:
-
-```text
-tests;
-at least one usage path in examples or documentation;
-stable naming;
-stable error behaviour;
-no virtual class requirement;
-no YAML dependency;
-no external geometry backend dependency.
-```
-
-An experimental public API header should compile and be testable, but its interface may still change.
-
-## Roadmap
-
-Near-term planned work:
-
-```text
-finalise pattern_name semantics;
-complete 2D API review;
-complete VTK writer review;
-add installation and consumer-project tests;
-update manual and registration documentation;
-prepare a release candidate.
-```
-
-## License
-
-MIT License.
-
-```
-```
+Code, comments and diagnostic messages are written in English.
