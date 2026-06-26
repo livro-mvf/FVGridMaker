@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: FVGridException.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements the base exception type used by FVGridMaker.
 // Author: FVGridMaker Team
 // License: MIT
@@ -11,7 +11,7 @@
 // C++ standard library includes
 // ----------------------------------------------------------------------------
 #include <sstream>
-// #include <utility>
+#include <utility>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
@@ -21,6 +21,27 @@
 namespace fvgrid {
 
 namespace {
+
+void append_error_context(
+    std::ostringstream& stream,
+    const ErrorContextList& context
+) {
+    if (context.empty()) {
+        return;
+    }
+
+    stream << " (context: ";
+
+    for (std::size_t index = 0; index < context.size(); ++index) {
+        if (index > 0) {
+            stream << ", ";
+        }
+
+        stream << context[index].key << "=" << context[index].value;
+    }
+
+    stream << ")";
+}
 
 [[nodiscard]] std::string format_error_message(const ErrorRecord& record) {
     std::ostringstream stream;
@@ -42,6 +63,8 @@ namespace {
     if (!record.source.class_id().empty()) {
         stream << " (class id: " << record.source.class_id() << ")";
     }
+
+    append_error_context(stream, record.context);
 
     stream << " at " << record.location.file_name() << ":"
            << record.location.line() << " in "

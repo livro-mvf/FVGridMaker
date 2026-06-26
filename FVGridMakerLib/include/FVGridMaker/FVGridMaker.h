@@ -31,9 +31,11 @@
 // ----------------------------------------------------------------------------
 // Stable public API: Error handling
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
-#include <FVGridMaker/ErrorHandling/ErrorCodes.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
+#include <FVGridMaker/ErrorHandling/ErrorContext.h>
+#include <FVGridMaker/ErrorHandling/ErrorDescriptor.h>
 #include <FVGridMaker/ErrorHandling/ErrorRecord.h>
+#include <FVGridMaker/ErrorHandling/ErrorTraits.h>
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 

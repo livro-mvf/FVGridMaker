@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Random1D.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements random one-dimensional axis generation utilities.
 // Author: FVGridMaker Team
 // License: MIT
@@ -17,7 +17,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Random1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
@@ -63,21 +63,18 @@ void Random1D::validate_input(
     MinSpacing min_spacing,
     CoordinateKind1D input_kind
 ) {
-    require(
+    require<errors::grid::InvalidNVol>(
         nvol.value() > 0,
-        error_catalog::kInvalidNVol,
         Random1D::id()
     );
 
-    require(
+    require<errors::grid::InvalidLength>(
         length.value() > static_cast<Real>(0.0),
-        error_catalog::kInvalidLength,
         Random1D::id()
     );
 
-    require(
+    require<errors::grid::InvalidMinSpacing>(
         min_spacing.value() >= static_cast<Real>(0.0),
-        error_catalog::kInvalidMinSpacing,
         Random1D::id()
     );
 
@@ -89,9 +86,8 @@ void Random1D::validate_input(
     const Real required_minimum =
         min_spacing.value() * static_cast<Real>(interval_count);
 
-    require(
+    require<errors::grid::ImpossibleMinSpacing>(
         required_minimum <= length.value(),
-        error_catalog::kImpossibleMinSpacing,
         Random1D::id()
     );
 }

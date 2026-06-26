@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Roberts1D.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements Roberts one-dimensional axis generation utilities.
 // Author: FVGridMaker Team
 // License: MIT
@@ -15,7 +15,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Roberts1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
@@ -42,21 +42,18 @@ void Roberts1D::validate_input(
     Length length,
     Beta beta
 ) {
-    require(
+    require<errors::grid::InvalidNVol>(
         nvol.value() > 0,
-        error_catalog::kInvalidNVol,
         Roberts1D::id()
     );
 
-    require(
+    require<errors::grid::InvalidLength>(
         length.value() > static_cast<Real>(0.0),
-        error_catalog::kInvalidLength,
         Roberts1D::id()
     );
 
-    require(
+    require<errors::grid::InvalidBeta>(
         beta.value() > static_cast<Real>(1.0),
-        error_catalog::kInvalidArgument,
         Roberts1D::id()
     );
 }

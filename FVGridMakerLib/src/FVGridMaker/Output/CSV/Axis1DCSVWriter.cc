@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Axis1DCSVWriter.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements a CSV writer for one-dimensional axes.
 // Author: FVGridMaker Team
 // License: MIT
@@ -19,7 +19,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/Output/CSV/Axis1DCSVWriter.h>
 
@@ -48,9 +48,8 @@ void Axis1DCSVWriter::write(
 
     output.flush();
 
-    require(
+    require<errors::output::FileWriteFailed>(
         static_cast<bool>(output),
-        error_catalog::kOutputFileWriteFailed,
         Axis1DCSVWriter::id()
     );
 }
@@ -65,18 +64,16 @@ void Axis1DCSVWriter::write(
         std::error_code error;
         std::filesystem::create_directories(parent_path, error);
 
-        require(
+        require<errors::output::FileOpenFailed>(
             !error,
-            error_catalog::kOutputFileOpenFailed,
             Axis1DCSVWriter::id()
         );
     }
 
     std::ofstream output{filepath};
 
-    require(
+    require<errors::output::FileOpenFailed>(
         output.is_open(),
-        error_catalog::kOutputFileOpenFailed,
         Axis1DCSVWriter::id()
     );
 

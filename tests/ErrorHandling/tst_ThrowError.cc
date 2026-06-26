@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: tst_ThrowError.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Tests helper functions for throwing FVGridMaker exceptions.
 // Author: FVGridMaker Team
 // License: MIT
@@ -17,6 +17,7 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 
@@ -37,9 +38,20 @@ namespace {
     };
 }
 
+struct UserDefinedError final {
+    static constexpr std::string_view code =
+        "USER.TEST.ERROR";
+
+    static constexpr std::string_view message =
+        "User-defined test error.";
+
+    static constexpr std::string_view category =
+        "User";
+};
+
 }  // namespace
 
-TEST(ThrowError, ThrowErrorThrowsFVGridException) {
+TEST(ThrowError, RuntimeThrowErrorThrowsFVGridException) {
     EXPECT_THROW(
         throw_error(
             "FVGRID.TEST.THROW",
@@ -51,7 +63,7 @@ TEST(ThrowError, ThrowErrorThrowsFVGridException) {
     );
 }
 
-TEST(ThrowError, ThrowErrorStoresRecordFields) {
+TEST(ThrowError, RuntimeThrowErrorStoresRecordFields) {
     try {
         throw_error(
             "FVGRID.TEST.RECORD",
@@ -63,16 +75,44 @@ TEST(ThrowError, ThrowErrorStoresRecordFields) {
         EXPECT_EQ(exception.record().code, std::string_view{"FVGRID.TEST.RECORD"});
         EXPECT_EQ(exception.record().message, "record test message");
         EXPECT_EQ(exception.record().category, std::string_view{"Test"});
+        EXPECT_TRUE(exception.record().context.empty());
         EXPECT_EQ(exception.record().source.module(), std::string_view{"ErrorHandling"});
         EXPECT_EQ(exception.record().source.class_name(), std::string_view{"ThrowErrorTest"});
-        EXPECT_EQ(exception.record().source.class_id(), std::string_view{"fvgrid.test.ThrowErrorTest"});
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.test.ThrowErrorTest"}
+        );
         return;
     }
 
     FAIL() << "throw_error did not throw FVGridException.";
 }
 
-TEST(ThrowError, ThrowErrorStoresExplicitSourceLocation) {
+TEST(ThrowError, RuntimeThrowErrorStoresContext) {
+    try {
+        throw_error(
+            "FVGRID.TEST.CONTEXT",
+            "context test message",
+            "Test",
+            test_id(),
+            {
+                make_error_context("nvol", "0"),
+                make_error_context("expected", "> 0"),
+            }
+        );
+    } catch (const FVGridException& exception) {
+        ASSERT_EQ(exception.record().context.size(), 2U);
+        EXPECT_EQ(exception.record().context[0].key, "nvol");
+        EXPECT_EQ(exception.record().context[0].value, "0");
+        EXPECT_EQ(exception.record().context[1].key, "expected");
+        EXPECT_EQ(exception.record().context[1].value, "> 0");
+        return;
+    }
+
+    FAIL() << "throw_error did not throw FVGridException.";
+}
+
+TEST(ThrowError, RuntimeThrowErrorStoresExplicitSourceLocation) {
     constexpr auto location = std::source_location::current();
 
     try {
@@ -92,7 +132,57 @@ TEST(ThrowError, ThrowErrorStoresExplicitSourceLocation) {
     FAIL() << "throw_error did not throw FVGridException.";
 }
 
-TEST(Require, DoesNothingWhenConditionIsTrue) {
+TEST(ThrowError, TypedThrowErrorStoresBuiltInDescriptor) {
+    try {
+        throw_error<errors::grid::InvalidNVol>(test_id());
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.GRID.INVALID_NVOL"}
+        );
+        EXPECT_EQ(
+            exception.record().message,
+            "The number of control volumes must be positive."
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
+        return;
+    }
+
+    FAIL() << "typed throw_error did not throw FVGridException.";
+}
+
+TEST(ThrowError, TypedThrowErrorStoresUserDefinedDescriptor) {
+    try {
+        throw_error<UserDefinedError>(test_id());
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(exception.record().code, std::string_view{"USER.TEST.ERROR"});
+        EXPECT_EQ(exception.record().message, "User-defined test error.");
+        EXPECT_EQ(exception.record().category, std::string_view{"User"});
+        return;
+    }
+
+    FAIL() << "typed throw_error did not throw FVGridException.";
+}
+
+TEST(ThrowError, TypedThrowErrorStoresContext) {
+    try {
+        throw_error<errors::grid::InvalidNVol>(
+            test_id(),
+            {
+                make_error_context("nvol", "0"),
+            }
+        );
+    } catch (const FVGridException& exception) {
+        ASSERT_EQ(exception.record().context.size(), 1U);
+        EXPECT_EQ(exception.record().context[0].key, "nvol");
+        EXPECT_EQ(exception.record().context[0].value, "0");
+        return;
+    }
+
+    FAIL() << "typed throw_error did not throw FVGridException.";
+}
+
+TEST(Require, RuntimeRequireDoesNothingWhenConditionIsTrue) {
     EXPECT_NO_THROW(
         require(
             true,
@@ -104,7 +194,7 @@ TEST(Require, DoesNothingWhenConditionIsTrue) {
     );
 }
 
-TEST(Require, ThrowsWhenConditionIsFalse) {
+TEST(Require, RuntimeRequireThrowsWhenConditionIsFalse) {
     EXPECT_THROW(
         require(
             false,
@@ -117,26 +207,72 @@ TEST(Require, ThrowsWhenConditionIsFalse) {
     );
 }
 
-TEST(Require, StoresRecordFieldsWhenConditionIsFalse) {
+TEST(Require, RuntimeRequireStoresContextWhenConditionIsFalse) {
     try {
         require(
             false,
-            "FVGRID.TEST.REQUIRE.RECORD",
-            "require record message",
+            "FVGRID.TEST.REQUIRE.CONTEXT",
+            "require context message",
             "Test",
-            test_id()
+            test_id(),
+            {
+                make_error_context("condition", "false"),
+            }
         );
     } catch (const FVGridException& exception) {
-        EXPECT_EQ(exception.record().code, std::string_view{"FVGRID.TEST.REQUIRE.RECORD"});
-        EXPECT_EQ(exception.record().message, "require record message");
-        EXPECT_EQ(exception.record().category, std::string_view{"Test"});
-        EXPECT_EQ(exception.record().source.module(), std::string_view{"ErrorHandling"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"ThrowErrorTest"});
-        EXPECT_EQ(exception.record().source.class_id(), std::string_view{"fvgrid.test.ThrowErrorTest"});
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.TEST.REQUIRE.CONTEXT"}
+        );
+        ASSERT_EQ(exception.record().context.size(), 1U);
+        EXPECT_EQ(exception.record().context[0].key, "condition");
+        EXPECT_EQ(exception.record().context[0].value, "false");
         return;
     }
 
     FAIL() << "require did not throw FVGridException.";
+}
+
+TEST(Require, TypedRequireDoesNothingWhenConditionIsTrue) {
+    EXPECT_NO_THROW(
+        require<errors::grid::InvalidNVol>(
+            true,
+            test_id()
+        )
+    );
+}
+
+TEST(Require, TypedRequireThrowsWhenConditionIsFalse) {
+    EXPECT_THROW(
+        require<errors::grid::InvalidNVol>(
+            false,
+            test_id()
+        ),
+        FVGridException
+    );
+}
+
+TEST(Require, TypedRequireStoresBuiltInDescriptorAndContext) {
+    try {
+        require<errors::grid::InvalidNVol>(
+            false,
+            test_id(),
+            {
+                make_error_context("nvol", "0"),
+            }
+        );
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.GRID.INVALID_NVOL"}
+        );
+        ASSERT_EQ(exception.record().context.size(), 1U);
+        EXPECT_EQ(exception.record().context[0].key, "nvol");
+        EXPECT_EQ(exception.record().context[0].value, "0");
+        return;
+    }
+
+    FAIL() << "typed require did not throw FVGridException.";
 }
 
 }  // namespace fvgrid

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Operations1D.cc
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements interval and coordinate operations for 1D axes.
 // Author: FVGridMaker Team
 // License: MIT
@@ -19,7 +19,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 
@@ -28,9 +28,8 @@ namespace fvgrid {
 void Operations1D::validate_tolerance(
     Real tolerance
 ) {
-    require(
+    require<errors::operation::InvalidTolerance>(
         std::isfinite(tolerance) && tolerance >= static_cast<Real>(0.0),
-        error_catalog::kInvalidTolerance,
         Operations1D::id()
     );
 }
@@ -46,9 +45,8 @@ void Operations1D::require_same_pattern(
     const Axis1D& left,
     const Axis1D& right
 ) {
-    require(
+    require<errors::operation::IncompatibleGridPatterns>(
         same_pattern(left, right),
-        error_catalog::kIncompatibleGridPatterns,
         Operations1D::id()
     );
 }
@@ -87,9 +85,8 @@ AxisInterval1D Operations1D::require_interval_intersection(
 ) {
     const AxisInterval1D result = intersection(left, right, tolerance);
 
-    require(
+    require<errors::operation::EmptyGridIntersection>(
         result.is_interval(),
-        error_catalog::kEmptyGridIntersection,
         Operations1D::id()
     );
 
@@ -133,9 +130,8 @@ Axis1D Operations1D::clip_faces_to_interval(
 ) {
     validate_tolerance(tolerance);
 
-    require(
+    require<errors::operation::EmptyGridIntersection>(
         interval.is_interval(),
-        error_catalog::kEmptyGridIntersection,
         Operations1D::id()
     );
 
@@ -161,9 +157,8 @@ Axis1D Operations1D::clip_faces_to_interval(
         tolerance
     );
 
-    require(
+    require<errors::operation::EmptyGridIntersection>(
         clipped_faces.size() >= static_cast<Size>(2),
-        error_catalog::kEmptyGridIntersection,
         Operations1D::id()
     );
 

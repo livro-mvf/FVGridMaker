@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: VolumeCentered1D.cpp
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements the volume-centred one-dimensional grid pattern.
 // Author: FVGridMaker Team
 // License: MIT
@@ -17,7 +17,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
@@ -26,9 +26,8 @@ namespace fvgrid {
 std::vector<Real> VolumeCentered1D::centers_from_faces(
     std::span<const Real> faces
 ) {
-    require(
+    require<errors::grid::InvalidFaceCount>(
         faces.size() >= 2,
-        error_catalog::kInvalidFaceCount,
         VolumeCentered1D::id()
     );
 

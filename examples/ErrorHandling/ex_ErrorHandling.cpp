@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// File: ex_ErrorHandling.cc
+// File: ex_ErrorHandling.cpp
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Demonstrates basic FVGridMaker error handling.
 // Author: FVGridMaker Team
 // License: MIT
@@ -16,7 +16,7 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 
@@ -28,9 +28,8 @@ int main() {
     };
 
     try {
-        fvgrid::require(
+        fvgrid::require<fvgrid::errors::core::InvalidArgument>(
             false,
-            fvgrid::error_catalog::kInvalidArgument,
             example_id
         );
     } catch (const fvgrid::FVGridException& exception) {

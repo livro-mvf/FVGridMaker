@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: FaceCentered1D.cpp
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements the face-centred one-dimensional grid pattern.
 // Author: FVGridMaker Team
 // License: MIT
@@ -10,15 +10,15 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
-#include <string>
 #include <algorithm>
+#include <string>
 #include <utility>
 #include <vector>
 
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 
@@ -29,15 +29,13 @@ std::vector<Real> FaceCentered1D::faces_from_centers(
     Real x_min,
     Real x_max
 ) {
-    require(
+    require<errors::grid::InvalidCenterCount>(
         !centers.empty(),
-        error_catalog::kInvalidCenterCount,
         FaceCentered1D::id()
     );
 
-    require(
+    require<errors::grid::InvalidLength>(
         x_max > x_min,
-        error_catalog::kInvalidLength,
         FaceCentered1D::id()
     );
 
@@ -49,21 +47,18 @@ std::vector<Real> FaceCentered1D::faces_from_centers(
             }
         ) == centers.end();
 
-    require(
+    require<errors::grid::NonIncreasingCenters>(
         centers_strictly_increasing,
-        error_catalog::kNonIncreasingCenters,
         FaceCentered1D::id()
     );
 
-    require(
+    require<errors::core::OutOfRange>(
         centers.front() > x_min,
-        error_catalog::kOutOfRange,
         FaceCentered1D::id()
     );
 
-    require(
+    require<errors::core::OutOfRange>(
         centers.back() < x_max,
-        error_catalog::kOutOfRange,
         FaceCentered1D::id()
     );
 
@@ -85,9 +80,8 @@ AxisGeometry1D FaceCentered1D::complete_geometry(
     std::vector<Real> centers,
     Domain1D domain
 ) {
-    require(
+    require<errors::core::InvalidArgument>(
         domain.has_bounds(),
-        error_catalog::kInvalidArgument,
         FaceCentered1D::id()
     );
 

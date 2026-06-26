@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: FVGridException.h
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Defines the base exception type used by FVGridMaker.
 // Author: FVGridMaker Team
 // License: MIT

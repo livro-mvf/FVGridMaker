@@ -1,8 +1,9 @@
 // ----------------------------------------------------------------------------
-// File: ErrorDescriptor.h
+// File: ErrorContext.h
 // Project: FVGridMaker
 // Version: see <FVGridMaker/Core/Version.h>
-// Description: Defines immutable descriptors for FVGridMaker error codes.
+// Description: Defines structured diagnostic context entries for FVGridMaker
+//              errors.
 // Author: FVGridMaker Team
 // License: MIT
 // ----------------------------------------------------------------------------
@@ -12,14 +13,27 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <string>
 #include <string_view>
+#include <vector>
 
 namespace fvgrid {
 
-struct ErrorDescriptor final {
-    std::string_view code;
-    std::string_view message;
-    std::string_view category;
+struct ErrorContext final {
+    std::string key;
+    std::string value;
 };
+
+using ErrorContextList = std::vector<ErrorContext>;
+
+[[nodiscard]] inline ErrorContext make_error_context(
+    std::string_view key,
+    std::string_view value
+) {
+    return ErrorContext{
+        .key = std::string{key},
+        .value = std::string{value},
+    };
+}
 
 }  // namespace fvgrid

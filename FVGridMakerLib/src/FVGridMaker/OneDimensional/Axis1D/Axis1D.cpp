@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Axis1D.cpp
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Implements a one-dimensional structured finite-volume axis.
 // Author: FVGridMaker Team
 // License: MIT
@@ -20,7 +20,7 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
@@ -98,27 +98,39 @@ std::string_view Axis1D::pattern_name() const noexcept {
 }
 
 void Axis1D::validate_geometry() const {
-    require(
+    require<errors::grid::InvalidFaceCount>(
         faces_.size() >= 2,
-        error_catalog::kInvalidFaceCount,
         Axis1D::id()
     );
 
-    require(
+    require<errors::grid::InvalidCenterCount>(
         centers_.size() + 1 == faces_.size(),
-        error_catalog::kInvalidCenterCount,
         Axis1D::id()
     );
 
-    const bool faces_are_finite = std::ranges::all_of(faces_, [](Real value) {
-        return std::isfinite(value);
-    });
-    require(faces_are_finite, error_catalog::kInvalidArgument, Axis1D::id());
+    const bool faces_are_finite = std::ranges::all_of(
+        faces_,
+        [](Real value) {
+            return std::isfinite(value);
+        }
+    );
 
-    const bool centers_are_finite = std::ranges::all_of(centers_, [](Real value) {
-        return std::isfinite(value);
-    });
-    require(centers_are_finite, error_catalog::kInvalidArgument, Axis1D::id());
+    require<errors::core::InvalidArgument>(
+        faces_are_finite,
+        Axis1D::id()
+    );
+
+    const bool centers_are_finite = std::ranges::all_of(
+        centers_,
+        [](Real value) {
+            return std::isfinite(value);
+        }
+    );
+
+    require<errors::core::InvalidArgument>(
+        centers_are_finite,
+        Axis1D::id()
+    );
 
     const bool faces_strictly_increasing =
         std::ranges::adjacent_find(
@@ -128,9 +140,8 @@ void Axis1D::validate_geometry() const {
             }
         ) == faces_.end();
 
-    require(
+    require<errors::grid::NonIncreasingFaces>(
         faces_strictly_increasing,
-        error_catalog::kNonIncreasingFaces,
         Axis1D::id()
     );
 
@@ -142,21 +153,18 @@ void Axis1D::validate_geometry() const {
             }
         ) == centers_.end();
 
-    require(
+    require<errors::grid::NonIncreasingCenters>(
         centers_strictly_increasing,
-        error_catalog::kNonIncreasingCenters,
         Axis1D::id()
     );
 
-    require(
+    require<errors::core::OutOfRange>(
         centers_.front() > faces_.front(),
-        error_catalog::kOutOfRange,
         Axis1D::id()
     );
 
-    require(
+    require<errors::core::OutOfRange>(
         centers_.back() < faces_.back(),
-        error_catalog::kOutOfRange,
         Axis1D::id()
     );
 }

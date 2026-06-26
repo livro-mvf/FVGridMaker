@@ -1,26 +1,36 @@
 // ----------------------------------------------------------------------------
 // File: StructuredGrid2D.h
 // Project: FVGridMaker
-// Description: Two-dimensional grid composed from two independent Axis1D objects.
+// Version: see <FVGridMaker/Core/Version.h>
+// Description: Two-dimensional grid composed from two independent Axis1D
+//              objects.
+// Author: FVGridMaker Team
 // License: MIT
 // ----------------------------------------------------------------------------
+
 #pragma once
 
+// ----------------------------------------------------------------------------
+// C++ standard library includes
+// ----------------------------------------------------------------------------
 #include <cmath>
 #include <iosfwd>
+#include <span>
 #include <string>
 #include <string_view>
-#include <span>
 #include <utility>
 #include <vector>
 
+// ----------------------------------------------------------------------------
+// FVGridMaker includes
+// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
-#include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateMetrics2D.h>
+#include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
 
 namespace fvgrid {
 
@@ -44,13 +54,17 @@ public:
     }
 
     [[nodiscard]] static constexpr ID id() noexcept {
-        return ID{"TwoDimensional", "StructuredGrid2D",
-                  "fvgrid.2d.grid.StructuredGrid2D"};
+        return ID{
+            "TwoDimensional",
+            "StructuredGrid2D",
+            "fvgrid.2d.grid.StructuredGrid2D"
+        };
     }
 
     [[nodiscard]] static constexpr std::string_view class_name() noexcept {
         return id().class_name();
     }
+
     [[nodiscard]] static constexpr std::string_view class_id() noexcept {
         return id().class_id();
     }
@@ -88,6 +102,7 @@ public:
 
     // Computational area in the two independent coordinates.
     [[nodiscard]] Real cell_area(Size i, Size j) const;
+
     // Physical area/volume supplied by the coordinate trait.
     [[nodiscard]] Real cell_measure(Size i, Size j) const;
     [[nodiscard]] Real first_face_measure(Size i, Size j) const;
@@ -114,6 +129,7 @@ private:
     template <CoordinateMapping2D Mapping>
     void build_derived_geometry(const Mapping& mapping) {
         physical_face_points_.resize(num_faces_x() * num_faces_y());
+
         for (Size j = 0; j < num_faces_y(); ++j) {
             for (Size i = 0; i < num_faces_x(); ++i) {
                 physical_face_points_[j * num_faces_x() + i] =
@@ -122,43 +138,75 @@ private:
         }
 
         cell_measures_.resize(num_cells());
+
         for (Size j = 0; j < num_cells_y(); ++j) {
             for (Size i = 0; i < num_cells_x(); ++i) {
-                const Real measure = static_cast<Real>(mapping.cell_measure(
-                    CoordinateCell2D{x_face(i), x_face(i + 1),
-                                     y_face(j), y_face(j + 1)}
-                ));
-                require(
+                const Real measure = static_cast<Real>(
+                    mapping.cell_measure(
+                        CoordinateCell2D{
+                            x_face(i),
+                            x_face(i + 1),
+                            y_face(j),
+                            y_face(j + 1)
+                        }
+                    )
+                );
+
+                require<errors::core::InvalidArgument>(
                     std::isfinite(measure) && measure > Real{},
-                    error_catalog::kInvalidArgument,
                     id()
                 );
+
                 cell_measures_[j * num_cells_x() + i] = measure;
             }
         }
+
         build_face_measures(mapping);
     }
 
     template <CoordinateMapping2D Mapping>
     void build_face_measures(const Mapping& mapping) {
-        first_face_measures_.resize(num_faces_x()*num_cells_y());
-        for (Size j=0; j<num_cells_y(); ++j)
-            for (Size i=0; i<num_faces_x(); ++i) {
-                const Real value=coordinate_metrics::first_face_measure(
-                    mapping,x_face(i),y_face(j),y_face(j+1));
-                require(std::isfinite(value) && value>=Real{},
-                        error_catalog::kInvalidArgument,id());
-                first_face_measures_[j*num_faces_x()+i]=value;
+        first_face_measures_.resize(num_faces_x() * num_cells_y());
+
+        for (Size j = 0; j < num_cells_y(); ++j) {
+            for (Size i = 0; i < num_faces_x(); ++i) {
+                const Real value =
+                    coordinate_metrics::first_face_measure(
+                        mapping,
+                        x_face(i),
+                        y_face(j),
+                        y_face(j + 1)
+                    );
+
+                require<errors::core::InvalidArgument>(
+                    std::isfinite(value) && value >= Real{},
+                    id()
+                );
+
+                first_face_measures_[j * num_faces_x() + i] = value;
             }
-        second_face_measures_.resize(num_cells_x()*num_faces_y());
-        for (Size j=0; j<num_faces_y(); ++j)
-            for (Size i=0; i<num_cells_x(); ++i) {
-                const Real value=coordinate_metrics::second_face_measure(
-                    mapping,y_face(j),x_face(i),x_face(i+1));
-                require(std::isfinite(value) && value>=Real{},
-                        error_catalog::kInvalidArgument,id());
-                second_face_measures_[j*num_cells_x()+i]=value;
+        }
+
+        second_face_measures_.resize(num_cells_x() * num_faces_y());
+
+        for (Size j = 0; j < num_faces_y(); ++j) {
+            for (Size i = 0; i < num_cells_x(); ++i) {
+                const Real value =
+                    coordinate_metrics::second_face_measure(
+                        mapping,
+                        y_face(j),
+                        x_face(i),
+                        x_face(i + 1)
+                    );
+
+                require<errors::core::InvalidArgument>(
+                    std::isfinite(value) && value >= Real{},
+                    id()
+                );
+
+                second_face_measures_[j * num_cells_x() + i] = value;
             }
+        }
     }
 
     void validate_x_cell_index(Size i) const;

@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
 // File: Custom1D.h
 // Project: FVGridMaker
-// Version: 0.1.0
+// Version: see <FVGridMaker/Core/Version.h>
 // Description: Declares generic custom one-dimensional axis generation.
 // Author: FVGridMaker Team
 // License: MIT
@@ -23,7 +23,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
-#include <FVGridMaker/ErrorHandling/ErrorCatalog.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
@@ -74,9 +74,8 @@ public:
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
 
-        require(
+        require<errors::grid::InvalidCoordinateKind>(
             coordinates.kind() == PatternType::input_kind(),
-            error_catalog::kInvalidCoordinateKind,
             Custom1D::id()
         );
 
