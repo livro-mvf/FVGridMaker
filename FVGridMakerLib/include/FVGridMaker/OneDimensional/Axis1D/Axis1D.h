@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <concepts>
 #include <iosfwd>
 #include <span>
 #include <string>
@@ -72,6 +73,14 @@ public:
     [[nodiscard]] Real length() const noexcept;
 
     [[nodiscard]] std::string_view pattern_name() const noexcept;
+
+    template <class Pattern>
+        requires requires {
+            { Pattern::name() } -> std::convertible_to<std::string_view>;
+        }
+    [[nodiscard]] bool has_pattern() const noexcept {
+        return pattern_name() == Pattern::name();
+    }
 
 private:
     std::vector<Real> faces_;

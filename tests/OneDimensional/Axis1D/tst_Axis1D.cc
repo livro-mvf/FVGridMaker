@@ -96,6 +96,13 @@ TEST(Axis1D, UsesVolumeCenteredPatternByDefault) {
     EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
 }
 
+TEST(Axis1D, DetectsVolumeCenteredPatternByType) {
+    const Axis1D axis{{0.0, 0.5, 1.0}};
+
+    EXPECT_TRUE(axis.has_pattern<VolumeCentered1D>());
+    EXPECT_FALSE(axis.has_pattern<FaceCentered1D>());
+}
+
 TEST(Axis1D, StoresExplicitFaceCenteredPatternName) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},
@@ -103,6 +110,16 @@ TEST(Axis1D, StoresExplicitFaceCenteredPatternName) {
     };
 
     EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
+}
+
+TEST(Axis1D, DetectsExplicitFaceCenteredPatternByType) {
+    const Axis1D axis{
+        {0.0, 0.5, 1.0},
+        FaceCentered1D::name()
+    };
+
+    EXPECT_TRUE(axis.has_pattern<FaceCentered1D>());
+    EXPECT_FALSE(axis.has_pattern<VolumeCentered1D>());
 }
 
 TEST(Axis1D, StoresCustomPatternName) {
@@ -114,6 +131,15 @@ TEST(Axis1D, StoresCustomPatternName) {
     EXPECT_EQ(axis.pattern_name(), std::string_view{"CustomPattern1D"});
 }
 
+TEST(Axis1D, RejectsBuiltInPatternQueriesForCustomPatternName) {
+    const Axis1D axis{
+        {0.0, 0.5, 1.0},
+        "CustomPattern1D"
+    };
+
+    EXPECT_FALSE(axis.has_pattern<VolumeCentered1D>());
+    EXPECT_FALSE(axis.has_pattern<FaceCentered1D>());
+}
 
 TEST(Axis1D, OwnsDynamicPatternName) {
     Axis1D axis = [] {
@@ -232,7 +258,10 @@ TEST(Axis1D, RejectsRepeatedFaces) {
             std::string_view{"FVGRID.GRID.NON_INCREASING_FACES"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
@@ -252,7 +281,10 @@ TEST(Axis1D, RejectsDecreasingFaces) {
             std::string_view{"FVGRID.GRID.NON_INCREASING_FACES"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
@@ -276,7 +308,10 @@ TEST(Axis1D, RejectsWrongCenterCount) {
             std::string_view{"FVGRID.GRID.INVALID_CENTER_COUNT"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
@@ -300,7 +335,10 @@ TEST(Axis1D, RejectsRepeatedCenters) {
             std::string_view{"FVGRID.GRID.NON_INCREASING_CENTERS"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
@@ -324,7 +362,10 @@ TEST(Axis1D, RejectsDecreasingCenters) {
             std::string_view{"FVGRID.GRID.NON_INCREASING_CENTERS"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Grid"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
@@ -348,7 +389,10 @@ TEST(Axis1D, RejectsFirstCenterOutsideLeftBoundary) {
             std::string_view{"FVGRID.CORE.OUT_OF_RANGE"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Core"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
@@ -372,7 +416,10 @@ TEST(Axis1D, RejectsLastCenterOutsideRightBoundary) {
             std::string_view{"FVGRID.CORE.OUT_OF_RANGE"}
         );
         EXPECT_EQ(exception.record().category, std::string_view{"Core"});
-        EXPECT_EQ(exception.record().source.class_name(), std::string_view{"Axis1D"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
         EXPECT_EQ(
             exception.record().source.class_id(),
             std::string_view{"fvgrid.1d.axis.Axis1D"}
