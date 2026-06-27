@@ -1,20 +1,21 @@
 # Testes da FVGridMaker
 
-A suíte oficial usa arquivos `tst_*.cc`, `tst_*.cpp` ou `tst_*.cxx`. Cada
-arquivo gera um executável independente e é registrado no CTest.
+A suÃ­te oficial usa arquivos `tst_*.cc`, `tst_*.cpp` ou `tst_*.cxx`. Cada
+arquivo gera um executÃ¡vel independente e Ã© registrado no CTest.
 
-Os diretórios antigos com arquivos `ut_*` pertencem a uma API anterior e não
-são compilados. Eles permanecem apenas como histórico; não devem ser usados
-como evidência de cobertura da biblioteca atual.
+Os diretÃ³rios antigos com arquivos `ut_*` pertencem a uma API anterior e nÃ£o
+sÃ£o compilados. Eles permanecem apenas como histÃ³rico; nÃ£o devem ser usados
+como evidÃªncia de cobertura da biblioteca atual.
 
-Critérios para novos testes:
+CritÃ©rios para novos testes:
 
-- um caso nominal e pelo menos um caso de erro por invariante público;
-- conferir conteúdo e ordem dos vetores, não apenas seus tamanhos;
-- usar sementes fixas em testes aleatórios;
-- testar índices nos limites e imediatamente fora deles;
+- um caso nominal e pelo menos um caso de erro por invariante pÃºblico;
+- conferir conteÃºdo e ordem dos vetores, nÃ£o apenas seus tamanhos;
+- usar sementes fixas em testes aleatÃ³rios;
+- testar Ã­ndices nos limites e imediatamente fora deles;
 - testar NaN/infinito para entradas reais;
-- limpar arquivos temporários produzidos por writers.
+- em 2D, cobrir padrões incompatíveis, pontos físicos finitos, métricas analíticas, operações lógicas e writers VTK separados;
+- limpar arquivos temporÃ¡rios produzidos por writers.
 
 ```bash
 cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF

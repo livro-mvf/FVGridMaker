@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------------
-// File: LegacyVTKRectilinearGrid2DWriter.h
+// File: LegacyVTKStructuredGrid2DWriter.h
 // Project: FVGridMaker
-// Description: Legacy VTK writer for rectilinear two-dimensional grids.
+// Description: Legacy VTK writer for mapped two-dimensional structured grids.
 // License: MIT
 // ----------------------------------------------------------------------------
 
@@ -9,22 +9,20 @@
 
 #include <filesystem>
 #include <iosfwd>
-#include <span>
 #include <string_view>
 
 #include <FVGridMaker/Core/ID.h>
-#include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
 
 namespace fvgrid {
 
-class LegacyVTKRectilinearGrid2DWriter final {
+class LegacyVTKStructuredGrid2DWriter final {
 public:
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
             "Output",
-            "LegacyVTKRectilinearGrid2DWriter",
-            "fvgrid.output.vtk.LegacyVTKRectilinearGrid2DWriter"
+            "LegacyVTKStructuredGrid2DWriter",
+            "fvgrid.output.vtk.LegacyVTKStructuredGrid2DWriter"
         };
     }
 
@@ -47,21 +45,10 @@ private:
         const StructuredGrid2D& grid
     );
 
-    static void write_coordinate_array(
-        std::ostream& output,
-        std::string_view vtk_name,
-        std::span<const Real> coordinates
-    );
-
     static void write_cell_measure_data(
         std::ostream& output,
         const StructuredGrid2D& grid
     );
 };
-
-void write_vtk(
-    const StructuredGrid2D& grid,
-    const std::filesystem::path& filepath
-);
 
 }  // namespace fvgrid

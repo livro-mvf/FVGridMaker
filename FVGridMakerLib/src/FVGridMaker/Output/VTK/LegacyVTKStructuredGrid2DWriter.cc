@@ -1,8 +1,7 @@
 // ----------------------------------------------------------------------------
-// File: LegacyVTKRectilinearGrid2DWriter.cc
+// File: LegacyVTKStructuredGrid2DWriter.cc
 // Project: FVGridMaker
-// Version: see <FVGridMaker/Core/Version.h>
-// Description: Implements a legacy VTK writer for rectilinear 2D grids.
+// Description: Implements a legacy VTK writer for mapped structured 2D grids.
 // License: MIT
 // ----------------------------------------------------------------------------
 
@@ -14,17 +13,16 @@
 
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
-#include <FVGridMaker/Output/VTK/LegacyVTKRectilinearGrid2DWriter.h>
 #include <FVGridMaker/Output/VTK/LegacyVTKStructuredGrid2DWriter.h>
 
 namespace fvgrid {
 
-void LegacyVTKRectilinearGrid2DWriter::write(
+void LegacyVTKStructuredGrid2DWriter::write(
     const StructuredGrid2D& grid,
     const std::filesystem::path& filepath
 ) {
     require<errors::core::InvalidArgument>(
-        grid.vtk_rectilinear(),
+        !grid.vtk_rectilinear(),
         id()
     );
 
@@ -64,35 +62,27 @@ void LegacyVTKRectilinearGrid2DWriter::write(
     );
 }
 
-void LegacyVTKRectilinearGrid2DWriter::write_geometry(
+void LegacyVTKStructuredGrid2DWriter::write_geometry(
     std::ostream& output,
     const StructuredGrid2D& grid
 ) {
-    output << "DATASET RECTILINEAR_GRID\n"
+    output << "DATASET STRUCTURED_GRID\n"
            << "DIMENSIONS " << grid.num_faces_x() << ' '
-           << grid.num_faces_y() << " 1\n\n";
+           << grid.num_faces_y() << " 1\n"
+           << "POINTS " << grid.num_faces_x() * grid.num_faces_y()
+           << " double\n";
 
-    write_coordinate_array(output, "X_COORDINATES", grid.first_axis().faces());
-    write_coordinate_array(output, "Y_COORDINATES", grid.second_axis().faces());
-
-    output << "Z_COORDINATES 1 double\n0\n\n";
-}
-
-void LegacyVTKRectilinearGrid2DWriter::write_coordinate_array(
-    std::ostream& output,
-    std::string_view vtk_name,
-    std::span<const Real> coordinates
-) {
-    output << vtk_name << ' ' << coordinates.size() << " double\n";
-
-    for (const Real coordinate : coordinates) {
-        output << coordinate << '\n';
+    for (Size j = 0; j < grid.num_faces_y(); ++j) {
+        for (Size i = 0; i < grid.num_faces_x(); ++i) {
+            const PhysicalPoint2D point = grid.physical_vertex(i, j);
+            output << point.x << ' ' << point.y << ' ' << point.z << '\n';
+        }
     }
 
     output << '\n';
 }
 
-void LegacyVTKRectilinearGrid2DWriter::write_cell_measure_data(
+void LegacyVTKStructuredGrid2DWriter::write_cell_measure_data(
     std::ostream& output,
     const StructuredGrid2D& grid
 ) {
@@ -105,18 +95,6 @@ void LegacyVTKRectilinearGrid2DWriter::write_cell_measure_data(
             output << grid.cell_measure(i, j) << '\n';
         }
     }
-}
-
-void write_vtk(
-    const StructuredGrid2D& grid,
-    const std::filesystem::path& filepath
-) {
-    if (grid.vtk_rectilinear()) {
-        LegacyVTKRectilinearGrid2DWriter::write(grid, filepath);
-        return;
-    }
-
-    LegacyVTKStructuredGrid2DWriter::write(grid, filepath);
 }
 
 }  // namespace fvgrid

@@ -23,6 +23,7 @@
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/Output/VTK/LegacyVTKRectilinearGrid2DWriter.h>
+#include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
 
 // ----------------------------------------------------------------------------
@@ -257,4 +258,23 @@ TEST(LegacyVTKRectilinearGrid2DWriter, RejectsFileOpenFailure) {
     FAIL() << "The VTK writer accepted a directory as an output file.";
 }
 
+
+TEST(LegacyVTKRectilinearGrid2DWriter, RejectsMappedStructuredGrid) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{1.0, 2.0}},
+        Axis1D{std::vector<Real>{0.0, 1.0}},
+        PolarCoordinates2D{}
+    };
+
+    const std::filesystem::path output_path =
+        std::filesystem::temp_directory_path() /
+        "fvgridmaker_rectilinear_rejects_polar.vtk";
+
+    EXPECT_THROW(
+        LegacyVTKRectilinearGrid2DWriter::write(grid, output_path),
+        FVGridException
+    );
+
+    std::filesystem::remove(output_path);
+}
 }  // namespace fvgrid

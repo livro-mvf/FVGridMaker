@@ -9,6 +9,7 @@
 #include <cmath>
 #include <numbers>
 #include <sstream>
+#include <string>
 
 // ----------------------------------------------------------------------------
 // C++ standard library includes
@@ -21,6 +22,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
 
@@ -335,4 +337,155 @@ TEST(StructuredGrid2D, PrintsCoordinateSystemAndIndependentAxes) {
     );
 }
 
+TEST(StructuredGrid2D, BuildsFromTwoVolumeCenteredAxes) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{0.0, 1.0, 2.0}},
+        Axis1D{std::vector<Real>{0.0, 0.5, 1.0}}
+    };
+
+    EXPECT_EQ(grid.first_axis().pattern_name(), std::string_view{"VolumeCentered1D"});
+    EXPECT_EQ(grid.second_axis().pattern_name(), std::string_view{"VolumeCentered1D"});
+}
+
+TEST(StructuredGrid2D, RejectsIncompatibleAxisPatterns) {
+    const Axis1D volume_centered{std::vector<Real>{0.0, 1.0, 2.0}};
+    const Axis1D face_centered_like{
+        std::vector<Real>{0.0, 1.0, 2.0},
+        std::vector<Real>{0.5, 1.5},
+        std::string{FaceCentered1D::name()}
+    };
+
+    try {
+        [[maybe_unused]] const StructuredGrid2D grid{
+            volume_centered,
+            face_centered_like
+        };
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.OPERATION.INCOMPATIBLE_GRID_PATTERNS"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Operation"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"StructuredGrid2D"}
+        );
+        return;
+    }
+
+    FAIL() << "StructuredGrid2D accepted incompatible axis patterns.";
+}
+
+TEST(StructuredGrid2D, ProvidesLogicalAccessorsAndCartesianAliases) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{0.0, 1.0, 3.0}},
+        Axis1D{std::vector<Real>{0.0, 2.0, 5.0}}
+    };
+
+    EXPECT_DOUBLE_EQ(grid.first_face(2), 3.0);
+    EXPECT_DOUBLE_EQ(grid.second_face(2), 5.0);
+    EXPECT_DOUBLE_EQ(grid.first_center(1), 2.0);
+    EXPECT_DOUBLE_EQ(grid.second_center(1), 3.5);
+    EXPECT_DOUBLE_EQ(grid.first_cell_length(1), 2.0);
+    EXPECT_DOUBLE_EQ(grid.second_cell_length(1), 3.0);
+
+    EXPECT_DOUBLE_EQ(grid.x_face(2), grid.first_face(2));
+    EXPECT_DOUBLE_EQ(grid.y_face(2), grid.second_face(2));
+    EXPECT_DOUBLE_EQ(grid.x_center(1), grid.first_center(1));
+    EXPECT_DOUBLE_EQ(grid.y_center(1), grid.second_center(1));
+    EXPECT_DOUBLE_EQ(grid.x_cell_length(1), grid.first_cell_length(1));
+    EXPECT_DOUBLE_EQ(grid.y_cell_length(1), grid.second_cell_length(1));
+}
+
+TEST(StructuredGrid2D, RejectsOutOfBoundsLogicalAccessors) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{0.0, 1.0}},
+        Axis1D{std::vector<Real>{0.0, 1.0}}
+    };
+
+    EXPECT_THROW((void)grid.first_face(2), FVGridException);
+    EXPECT_THROW((void)grid.second_face(2), FVGridException);
+    EXPECT_THROW((void)grid.first_center(1), FVGridException);
+    EXPECT_THROW((void)grid.second_center(1), FVGridException);
+}
+
+TEST(StructuredGrid2D, ProvidesExplicitCartesianPhysicalPoints) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{0.0, 1.0}},
+        Axis1D{std::vector<Real>{0.0, 2.0}}
+    };
+
+    const PhysicalPoint2D vertex = grid.physical_vertex(1, 1);
+    EXPECT_DOUBLE_EQ(vertex.x, 1.0);
+    EXPECT_DOUBLE_EQ(vertex.y, 2.0);
+    EXPECT_DOUBLE_EQ(vertex.z, 0.0);
+
+    const PhysicalPoint2D center = grid.physical_cell_center(0, 0);
+    EXPECT_DOUBLE_EQ(center.x, 0.5);
+    EXPECT_DOUBLE_EQ(center.y, 1.0);
+    EXPECT_DOUBLE_EQ(center.z, 0.0);
+
+    const PhysicalPoint2D first_face_center =
+        grid.physical_first_face_center(1, 0);
+    EXPECT_DOUBLE_EQ(first_face_center.x, 1.0);
+    EXPECT_DOUBLE_EQ(first_face_center.y, 1.0);
+
+    const PhysicalPoint2D second_face_center =
+        grid.physical_second_face_center(0, 1);
+    EXPECT_DOUBLE_EQ(second_face_center.x, 0.5);
+    EXPECT_DOUBLE_EQ(second_face_center.y, 2.0);
+}
+
+TEST(StructuredGrid2D, ProvidesExplicitPolarPhysicalPoints) {
+    const StructuredGrid2D grid{
+        Axis1D{std::vector<Real>{1.0, 3.0}},
+        Axis1D{std::vector<Real>{0.0, std::numbers::pi / 2.0}},
+        PolarCoordinates2D{}
+    };
+
+    const PhysicalPoint2D center = grid.physical_cell_center(0, 0);
+    EXPECT_NEAR(center.x, std::numbers::sqrt2, 1.0e-14);
+    EXPECT_NEAR(center.y, std::numbers::sqrt2, 1.0e-14);
+
+    const PhysicalPoint2D first_face_center =
+        grid.physical_first_face_center(0, 0);
+    EXPECT_NEAR(first_face_center.x, std::numbers::sqrt2 / 2.0, 1.0e-14);
+    EXPECT_NEAR(first_face_center.y, std::numbers::sqrt2 / 2.0, 1.0e-14);
+
+    const PhysicalPoint2D second_face_center =
+        grid.physical_second_face_center(0, 1);
+    EXPECT_NEAR(second_face_center.x, 0.0, 1.0e-14);
+    EXPECT_NEAR(second_face_center.y, 2.0, 1.0e-14);
+}
+
+TEST(StructuredGrid2D, OwnsFunctionalMappingNames) {
+    const StructuredGrid2D grid = [] {
+        std::string system_name = "Warped";
+        std::string first_name = "q";
+        std::string second_name = "s";
+        const auto mapping = make_coordinate_mapping_2d(
+            system_name,
+            first_name,
+            second_name,
+            [](Real first, Real second) {
+                return PhysicalPoint2D{first, second + first, 0.0};
+            },
+            [](CoordinateCell2D cell) {
+                return (cell.first_max - cell.first_min)
+                     * (cell.second_max - cell.second_min);
+            }
+        );
+
+        return StructuredGrid2D{
+            Axis1D{std::vector<Real>{0.0, 1.0}},
+            Axis1D{std::vector<Real>{0.0, 1.0}},
+            mapping
+        };
+    }();
+
+    EXPECT_EQ(grid.coordinate_system_name(), std::string_view{"Warped"});
+    EXPECT_EQ(grid.first_coordinate_name(), std::string_view{"q"});
+    EXPECT_EQ(grid.second_coordinate_name(), std::string_view{"s"});
+    EXPECT_DOUBLE_EQ(grid.physical_vertex(1, 1).y, 2.0);
+}
 }  // namespace fvgrid

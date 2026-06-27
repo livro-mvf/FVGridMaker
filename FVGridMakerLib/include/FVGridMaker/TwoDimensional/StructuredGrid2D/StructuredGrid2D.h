@@ -10,9 +10,6 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <cmath>
 #include <iosfwd>
 #include <span>
@@ -21,9 +18,6 @@
 #include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
@@ -50,6 +44,7 @@ public:
           first_coordinate_name_(mapping.first_coordinate_name()),
           second_coordinate_name_(mapping.second_coordinate_name()),
           vtk_rectilinear_(mapping.vtk_rectilinear()) {
+        validate_axis_patterns();
         build_derived_geometry(mapping);
     }
 
@@ -93,6 +88,14 @@ public:
     [[nodiscard]] Real length_y() const noexcept;
 
     [[nodiscard]] Size linear_cell_index(Size i, Size j) const;
+
+    [[nodiscard]] Real first_face(Size i) const;
+    [[nodiscard]] Real second_face(Size j) const;
+    [[nodiscard]] Real first_center(Size i) const;
+    [[nodiscard]] Real second_center(Size j) const;
+    [[nodiscard]] Real first_cell_length(Size i) const;
+    [[nodiscard]] Real second_cell_length(Size j) const;
+
     [[nodiscard]] Real x_face(Size i) const;
     [[nodiscard]] Real y_face(Size j) const;
     [[nodiscard]] Real x_center(Size i) const;
@@ -103,16 +106,30 @@ public:
     // Computational area in the two independent coordinates.
     [[nodiscard]] Real cell_area(Size i, Size j) const;
 
-    // Physical area/volume supplied by the coordinate trait.
+    // Physical area/volume supplied by the coordinate mapping.
     [[nodiscard]] Real cell_measure(Size i, Size j) const;
     [[nodiscard]] Real first_face_measure(Size i, Size j) const;
     [[nodiscard]] Real second_face_measure(Size i, Size j) const;
     [[nodiscard]] std::span<const Real> cell_measures() const noexcept;
     [[nodiscard]] std::span<const Real> first_face_measures() const noexcept;
     [[nodiscard]] std::span<const Real> second_face_measures() const noexcept;
+
     [[nodiscard]] Real vertical_face_length(Size j) const;
     [[nodiscard]] Real horizontal_face_length(Size i) const;
+
+    // A physical vertex is the mapped point at a pair of logical face
+    // coordinates. The old name is kept as a compatibility alias.
+    [[nodiscard]] PhysicalPoint2D physical_vertex(Size i, Size j) const;
     [[nodiscard]] PhysicalPoint2D physical_face_point(Size i, Size j) const;
+    [[nodiscard]] PhysicalPoint2D physical_cell_center(Size i, Size j) const;
+    [[nodiscard]] PhysicalPoint2D physical_first_face_center(
+        Size i,
+        Size j
+    ) const;
+    [[nodiscard]] PhysicalPoint2D physical_second_face_center(
+        Size i,
+        Size j
+    ) const;
 
 private:
     Axis1D first_axis_;
@@ -122,9 +139,18 @@ private:
     std::string second_coordinate_name_;
     bool vtk_rectilinear_{};
     std::vector<PhysicalPoint2D> physical_face_points_;
+    std::vector<PhysicalPoint2D> physical_cell_centers_;
+    std::vector<PhysicalPoint2D> physical_first_face_centers_;
+    std::vector<PhysicalPoint2D> physical_second_face_centers_;
     std::vector<Real> cell_measures_;
     std::vector<Real> first_face_measures_;
     std::vector<Real> second_face_measures_;
+
+    [[nodiscard]] static bool physical_point_is_finite(
+        PhysicalPoint2D point
+    ) noexcept;
+
+    void validate_axis_patterns() const;
 
     template <CoordinateMapping2D Mapping>
     void build_derived_geometry(const Mapping& mapping) {
@@ -132,8 +158,63 @@ private:
 
         for (Size j = 0; j < num_faces_y(); ++j) {
             for (Size i = 0; i < num_faces_x(); ++i) {
-                physical_face_points_[j * num_faces_x() + i] =
-                    mapping.map(x_face(i), y_face(j));
+                const PhysicalPoint2D point =
+                    mapping.map(first_face(i), second_face(j));
+
+                require<errors::core::InvalidArgument>(
+                    physical_point_is_finite(point),
+                    id()
+                );
+
+                physical_face_points_[j * num_faces_x() + i] = point;
+            }
+        }
+
+        physical_cell_centers_.resize(num_cells());
+
+        for (Size j = 0; j < num_cells_y(); ++j) {
+            for (Size i = 0; i < num_cells_x(); ++i) {
+                const PhysicalPoint2D point =
+                    mapping.map(first_center(i), second_center(j));
+
+                require<errors::core::InvalidArgument>(
+                    physical_point_is_finite(point),
+                    id()
+                );
+
+                physical_cell_centers_[linear_cell_index(i, j)] = point;
+            }
+        }
+
+        physical_first_face_centers_.resize(num_faces_x() * num_cells_y());
+
+        for (Size j = 0; j < num_cells_y(); ++j) {
+            for (Size i = 0; i < num_faces_x(); ++i) {
+                const PhysicalPoint2D point =
+                    mapping.map(first_face(i), second_center(j));
+
+                require<errors::core::InvalidArgument>(
+                    physical_point_is_finite(point),
+                    id()
+                );
+
+                physical_first_face_centers_[j * num_faces_x() + i] = point;
+            }
+        }
+
+        physical_second_face_centers_.resize(num_cells_x() * num_faces_y());
+
+        for (Size j = 0; j < num_faces_y(); ++j) {
+            for (Size i = 0; i < num_cells_x(); ++i) {
+                const PhysicalPoint2D point =
+                    mapping.map(first_center(i), second_face(j));
+
+                require<errors::core::InvalidArgument>(
+                    physical_point_is_finite(point),
+                    id()
+                );
+
+                physical_second_face_centers_[j * num_cells_x() + i] = point;
             }
         }
 
@@ -144,10 +225,10 @@ private:
                 const Real measure = static_cast<Real>(
                     mapping.cell_measure(
                         CoordinateCell2D{
-                            x_face(i),
-                            x_face(i + 1),
-                            y_face(j),
-                            y_face(j + 1)
+                            first_face(i),
+                            first_face(i + static_cast<Size>(1)),
+                            second_face(j),
+                            second_face(j + static_cast<Size>(1))
                         }
                     )
                 );
@@ -157,7 +238,7 @@ private:
                     id()
                 );
 
-                cell_measures_[j * num_cells_x() + i] = measure;
+                cell_measures_[linear_cell_index(i, j)] = measure;
             }
         }
 
@@ -173,9 +254,9 @@ private:
                 const Real value =
                     coordinate_metrics::first_face_measure(
                         mapping,
-                        x_face(i),
-                        y_face(j),
-                        y_face(j + 1)
+                        first_face(i),
+                        second_face(j),
+                        second_face(j + static_cast<Size>(1))
                     );
 
                 require<errors::core::InvalidArgument>(
@@ -194,9 +275,9 @@ private:
                 const Real value =
                     coordinate_metrics::second_face_measure(
                         mapping,
-                        y_face(j),
-                        x_face(i),
-                        x_face(i + 1)
+                        second_face(j),
+                        first_face(i),
+                        first_face(i + static_cast<Size>(1))
                     );
 
                 require<errors::core::InvalidArgument>(

@@ -84,12 +84,16 @@
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateMappingFactory2D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateMetrics2D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
+#include <FVGridMaker/TwoDimensional/Operations2D/LogicalBox2D.h>
+#include <FVGridMaker/TwoDimensional/Operations2D/Operations2D.h>
+#include <FVGridMaker/TwoDimensional/Quality2D/Quality2D.h>
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
 
 // ----------------------------------------------------------------------------
 // Experimental public API: Two-dimensional output
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Output/VTK/LegacyVTKRectilinearGrid2DWriter.h>
+#include <FVGridMaker/Output/VTK/LegacyVTKStructuredGrid2DWriter.h>
 
 namespace fvgrid {
 
