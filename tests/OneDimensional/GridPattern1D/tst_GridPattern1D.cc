@@ -21,7 +21,6 @@
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
@@ -106,7 +105,7 @@ TEST(GridPattern1D, VolumeCenteredMetadataIsStable) {
     );
 }
 
-TEST(GridPattern1D, VolumeCenteredCoordinatesAreCorrect) {
+TEST(GridPattern1D, VolumeCenteredCoordinateNamesAreStable) {
     EXPECT_EQ(
         VolumeCentered1D::primary_coordinates_name(),
         std::string_view{"faces"}
@@ -115,7 +114,6 @@ TEST(GridPattern1D, VolumeCenteredCoordinatesAreCorrect) {
         VolumeCentered1D::secondary_coordinates(),
         std::string_view{"centers"}
     );
-    EXPECT_EQ(VolumeCentered1D::input_kind(), CoordinateKind1D::Faces);
 }
 
 TEST(GridPattern1D, VolumeCenteredDeclaresPrimaryCoordinateTag) {
@@ -206,7 +204,7 @@ TEST(GridPattern1D, FaceCenteredMetadataIsStable) {
     );
 }
 
-TEST(GridPattern1D, FaceCenteredCoordinatesAreCorrect) {
+TEST(GridPattern1D, FaceCenteredCoordinateNamesAreStable) {
     EXPECT_EQ(
         FaceCentered1D::primary_coordinates_name(),
         std::string_view{"centers"}
@@ -215,7 +213,6 @@ TEST(GridPattern1D, FaceCenteredCoordinatesAreCorrect) {
         FaceCentered1D::secondary_coordinates(),
         std::string_view{"faces"}
     );
-    EXPECT_EQ(FaceCentered1D::input_kind(), CoordinateKind1D::Centers);
 }
 
 TEST(GridPattern1D, FaceCenteredDeclaresPrimaryCoordinateTag) {

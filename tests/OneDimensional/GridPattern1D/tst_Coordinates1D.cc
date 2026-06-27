@@ -15,8 +15,8 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Coordinates1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 
 // ----------------------------------------------------------------------------
 // External library includes
@@ -30,7 +30,8 @@ TEST(Coordinates1D, StoresFaceCoordinates) {
         std::vector<Real>{0.0, 0.2, 0.7, 1.0}
     );
 
-    EXPECT_EQ(coordinates.kind(), CoordinateKind1D::Faces);
+    EXPECT_TRUE(coordinates.has_tag<FaceCoordinates1D>());
+    EXPECT_FALSE(coordinates.has_tag<CenterCoordinates1D>());
 
     ASSERT_EQ(coordinates.values().size(), static_cast<Size>(4));
     EXPECT_DOUBLE_EQ(coordinates.values()[0], 0.0);
@@ -44,7 +45,8 @@ TEST(Coordinates1D, StoresCentreCoordinates) {
         std::vector<Real>{0.1, 0.45, 0.85}
     );
 
-    EXPECT_EQ(coordinates.kind(), CoordinateKind1D::Centers);
+    EXPECT_TRUE(coordinates.has_tag<CenterCoordinates1D>());
+    EXPECT_FALSE(coordinates.has_tag<FaceCoordinates1D>());
 
     ASSERT_EQ(coordinates.values().size(), static_cast<Size>(3));
     EXPECT_DOUBLE_EQ(coordinates.values()[0], 0.1);

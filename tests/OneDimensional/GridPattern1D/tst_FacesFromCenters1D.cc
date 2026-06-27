@@ -20,7 +20,6 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FacesFromCenters1D.h>
@@ -243,12 +242,6 @@ TEST(FacesFromCenters1D, DeclaresPrimaryCoordinateTag) {
             CenterCoordinates1D
         >)
     );
-}
-
-TEST(FacesFromCenters1D, KeepsTemporaryInputKindCompatibility) {
-    using Pattern = FacesFromCenters1D<ConstantWeight1D>;
-
-    EXPECT_EQ(Pattern::input_kind(), CoordinateKind1D::Centers);
 }
 
 TEST(FacesFromCenters1D, SatisfiesGridPatternConcept) {

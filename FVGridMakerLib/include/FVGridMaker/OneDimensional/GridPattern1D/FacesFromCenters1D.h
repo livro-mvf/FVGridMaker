@@ -27,7 +27,6 @@
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
@@ -69,10 +68,6 @@ public:
     [[nodiscard]] static constexpr std::string_view secondary_coordinates()
         noexcept {
         return "faces";
-    }
-
-    [[nodiscard]] static constexpr CoordinateKind1D input_kind() noexcept {
-        return CoordinateKind1D::Centers;
     }
 
     [[nodiscard]] AxisGeometry1D complete_geometry(

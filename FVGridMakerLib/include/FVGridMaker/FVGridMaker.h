@@ -49,7 +49,6 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FacesFromCenters1D.h>
