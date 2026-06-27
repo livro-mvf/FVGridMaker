@@ -9,9 +9,6 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <concepts>
 #include <random>
 #include <string_view>
@@ -19,22 +16,21 @@
 #include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/StrongTypes.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 
 namespace fvgrid {
 
-class Random1D final {
+template <std::floating_point T>
+class BasicRandom1D final {
 public:
+    using value_type = T;
+
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
             "OneDimensional",
@@ -51,27 +47,27 @@ public:
         return id().class_id();
     }
 
-    [[nodiscard]] static Axis1D make(
+    [[nodiscard]] static BasicAxis1D<T> make(
         NVol nvol,
-        Length length,
-        XInit xinit,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
         Seed seed
     );
 
-    [[nodiscard]] static Axis1D make(
+    [[nodiscard]] static BasicAxis1D<T> make(
         NVol nvol,
-        Length length,
-        XInit xinit,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
         Seed seed,
-        MinSpacing min_spacing
+        BasicMinSpacing<T> min_spacing
     );
 
     template <class Pattern>
-        requires GridPattern1D<std::remove_cvref_t<Pattern>>
-    [[nodiscard]] static Axis1D make(
+        requires GridPattern1DFor<std::remove_cvref_t<Pattern>, T>
+    [[nodiscard]] static BasicAxis1D<T> make(
         NVol nvol,
-        Length length,
-        XInit xinit,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
         Seed seed,
         Pattern&& pattern
     ) {
@@ -80,19 +76,19 @@ public:
             length,
             xinit,
             seed,
-            MinSpacing{static_cast<Real>(0.0)},
+            BasicMinSpacing<T>{T{}},
             std::forward<Pattern>(pattern)
         );
     }
 
     template <class Pattern>
-        requires GridPattern1D<std::remove_cvref_t<Pattern>>
-    [[nodiscard]] static Axis1D make(
+        requires GridPattern1DFor<std::remove_cvref_t<Pattern>, T>
+    [[nodiscard]] static BasicAxis1D<T> make(
         NVol nvol,
-        Length length,
-        XInit xinit,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
         Seed seed,
-        MinSpacing min_spacing,
+        BasicMinSpacing<T> min_spacing,
         Pattern&& pattern
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
@@ -105,14 +101,14 @@ public:
             interval_count_for_pattern<PatternType>(nvol)
         );
 
-        const Domain1D domain = Domain1D::from_length(
+        const BasicDomain1D<T> domain = BasicDomain1D<T>::from_length(
             xinit,
             length
         );
 
         std::mt19937_64 random_engine{seed.value()};
 
-        std::vector<Real> primary_coordinates =
+        std::vector<T> primary_coordinates =
             build_primary_coordinates<PatternType>(
                 nvol,
                 length,
@@ -123,35 +119,27 @@ public:
 
         const auto& pattern_ref = pattern;
 
-        AxisGeometry1D geometry = pattern_ref.complete_geometry(
+        BasicAxisGeometry1D<T> geometry = pattern_ref.complete_geometry(
             std::move(primary_coordinates),
             domain
         );
 
-        return Axis1D::from_geometry(std::move(geometry));
+        return BasicAxis1D<T>::from_geometry(std::move(geometry));
     }
 
 private:
     static void validate_input(
         NVol nvol,
-        Length length,
-        XInit xinit,
-        MinSpacing min_spacing,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
+        BasicMinSpacing<T> min_spacing,
         Size interval_count
     );
 
-    // Builds a normalized random partition of total_length.
-    //
-    // This is not the same as sampling sorted independent random faces
-    // uniformly over the admissible simplex. The routine generates positive
-    // random weights, normalizes their free part, and then adds min_spacing
-    // to each interval. It is intended as a deterministic stress-test mesh
-    // generator controlled by Seed, not as a statistical sampler with a
-    // prescribed probability law for mesh spacings.
-    [[nodiscard]] static std::vector<Real> build_random_partition(
+    [[nodiscard]] static std::vector<T> build_random_partition(
         Size interval_count,
-        Real total_length,
-        Real min_spacing,
+        T total_length,
+        T min_spacing,
         std::mt19937_64& random_engine
     );
 
@@ -167,27 +155,27 @@ private:
     }
 
     template <class PatternType>
-    [[nodiscard]] static std::vector<Real> build_primary_coordinates(
+    [[nodiscard]] static std::vector<T> build_primary_coordinates(
         NVol nvol,
-        Length length,
-        XInit xinit,
-        MinSpacing min_spacing,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
+        BasicMinSpacing<T> min_spacing,
         std::mt19937_64& random_engine
     ) {
         using CoordinateTag = typename PatternType::primary_coordinates;
 
         const Size cell_count = nvol.value();
-        const Real x0 = xinit.value();
+        const T x0 = xinit.value();
 
         if constexpr (std::same_as<CoordinateTag, FaceCoordinates1D>) {
-            const std::vector<Real> widths = build_random_partition(
+            const std::vector<T> widths = build_random_partition(
                 cell_count,
                 length.value(),
                 min_spacing.value(),
                 random_engine
             );
 
-            std::vector<Real> faces(cell_count + static_cast<Size>(1));
+            std::vector<T> faces(cell_count + static_cast<Size>(1));
             faces[0] = x0;
 
             for (Size i = 0; i < cell_count; ++i) {
@@ -200,15 +188,15 @@ private:
         } else {
             const Size gap_count = cell_count + static_cast<Size>(1);
 
-            const std::vector<Real> gaps = build_random_partition(
+            const std::vector<T> gaps = build_random_partition(
                 gap_count,
                 length.value(),
                 min_spacing.value(),
                 random_engine
             );
 
-            std::vector<Real> centers(cell_count);
-            Real coordinate = x0 + gaps[0];
+            std::vector<T> centers(cell_count);
+            T coordinate = x0 + gaps[0];
             centers[0] = coordinate;
 
             for (Size i = 1; i < cell_count; ++i) {
@@ -221,11 +209,32 @@ private:
     }
 };
 
+using Random1D = BasicRandom1D<double>;
+using Random1DFloat = BasicRandom1D<float>;
+using Random1DLongDouble = BasicRandom1D<long double>;
+
+template <std::floating_point T>
+[[nodiscard]] BasicAxis1D<T> random_axis_1d(
+    NVol nvol,
+    BasicLength<T> length,
+    BasicXInit<T> xinit,
+    Seed seed
+);
+
 [[nodiscard]] Axis1D random_axis_1d(
     NVol nvol,
     Length length,
     XInit xinit,
     Seed seed
+);
+
+template <std::floating_point T>
+[[nodiscard]] BasicAxis1D<T> random_axis_1d(
+    NVol nvol,
+    BasicLength<T> length,
+    BasicXInit<T> xinit,
+    Seed seed,
+    BasicMinSpacing<T> min_spacing
 );
 
 [[nodiscard]] Axis1D random_axis_1d(
@@ -237,7 +246,7 @@ private:
 );
 
 template <class Pattern>
-    requires GridPattern1D<std::remove_cvref_t<Pattern>>
+    requires GridPattern1DFor<std::remove_cvref_t<Pattern>, double>
 [[nodiscard]] Axis1D random_axis_1d(
     NVol nvol,
     Length length,
@@ -245,17 +254,11 @@ template <class Pattern>
     Seed seed,
     Pattern&& pattern
 ) {
-    return Random1D::make(
-        nvol,
-        length,
-        xinit,
-        seed,
-        std::forward<Pattern>(pattern)
-    );
+    return Random1D::make(nvol, length, xinit, seed, std::forward<Pattern>(pattern));
 }
 
 template <class Pattern>
-    requires GridPattern1D<std::remove_cvref_t<Pattern>>
+    requires GridPattern1DFor<std::remove_cvref_t<Pattern>, double>
 [[nodiscard]] Axis1D random_axis_1d(
     NVol nvol,
     Length length,
@@ -274,4 +277,21 @@ template <class Pattern>
     );
 }
 
+template <std::floating_point T>
+[[nodiscard]] BasicAxis1D<T> random_axis_1d(
+    Size nvol,
+    T xinit,
+    T xfinal,
+    UInt64 seed
+);
+
+[[nodiscard]] Axis1D random_axis_1d(
+    Size nvol,
+    double xinit,
+    double xfinal,
+    UInt64 seed
+);
+
 }  // namespace fvgrid
+
+#include <FVGridMaker/OneDimensional/Distribution1D/Random1D.tpp>

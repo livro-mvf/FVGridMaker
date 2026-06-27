@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <concepts>
 #include <string_view>
 
 // ----------------------------------------------------------------------------
@@ -19,34 +20,36 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/StrongTypes.h>
-#include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 
 namespace fvgrid {
 
-class Domain1D final {
+template <std::floating_point T>
+class BasicDomain1D final {
 public:
-    [[nodiscard]] static constexpr Domain1D none() noexcept {
-        return Domain1D{};
+    using value_type = T;
+
+    [[nodiscard]] static constexpr BasicDomain1D none() noexcept {
+        return BasicDomain1D{};
     }
 
-    [[nodiscard]] static constexpr Domain1D from_length(
-        XInit xinit,
-        Length length
+    [[nodiscard]] static constexpr BasicDomain1D from_length(
+        BasicXInit<T> xinit,
+        BasicLength<T> length
     ) noexcept {
-        return Domain1D{
+        return BasicDomain1D{
             xinit.value(),
             xinit.value() + length.value(),
             true
         };
     }
 
-    [[nodiscard]] static constexpr Domain1D from_bounds(
-        XInit xinit,
-        XFinal xfinal
+    [[nodiscard]] static constexpr BasicDomain1D from_bounds(
+        BasicXInit<T> xinit,
+        BasicXFinal<T> xfinal
     ) noexcept {
-        return Domain1D{xinit.value(), xfinal.value(), true};
+        return BasicDomain1D{xinit.value(), xfinal.value(), true};
     }
 
     [[nodiscard]] static constexpr ID id() noexcept {
@@ -69,48 +72,52 @@ public:
         return has_bounds_;
     }
 
-    [[nodiscard]] Real xmin() const {
+    [[nodiscard]] T xmin() const {
         require<errors::core::InvalidArgument>(
             has_bounds_,
-            Domain1D::id()
+            BasicDomain1D::id()
         );
 
         return xmin_;
     }
 
-    [[nodiscard]] Real xmax() const {
+    [[nodiscard]] T xmax() const {
         require<errors::core::InvalidArgument>(
             has_bounds_,
-            Domain1D::id()
+            BasicDomain1D::id()
         );
 
         return xmax_;
     }
 
-    [[nodiscard]] Real length() const {
+    [[nodiscard]] T length() const {
         require<errors::core::InvalidArgument>(
             has_bounds_,
-            Domain1D::id()
+            BasicDomain1D::id()
         );
 
         return xmax_ - xmin_;
     }
 
 private:
-    constexpr Domain1D() noexcept = default;
+    constexpr BasicDomain1D() noexcept = default;
 
-    constexpr Domain1D(
-        Real xmin,
-        Real xmax,
+    constexpr BasicDomain1D(
+        T xmin,
+        T xmax,
         bool has_bounds
     ) noexcept
         : xmin_(xmin),
           xmax_(xmax),
           has_bounds_(has_bounds) {}
 
-    Real xmin_ = static_cast<Real>(0.0);
-    Real xmax_ = static_cast<Real>(0.0);
-    bool has_bounds_ = false;
+    T xmin_{};
+    T xmax_{};
+    bool has_bounds_{false};
 };
+
+using Domain1D = BasicDomain1D<double>;
+using Domain1DFloat = BasicDomain1D<float>;
+using Domain1DLongDouble = BasicDomain1D<long double>;
 
 }  // namespace fvgrid

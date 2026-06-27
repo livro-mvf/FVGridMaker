@@ -13,6 +13,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <compare>
 #include <concepts>
 
 // ----------------------------------------------------------------------------
@@ -34,6 +35,16 @@ public:
         return value_;
     }
 
+    friend constexpr bool operator==(
+        const StrongReal&,
+        const StrongReal&
+    ) noexcept = default;
+
+    friend constexpr auto operator<=> (
+        const StrongReal&,
+        const StrongReal&
+    ) noexcept = default;
+
 private:
     T value_;
 };
@@ -50,6 +61,16 @@ public:
         return value_;
     }
 
+    friend constexpr bool operator==(
+        const StrongInteger&,
+        const StrongInteger&
+    ) noexcept = default;
+
+    friend constexpr auto operator<=> (
+        const StrongInteger&,
+        const StrongInteger&
+    ) noexcept = default;
+
 private:
     T value_;
 };
@@ -63,12 +84,39 @@ struct BetaTag final {};
 struct SeedTag final {};
 
 using NVol = StrongInteger<Size, NVolTag>;
-using Length = StrongReal<Real, LengthTag>;
-using XInit = StrongReal<Real, XInitTag>;
-using XFinal = StrongReal<Real, XFinalTag>;
-using MinSpacing = StrongReal<Real, MinSpacingTag>;
-using Beta = StrongReal<Real, BetaTag>;
 using Seed = StrongInteger<UInt64, SeedTag>;
 
-}  // namespace fvgrid
+template <std::floating_point T>
+using BasicLength = StrongReal<T, LengthTag>;
 
+template <std::floating_point T>
+using BasicXInit = StrongReal<T, XInitTag>;
+
+template <std::floating_point T>
+using BasicXFinal = StrongReal<T, XFinalTag>;
+
+template <std::floating_point T>
+using BasicMinSpacing = StrongReal<T, MinSpacingTag>;
+
+template <std::floating_point T>
+using BasicBeta = StrongReal<T, BetaTag>;
+
+using Length = BasicLength<double>;
+using XInit = BasicXInit<double>;
+using XFinal = BasicXFinal<double>;
+using MinSpacing = BasicMinSpacing<double>;
+using Beta = BasicBeta<double>;
+
+using LengthFloat = BasicLength<float>;
+using XInitFloat = BasicXInit<float>;
+using XFinalFloat = BasicXFinal<float>;
+using MinSpacingFloat = BasicMinSpacing<float>;
+using BetaFloat = BasicBeta<float>;
+
+using LengthLongDouble = BasicLength<long double>;
+using XInitLongDouble = BasicXInit<long double>;
+using XFinalLongDouble = BasicXFinal<long double>;
+using MinSpacingLongDouble = BasicMinSpacing<long double>;
+using BetaLongDouble = BasicBeta<long double>;
+
+}  // namespace fvgrid

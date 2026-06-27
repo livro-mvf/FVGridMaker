@@ -20,31 +20,32 @@
 // ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
-#include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
 namespace fvgrid {
 
-template <class Pattern>
-concept GridPattern1D =
+template <class Pattern, class T>
+concept GridPattern1DFor =
+    std::floating_point<T> &&
     requires(
         const Pattern& pattern,
-        std::vector<Real> coordinates,
-        Domain1D domain
+        std::vector<T> coordinates,
+        BasicDomain1D<T> domain
     ) {
         typename Pattern::primary_coordinates;
 
         requires PrimaryCoordinateTag1D<typename Pattern::primary_coordinates>;
 
-        {
-            pattern.name()
-        } -> std::convertible_to<std::string_view>;
+        { Pattern::name() } -> std::convertible_to<std::string_view>;
 
         {
             pattern.complete_geometry(std::move(coordinates), domain)
-        } -> std::same_as<AxisGeometry1D>;
+        } -> std::same_as<BasicAxisGeometry1D<T>>;
     };
+
+template <class Pattern>
+concept GridPattern1D = GridPattern1DFor<Pattern, double>;
 
 }  // namespace fvgrid

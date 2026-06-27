@@ -9,16 +9,11 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
+#include <concepts>
 #include <filesystem>
 #include <iosfwd>
 #include <string_view>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 
@@ -42,15 +37,19 @@ public:
         return id().class_id();
     }
 
+    template <std::floating_point T>
     static void write(
-        const Axis1D& axis,
+        const BasicAxis1D<T>& axis,
         std::ostream& output
     );
 
+    template <std::floating_point T>
     static void write(
-        const Axis1D& axis,
+        const BasicAxis1D<T>& axis,
         const std::filesystem::path& filepath
     );
 };
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/Output/CSV/Axis1DCSVWriter.tpp>

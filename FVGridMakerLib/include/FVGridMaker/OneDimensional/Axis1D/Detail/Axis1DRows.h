@@ -9,16 +9,15 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
+#include <concepts>
+
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 
 namespace fvgrid::detail {
 
-template <class Callback>
+template <std::floating_point T, class Callback>
 void for_each_axis1d_row(
-    const Axis1D& axis,
+    const BasicAxis1D<T>& axis,
     Callback&& callback
 ) {
     const auto faces = axis.faces();
@@ -42,8 +41,8 @@ void for_each_axis1d_row(
     callback(
         cell_count,
         faces[cell_count],
-        Real{},
-        Real{},
+        T{},
+        T{},
         dx_centers[cell_count],
         false
     );

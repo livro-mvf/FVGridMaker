@@ -9,15 +9,10 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <cmath>
+#include <concepts>
 #include <string_view>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
@@ -25,9 +20,12 @@
 
 namespace fvgrid {
 
-class ConstantWeight1D final {
+template <std::floating_point T>
+class BasicConstantWeight1D final {
 public:
-    explicit ConstantWeight1D(Real value)
+    using value_type = T;
+
+    explicit BasicConstantWeight1D(T value)
         : value_{value} {
         validate(value_);
     }
@@ -48,25 +46,30 @@ public:
         return id().class_id();
     }
 
-    [[nodiscard]] Real value() const noexcept {
+    [[nodiscard]] T value() const noexcept {
         return value_;
     }
 
-    [[nodiscard]] Real operator()(Size) const noexcept {
+    [[nodiscard]] T operator()(Size) const noexcept {
         return value_;
     }
 
 private:
-    static void validate(Real value) {
+    static void validate(T value) {
         require<errors::core::InvalidArgument>(
-            std::isfinite(value) &&
-            value > static_cast<Real>(0.0) &&
-            value < static_cast<Real>(1.0),
-            ConstantWeight1D::id()
+            std::isfinite(value) && value > T{0} && value < T{1},
+            BasicConstantWeight1D::id()
         );
     }
 
-    Real value_;
+    T value_;
 };
+
+template <std::floating_point T>
+BasicConstantWeight1D(T) -> BasicConstantWeight1D<T>;
+
+using ConstantWeight1D = BasicConstantWeight1D<double>;
+using ConstantWeight1DFloat = BasicConstantWeight1D<float>;
+using ConstantWeight1DLongDouble = BasicConstantWeight1D<long double>;
 
 }  // namespace fvgrid

@@ -9,16 +9,11 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
+#include <concepts>
 #include <span>
 #include <string_view>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
@@ -44,44 +39,54 @@ public:
         return id().class_id();
     }
 
-    static void validate_tolerance(Real tolerance);
+    template <std::floating_point T>
+    static void validate_tolerance(T tolerance);
 
+    template <std::floating_point T>
     [[nodiscard]] static bool same_pattern(
-        const Axis1D& left,
-        const Axis1D& right
+        const BasicAxis1D<T>& left,
+        const BasicAxis1D<T>& right
     ) noexcept;
 
+    template <std::floating_point T>
     static void require_same_pattern(
-        const Axis1D& left,
-        const Axis1D& right
+        const BasicAxis1D<T>& left,
+        const BasicAxis1D<T>& right
     );
 
-    [[nodiscard]] static AxisInterval1D domain_interval(
-        const Axis1D& axis
+    template <std::floating_point T>
+    [[nodiscard]] static BasicAxisInterval1D<T> domain_interval(
+        const BasicAxis1D<T>& axis
     ) noexcept;
 
-    [[nodiscard]] static AxisInterval1D intersection(
-        const Axis1D& left,
-        const Axis1D& right,
-        Real tolerance = static_cast<Real>(0.0)
+    template <std::floating_point T>
+    [[nodiscard]] static BasicAxisInterval1D<T> intersection(
+        const BasicAxis1D<T>& left,
+        const BasicAxis1D<T>& right,
+        T tolerance = T{}
     );
 
-    [[nodiscard]] static AxisInterval1D require_interval_intersection(
-        const Axis1D& left,
-        const Axis1D& right,
-        Real tolerance = static_cast<Real>(0.0)
+    template <std::floating_point T>
+    [[nodiscard]] static BasicAxisInterval1D<T> require_interval_intersection(
+        const BasicAxis1D<T>& left,
+        const BasicAxis1D<T>& right,
+        T tolerance = T{}
     );
 
-    [[nodiscard]] static std::vector<Real> unique_sorted_coordinates(
-        std::span<const Real> coordinates,
-        Real tolerance = static_cast<Real>(0.0)
+    template <std::floating_point T>
+    [[nodiscard]] static std::vector<T> unique_sorted_coordinates(
+        std::span<const T> coordinates,
+        T tolerance = T{}
     );
 
-    [[nodiscard]] static Axis1D clip_faces_to_interval(
-        const Axis1D& axis,
-        AxisInterval1D interval,
-        Real tolerance = static_cast<Real>(0.0)
+    template <std::floating_point T>
+    [[nodiscard]] static BasicAxis1D<T> clip_faces_to_interval(
+        const BasicAxis1D<T>& axis,
+        BasicAxisInterval1D<T> interval,
+        T tolerance = T{}
     );
 };
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/OneDimensional/Operations1D/Operations1D.tpp>

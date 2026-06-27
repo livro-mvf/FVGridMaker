@@ -12,20 +12,23 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <concepts>
 #include <string>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
-#include <FVGridMaker/Core/Types.h>
-
 namespace fvgrid {
 
-struct AxisGeometry1D final {
-    std::vector<Real> faces;
-    std::vector<Real> centers;
+template <std::floating_point T>
+struct BasicAxisGeometry1D final {
+    using value_type = T;
+
+    std::vector<T> faces;
+    std::vector<T> centers;
     std::string pattern_name;
 };
+
+using AxisGeometry1D = BasicAxisGeometry1D<double>;
+using AxisGeometry1DFloat = BasicAxisGeometry1D<float>;
+using AxisGeometry1DLongDouble = BasicAxisGeometry1D<long double>;
 
 }  // namespace fvgrid

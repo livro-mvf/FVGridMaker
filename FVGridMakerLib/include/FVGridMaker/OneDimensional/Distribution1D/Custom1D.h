@@ -9,30 +9,27 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
+#include <concepts>
 #include <string_view>
 #include <type_traits>
 #include <utility>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Coordinates1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 
 namespace fvgrid {
 
-class Custom1D final {
+template <std::floating_point T>
+class BasicCustom1D final {
 public:
+    using value_type = T;
+
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
             "OneDimensional",
@@ -49,32 +46,52 @@ public:
         return id().class_id();
     }
 
-    template <GridPattern1D Pattern>
-    [[nodiscard]] static Axis1D make(
-        Coordinates1D coordinates,
+    template <class Pattern>
+        requires GridPattern1DFor<std::remove_cvref_t<Pattern>, T>
+    [[nodiscard]] static BasicAxis1D<T> make(
+        BasicCoordinates1D<T> coordinates,
         Pattern&& pattern,
-        Domain1D domain = Domain1D::none()
+        BasicDomain1D<T> domain = BasicDomain1D<T>::none()
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
         using CoordinateTag = typename PatternType::primary_coordinates;
 
         require<errors::grid::InvalidCoordinateKind>(
             coordinates.template has_tag<CoordinateTag>(),
-            Custom1D::id()
+            BasicCustom1D::id()
         );
 
         const auto& pattern_ref = pattern;
 
-        AxisGeometry1D geometry = pattern_ref.complete_geometry(
+        BasicAxisGeometry1D<T> geometry = pattern_ref.complete_geometry(
             std::move(coordinates).release_values(),
             domain
         );
 
-        return Axis1D::from_geometry(std::move(geometry));
+        return BasicAxis1D<T>::from_geometry(std::move(geometry));
     }
 };
 
-template <GridPattern1D Pattern>
+using Custom1D = BasicCustom1D<double>;
+using Custom1DFloat = BasicCustom1D<float>;
+using Custom1DLongDouble = BasicCustom1D<long double>;
+
+template <std::floating_point T, class Pattern>
+    requires GridPattern1DFor<std::remove_cvref_t<Pattern>, T>
+[[nodiscard]] BasicAxis1D<T> custom_axis_1d(
+    BasicCoordinates1D<T> coordinates,
+    Pattern&& pattern,
+    BasicDomain1D<T> domain = BasicDomain1D<T>::none()
+) {
+    return BasicCustom1D<T>::make(
+        std::move(coordinates),
+        std::forward<Pattern>(pattern),
+        domain
+    );
+}
+
+template <class Pattern>
+    requires GridPattern1DFor<std::remove_cvref_t<Pattern>, double>
 [[nodiscard]] Axis1D custom_axis_1d(
     Coordinates1D coordinates,
     Pattern&& pattern,

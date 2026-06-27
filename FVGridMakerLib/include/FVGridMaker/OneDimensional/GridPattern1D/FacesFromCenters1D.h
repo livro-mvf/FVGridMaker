@@ -9,19 +9,14 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <algorithm>
 #include <cmath>
+#include <concepts>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
@@ -70,30 +65,30 @@ public:
         return "faces";
     }
 
-    [[nodiscard]] AxisGeometry1D complete_geometry(
-        std::vector<Real> centers,
-        Domain1D domain
+    template <std::floating_point T>
+    [[nodiscard]] BasicAxisGeometry1D<T> complete_geometry(
+        std::vector<T> centers,
+        BasicDomain1D<T> domain
     ) const {
         validate_domain(domain);
         validate_centers(centers, domain);
 
         const Size cell_count = centers.size();
 
-        std::vector<Real> faces(cell_count + static_cast<Size>(1));
+        std::vector<T> faces(cell_count + static_cast<Size>(1));
         faces.front() = domain.xmin();
         faces.back() = domain.xmax();
 
         for (Size p = 1; p < cell_count; ++p) {
-            const Real theta = weights_(p);
+            const T theta = static_cast<T>(weights_(p));
             validate_weight(theta);
 
             faces[p] =
-                (static_cast<Real>(1.0) - theta) *
-                centers[p - static_cast<Size>(1)] +
+                (T{1} - theta) * centers[p - static_cast<Size>(1)] +
                 theta * centers[p];
         }
 
-        return AxisGeometry1D{
+        return BasicAxisGeometry1D<T>{
             std::move(faces),
             std::move(centers),
             std::string{name()}
@@ -101,7 +96,8 @@ public:
     }
 
 private:
-    static void validate_domain(Domain1D domain) {
+    template <std::floating_point T>
+    static void validate_domain(BasicDomain1D<T> domain) {
         require<errors::core::InvalidArgument>(
             domain.has_bounds(),
             FacesFromCenters1D::id()
@@ -113,9 +109,10 @@ private:
         );
     }
 
+    template <std::floating_point T>
     static void validate_centers(
-        const std::vector<Real>& centers,
-        Domain1D domain
+        const std::vector<T>& centers,
+        BasicDomain1D<T> domain
     ) {
         require<errors::grid::InvalidCenterCount>(
             !centers.empty(),
@@ -125,7 +122,7 @@ private:
         const bool centers_strictly_increasing =
             std::ranges::adjacent_find(
                 centers,
-                [](Real left, Real right) {
+                [](T left, T right) {
                     return !(right > left);
                 }
             ) == centers.end();
@@ -146,11 +143,10 @@ private:
         );
     }
 
-    static void validate_weight(Real theta) {
+    template <std::floating_point T>
+    static void validate_weight(T theta) {
         require<errors::core::InvalidArgument>(
-            std::isfinite(theta) &&
-            theta > static_cast<Real>(0.0) &&
-            theta < static_cast<Real>(1.0),
+            std::isfinite(theta) && theta > T{0} && theta < T{1},
             FacesFromCenters1D::id()
         );
     }

@@ -17,99 +17,180 @@
 
 namespace fvgrid {
 
-struct PhysicalPoint2D final {
-    Real x{};
-    Real y{};
-    Real z{};
+template <std::floating_point T>
+struct BasicPhysicalPoint2D final {
+    using value_type = T;
+
+    T x{};
+    T y{};
+    T z{};
 };
 
-struct CoordinateCell2D final {
-    Real first_min{};
-    Real first_max{};
-    Real second_min{};
-    Real second_max{};
+using PhysicalPoint2D = BasicPhysicalPoint2D<double>;
+using PhysicalPoint2DFloat = BasicPhysicalPoint2D<float>;
+using PhysicalPoint2DLongDouble = BasicPhysicalPoint2D<long double>;
+
+template <std::floating_point T>
+struct BasicCoordinateCell2D final {
+    using value_type = T;
+
+    T first_min{};
+    T first_max{};
+    T second_min{};
+    T second_max{};
 };
+
+using CoordinateCell2D = BasicCoordinateCell2D<double>;
+using CoordinateCell2DFloat = BasicCoordinateCell2D<float>;
+using CoordinateCell2DLongDouble = BasicCoordinateCell2D<long double>;
+
+template <class Mapping, class T>
+concept CoordinateMapping2DFor =
+    std::floating_point<T> &&
+    requires(
+        const Mapping& mapping,
+        T first,
+        T second,
+        BasicCoordinateCell2D<T> cell
+    ) {
+        { mapping.name() } -> std::convertible_to<std::string_view>;
+        { mapping.first_coordinate_name() } -> std::convertible_to<std::string_view>;
+        { mapping.second_coordinate_name() } -> std::convertible_to<std::string_view>;
+        { mapping.vtk_rectilinear() } -> std::convertible_to<bool>;
+        { mapping.map(first, second) } -> std::same_as<BasicPhysicalPoint2D<T>>;
+        { mapping.cell_measure(cell) } -> std::convertible_to<T>;
+    };
 
 template <class Mapping>
-concept CoordinateMapping2D = requires(
-    const Mapping& mapping,
-    Real first,
-    Real second,
-    CoordinateCell2D cell
-) {
-    { mapping.name() } -> std::convertible_to<std::string_view>;
-    { mapping.first_coordinate_name() } -> std::convertible_to<std::string_view>;
-    { mapping.second_coordinate_name() } -> std::convertible_to<std::string_view>;
-    { mapping.vtk_rectilinear() } -> std::convertible_to<bool>;
-    { mapping.map(first, second) } -> std::same_as<PhysicalPoint2D>;
-    { mapping.cell_measure(cell) } -> std::convertible_to<Real>;
-};
+concept CoordinateMapping2D = CoordinateMapping2DFor<Mapping, double>;
 
-struct CartesianCoordinates2D final {
+template <std::floating_point T>
+struct BasicCartesianCoordinates2D final {
+    using value_type = T;
+
     [[nodiscard]] constexpr std::string_view name() const noexcept {
         return "Cartesian";
     }
-    [[nodiscard]] constexpr std::string_view first_coordinate_name() const noexcept {
+
+    [[nodiscard]] constexpr std::string_view first_coordinate_name()
+        const noexcept {
         return "x";
     }
-    [[nodiscard]] constexpr std::string_view second_coordinate_name() const noexcept {
+
+    [[nodiscard]] constexpr std::string_view second_coordinate_name()
+        const noexcept {
         return "y";
     }
-    [[nodiscard]] constexpr bool vtk_rectilinear() const noexcept { return true; }
-    [[nodiscard]] constexpr PhysicalPoint2D map(Real x, Real y) const noexcept {
-        return {x, y, Real{}};
+
+    [[nodiscard]] constexpr bool vtk_rectilinear() const noexcept {
+        return true;
     }
-    [[nodiscard]] constexpr Real cell_measure(CoordinateCell2D c) const noexcept {
+
+    [[nodiscard]] constexpr BasicPhysicalPoint2D<T> map(
+        T x,
+        T y
+    ) const noexcept {
+        return {x, y, T{}};
+    }
+
+    [[nodiscard]] constexpr T cell_measure(
+        BasicCoordinateCell2D<T> c
+    ) const noexcept {
         return (c.first_max - c.first_min) * (c.second_max - c.second_min);
     }
 };
 
-struct PolarCoordinates2D final {
+template <std::floating_point T>
+struct BasicPolarCoordinates2D final {
+    using value_type = T;
+
     [[nodiscard]] constexpr std::string_view name() const noexcept {
         return "Polar";
     }
-    [[nodiscard]] constexpr std::string_view first_coordinate_name() const noexcept {
+
+    [[nodiscard]] constexpr std::string_view first_coordinate_name()
+        const noexcept {
         return "r";
     }
-    [[nodiscard]] constexpr std::string_view second_coordinate_name() const noexcept {
+
+    [[nodiscard]] constexpr std::string_view second_coordinate_name()
+        const noexcept {
         return "theta";
     }
-    [[nodiscard]] constexpr bool vtk_rectilinear() const noexcept { return false; }
-    [[nodiscard]] PhysicalPoint2D map(Real r, Real theta) const noexcept {
-        return {r * std::cos(theta), r * std::sin(theta), Real{}};
+
+    [[nodiscard]] constexpr bool vtk_rectilinear() const noexcept {
+        return false;
     }
-    [[nodiscard]] constexpr Real cell_measure(CoordinateCell2D c) const noexcept {
-        return Real{0.5} * (c.first_max * c.first_max
-                          - c.first_min * c.first_min)
-             * (c.second_max - c.second_min);
+
+    [[nodiscard]] BasicPhysicalPoint2D<T> map(T r, T theta) const noexcept {
+        return {r * std::cos(theta), r * std::sin(theta), T{}};
+    }
+
+    [[nodiscard]] constexpr T cell_measure(
+        BasicCoordinateCell2D<T> c
+    ) const noexcept {
+        return T{0.5} *
+            (c.first_max * c.first_max - c.first_min * c.first_min) *
+            (c.second_max - c.second_min);
     }
 };
 
-struct AxisymmetricCoordinates2D final {
+template <std::floating_point T>
+struct BasicAxisymmetricCoordinates2D final {
+    using value_type = T;
+
     [[nodiscard]] constexpr std::string_view name() const noexcept {
         return "Axisymmetric";
     }
-    [[nodiscard]] constexpr std::string_view first_coordinate_name() const noexcept {
+
+    [[nodiscard]] constexpr std::string_view first_coordinate_name()
+        const noexcept {
         return "r";
     }
-    [[nodiscard]] constexpr std::string_view second_coordinate_name() const noexcept {
+
+    [[nodiscard]] constexpr std::string_view second_coordinate_name()
+        const noexcept {
         return "z";
     }
-    [[nodiscard]] constexpr bool vtk_rectilinear() const noexcept { return true; }
-    [[nodiscard]] constexpr PhysicalPoint2D map(Real r, Real z) const noexcept {
-        return {r, z, Real{}};
+
+    [[nodiscard]] constexpr bool vtk_rectilinear() const noexcept {
+        return true;
     }
-    [[nodiscard]] constexpr Real cell_measure(CoordinateCell2D c) const noexcept {
-        return std::numbers::pi_v<Real>
-             * (c.first_max * c.first_max - c.first_min * c.first_min)
-             * (c.second_max - c.second_min);
+
+    [[nodiscard]] constexpr BasicPhysicalPoint2D<T> map(
+        T r,
+        T z
+    ) const noexcept {
+        return {r, z, T{}};
+    }
+
+    [[nodiscard]] constexpr T cell_measure(
+        BasicCoordinateCell2D<T> c
+    ) const noexcept {
+        return std::numbers::pi_v<T> *
+            (c.first_max * c.first_max - c.first_min * c.first_min) *
+            (c.second_max - c.second_min);
     }
 };
 
-template <class Map, class Measure>
-class FunctionalCoordinateMapping2D final {
+using CartesianCoordinates2D = BasicCartesianCoordinates2D<double>;
+using CartesianCoordinates2DFloat = BasicCartesianCoordinates2D<float>;
+using CartesianCoordinates2DLongDouble = BasicCartesianCoordinates2D<long double>;
+
+using PolarCoordinates2D = BasicPolarCoordinates2D<double>;
+using PolarCoordinates2DFloat = BasicPolarCoordinates2D<float>;
+using PolarCoordinates2DLongDouble = BasicPolarCoordinates2D<long double>;
+
+using AxisymmetricCoordinates2D = BasicAxisymmetricCoordinates2D<double>;
+using AxisymmetricCoordinates2DFloat = BasicAxisymmetricCoordinates2D<float>;
+using AxisymmetricCoordinates2DLongDouble = BasicAxisymmetricCoordinates2D<long double>;
+
+template <std::floating_point T, class Map, class Measure>
+class BasicFunctionalCoordinateMapping2D final {
 public:
-    FunctionalCoordinateMapping2D(
+    using value_type = T;
+
+    BasicFunctionalCoordinateMapping2D(
         std::string name,
         std::string first_name,
         std::string second_name,
@@ -124,21 +205,28 @@ public:
           measure_(std::move(measure)),
           vtk_rectilinear_(vtk_rectilinear) {}
 
-    [[nodiscard]] std::string_view name() const noexcept { return name_; }
+    [[nodiscard]] std::string_view name() const noexcept {
+        return name_;
+    }
+
     [[nodiscard]] std::string_view first_coordinate_name() const noexcept {
         return first_name_;
     }
+
     [[nodiscard]] std::string_view second_coordinate_name() const noexcept {
         return second_name_;
     }
+
     [[nodiscard]] bool vtk_rectilinear() const noexcept {
         return vtk_rectilinear_;
     }
-    [[nodiscard]] PhysicalPoint2D map(Real first, Real second) const {
+
+    [[nodiscard]] BasicPhysicalPoint2D<T> map(T first, T second) const {
         return map_(first, second);
     }
-    [[nodiscard]] Real cell_measure(CoordinateCell2D cell) const {
-        return measure_(cell);
+
+    [[nodiscard]] T cell_measure(BasicCoordinateCell2D<T> cell) const {
+        return static_cast<T>(measure_(cell));
     }
 
 private:
@@ -151,6 +239,10 @@ private:
 };
 
 template <class Map, class Measure>
+using FunctionalCoordinateMapping2D =
+    BasicFunctionalCoordinateMapping2D<double, Map, Measure>;
+
+template <class Map, class Measure>
 [[nodiscard]] auto make_coordinate_mapping_2d(
     std::string name,
     std::string first_name,
@@ -159,9 +251,32 @@ template <class Map, class Measure>
     Measure measure,
     bool vtk_rectilinear = false
 ) {
-    return FunctionalCoordinateMapping2D<Map, Measure>{
-        std::move(name), std::move(first_name), std::move(second_name),
-        std::move(map), std::move(measure), vtk_rectilinear
+    return BasicFunctionalCoordinateMapping2D<double, Map, Measure>{
+        std::move(name),
+        std::move(first_name),
+        std::move(second_name),
+        std::move(map),
+        std::move(measure),
+        vtk_rectilinear
+    };
+}
+
+template <std::floating_point T, class Map, class Measure>
+[[nodiscard]] auto make_basic_coordinate_mapping_2d(
+    std::string name,
+    std::string first_name,
+    std::string second_name,
+    Map map,
+    Measure measure,
+    bool vtk_rectilinear = false
+) {
+    return BasicFunctionalCoordinateMapping2D<T, Map, Measure>{
+        std::move(name),
+        std::move(first_name),
+        std::move(second_name),
+        std::move(map),
+        std::move(measure),
+        vtk_rectilinear
     };
 }
 

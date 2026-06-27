@@ -25,20 +25,17 @@
 
 namespace fvgrid {
 
-class Coordinates1D final {
+template <std::floating_point T>
+class BasicCoordinates1D final {
 public:
-    [[nodiscard]] static Coordinates1D faces(std::vector<Real> values) {
-        return Coordinates1D{
-            std::move(values),
-            true
-        };
+    using value_type = T;
+
+    [[nodiscard]] static BasicCoordinates1D faces(std::vector<T> values) {
+        return BasicCoordinates1D{std::move(values), true};
     }
 
-    [[nodiscard]] static Coordinates1D centers(std::vector<Real> values) {
-        return Coordinates1D{
-            std::move(values),
-            false
-        };
+    [[nodiscard]] static BasicCoordinates1D centers(std::vector<T> values) {
+        return BasicCoordinates1D{std::move(values), false};
     }
 
     template <PrimaryCoordinateTag1D Tag>
@@ -50,24 +47,28 @@ public:
         }
     }
 
-    [[nodiscard]] std::span<const Real> values() const noexcept {
+    [[nodiscard]] std::span<const T> values() const noexcept {
         return values_;
     }
 
-    [[nodiscard]] std::vector<Real> release_values() && noexcept {
+    [[nodiscard]] std::vector<T> release_values() && noexcept {
         return std::move(values_);
     }
 
 private:
-    Coordinates1D(
-        std::vector<Real> values,
+    BasicCoordinates1D(
+        std::vector<T> values,
         bool is_face_coordinates
     ) noexcept
         : values_(std::move(values)),
           is_face_coordinates_(is_face_coordinates) {}
 
-    std::vector<Real> values_;
-    bool is_face_coordinates_;
+    std::vector<T> values_;
+    bool is_face_coordinates_{};
 };
+
+using Coordinates1D = BasicCoordinates1D<double>;
+using Coordinates1DFloat = BasicCoordinates1D<float>;
+using Coordinates1DLongDouble = BasicCoordinates1D<long double>;
 
 }  // namespace fvgrid

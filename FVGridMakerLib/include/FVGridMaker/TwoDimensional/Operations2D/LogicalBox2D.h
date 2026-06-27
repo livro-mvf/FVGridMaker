@@ -7,29 +7,39 @@
 
 #pragma once
 
+#include <concepts>
+
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/Operations1D/AxisInterval1D.h>
 
 namespace fvgrid {
 
-class LogicalBox2D final {
+template <std::floating_point T>
+class BasicLogicalBox2D final {
 public:
-    [[nodiscard]] static constexpr LogicalBox2D empty() noexcept {
-        return LogicalBox2D{AxisInterval1D::empty(), AxisInterval1D::empty()};
+    using value_type = T;
+
+    [[nodiscard]] static constexpr BasicLogicalBox2D empty() noexcept {
+        return BasicLogicalBox2D{
+            BasicAxisInterval1D<T>::empty(),
+            BasicAxisInterval1D<T>::empty()
+        };
     }
 
-    [[nodiscard]] static constexpr LogicalBox2D from_intervals(
-        AxisInterval1D first,
-        AxisInterval1D second
+    [[nodiscard]] static constexpr BasicLogicalBox2D from_intervals(
+        BasicAxisInterval1D<T> first,
+        BasicAxisInterval1D<T> second
     ) noexcept {
-        return LogicalBox2D{first, second};
+        return BasicLogicalBox2D{first, second};
     }
 
-    [[nodiscard]] constexpr AxisInterval1D first_interval() const noexcept {
+    [[nodiscard]] constexpr BasicAxisInterval1D<T> first_interval()
+        const noexcept {
         return first_;
     }
 
-    [[nodiscard]] constexpr AxisInterval1D second_interval() const noexcept {
+    [[nodiscard]] constexpr BasicAxisInterval1D<T> second_interval()
+        const noexcept {
         return second_;
     }
 
@@ -41,24 +51,28 @@ public:
         return first_.is_interval() && second_.is_interval();
     }
 
-    [[nodiscard]] constexpr Real computational_area() const noexcept {
+    [[nodiscard]] constexpr T computational_area() const noexcept {
         if (!is_area()) {
-            return Real{};
+            return T{};
         }
 
         return first_.length() * second_.length();
     }
 
 private:
-    constexpr LogicalBox2D(
-        AxisInterval1D first,
-        AxisInterval1D second
+    constexpr BasicLogicalBox2D(
+        BasicAxisInterval1D<T> first,
+        BasicAxisInterval1D<T> second
     ) noexcept
         : first_(first),
           second_(second) {}
 
-    AxisInterval1D first_ = AxisInterval1D::empty();
-    AxisInterval1D second_ = AxisInterval1D::empty();
+    BasicAxisInterval1D<T> first_ = BasicAxisInterval1D<T>::empty();
+    BasicAxisInterval1D<T> second_ = BasicAxisInterval1D<T>::empty();
 };
+
+using LogicalBox2D = BasicLogicalBox2D<double>;
+using LogicalBox2DFloat = BasicLogicalBox2D<float>;
+using LogicalBox2DLongDouble = BasicLogicalBox2D<long double>;
 
 }  // namespace fvgrid

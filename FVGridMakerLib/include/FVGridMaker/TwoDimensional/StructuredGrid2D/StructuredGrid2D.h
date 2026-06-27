@@ -11,6 +11,7 @@
 #pragma once
 
 #include <cmath>
+#include <concepts>
 #include <iosfwd>
 #include <span>
 #include <string>
@@ -28,14 +29,18 @@
 
 namespace fvgrid {
 
-class StructuredGrid2D final {
+template <std::floating_point T>
+class BasicStructuredGrid2D final {
 public:
-    StructuredGrid2D(Axis1D first_axis, Axis1D second_axis);
+    using value_type = T;
 
-    template <CoordinateMapping2D Mapping>
-    StructuredGrid2D(
-        Axis1D first_axis,
-        Axis1D second_axis,
+    BasicStructuredGrid2D(BasicAxis1D<T> first_axis, BasicAxis1D<T> second_axis);
+
+    template <class Mapping>
+        requires CoordinateMapping2DFor<Mapping, T>
+    BasicStructuredGrid2D(
+        BasicAxis1D<T> first_axis,
+        BasicAxis1D<T> second_axis,
         const Mapping& mapping
     )
         : first_axis_(std::move(first_axis)),
@@ -69,10 +74,10 @@ public:
     [[nodiscard]] std::string_view second_coordinate_name() const noexcept;
     [[nodiscard]] bool vtk_rectilinear() const noexcept;
 
-    [[nodiscard]] const Axis1D& first_axis() const noexcept;
-    [[nodiscard]] const Axis1D& second_axis() const noexcept;
-    [[nodiscard]] const Axis1D& x_axis() const noexcept;
-    [[nodiscard]] const Axis1D& y_axis() const noexcept;
+    [[nodiscard]] const BasicAxis1D<T>& first_axis() const noexcept;
+    [[nodiscard]] const BasicAxis1D<T>& second_axis() const noexcept;
+    [[nodiscard]] const BasicAxis1D<T>& x_axis() const noexcept;
+    [[nodiscard]] const BasicAxis1D<T>& y_axis() const noexcept;
 
     [[nodiscard]] Size num_cells_x() const noexcept;
     [[nodiscard]] Size num_cells_y() const noexcept;
@@ -80,215 +85,82 @@ public:
     [[nodiscard]] Size num_faces_x() const noexcept;
     [[nodiscard]] Size num_faces_y() const noexcept;
 
-    [[nodiscard]] Real xmin() const noexcept;
-    [[nodiscard]] Real xmax() const noexcept;
-    [[nodiscard]] Real ymin() const noexcept;
-    [[nodiscard]] Real ymax() const noexcept;
-    [[nodiscard]] Real length_x() const noexcept;
-    [[nodiscard]] Real length_y() const noexcept;
+    [[nodiscard]] T xmin() const noexcept;
+    [[nodiscard]] T xmax() const noexcept;
+    [[nodiscard]] T ymin() const noexcept;
+    [[nodiscard]] T ymax() const noexcept;
+    [[nodiscard]] T length_x() const noexcept;
+    [[nodiscard]] T length_y() const noexcept;
 
     [[nodiscard]] Size linear_cell_index(Size i, Size j) const;
 
-    [[nodiscard]] Real first_face(Size i) const;
-    [[nodiscard]] Real second_face(Size j) const;
-    [[nodiscard]] Real first_center(Size i) const;
-    [[nodiscard]] Real second_center(Size j) const;
-    [[nodiscard]] Real first_cell_length(Size i) const;
-    [[nodiscard]] Real second_cell_length(Size j) const;
+    [[nodiscard]] T first_face(Size i) const;
+    [[nodiscard]] T second_face(Size j) const;
+    [[nodiscard]] T first_center(Size i) const;
+    [[nodiscard]] T second_center(Size j) const;
+    [[nodiscard]] T first_cell_length(Size i) const;
+    [[nodiscard]] T second_cell_length(Size j) const;
 
-    [[nodiscard]] Real x_face(Size i) const;
-    [[nodiscard]] Real y_face(Size j) const;
-    [[nodiscard]] Real x_center(Size i) const;
-    [[nodiscard]] Real y_center(Size j) const;
-    [[nodiscard]] Real x_cell_length(Size i) const;
-    [[nodiscard]] Real y_cell_length(Size j) const;
+    [[nodiscard]] T x_face(Size i) const;
+    [[nodiscard]] T y_face(Size j) const;
+    [[nodiscard]] T x_center(Size i) const;
+    [[nodiscard]] T y_center(Size j) const;
+    [[nodiscard]] T x_cell_length(Size i) const;
+    [[nodiscard]] T y_cell_length(Size j) const;
 
-    // Computational area in the two independent coordinates.
-    [[nodiscard]] Real cell_area(Size i, Size j) const;
+    [[nodiscard]] T cell_logical_area(Size i, Size j) const;
+    [[nodiscard]] T cell_area(Size i, Size j) const;
 
-    // Physical area/volume supplied by the coordinate mapping.
-    [[nodiscard]] Real cell_measure(Size i, Size j) const;
-    [[nodiscard]] Real first_face_measure(Size i, Size j) const;
-    [[nodiscard]] Real second_face_measure(Size i, Size j) const;
-    [[nodiscard]] std::span<const Real> cell_measures() const noexcept;
-    [[nodiscard]] std::span<const Real> first_face_measures() const noexcept;
-    [[nodiscard]] std::span<const Real> second_face_measures() const noexcept;
+    [[nodiscard]] T cell_measure(Size i, Size j) const;
+    [[nodiscard]] T first_face_measure(Size i, Size j) const;
+    [[nodiscard]] T second_face_measure(Size i, Size j) const;
+    [[nodiscard]] std::span<const T> cell_measures() const noexcept;
+    [[nodiscard]] std::span<const T> first_face_measures() const noexcept;
+    [[nodiscard]] std::span<const T> second_face_measures() const noexcept;
 
-    [[nodiscard]] Real vertical_face_length(Size j) const;
-    [[nodiscard]] Real horizontal_face_length(Size i) const;
+    [[nodiscard]] T vertical_face_length(Size j) const;
+    [[nodiscard]] T horizontal_face_length(Size i) const;
 
-    // A physical vertex is the mapped point at a pair of logical face
-    // coordinates. The old name is kept as a compatibility alias.
-    [[nodiscard]] PhysicalPoint2D physical_vertex(Size i, Size j) const;
-    [[nodiscard]] PhysicalPoint2D physical_face_point(Size i, Size j) const;
-    [[nodiscard]] PhysicalPoint2D physical_cell_center(Size i, Size j) const;
-    [[nodiscard]] PhysicalPoint2D physical_first_face_center(
+    [[nodiscard]] BasicPhysicalPoint2D<T> physical_vertex(Size i, Size j) const;
+    [[nodiscard]] BasicPhysicalPoint2D<T> physical_face_point(Size i, Size j) const;
+    [[nodiscard]] BasicPhysicalPoint2D<T> physical_cell_center(Size i, Size j) const;
+    [[nodiscard]] BasicPhysicalPoint2D<T> physical_first_face_center(
         Size i,
         Size j
     ) const;
-    [[nodiscard]] PhysicalPoint2D physical_second_face_center(
+    [[nodiscard]] BasicPhysicalPoint2D<T> physical_second_face_center(
         Size i,
         Size j
     ) const;
 
 private:
-    Axis1D first_axis_;
-    Axis1D second_axis_;
+    BasicAxis1D<T> first_axis_;
+    BasicAxis1D<T> second_axis_;
     std::string coordinate_system_name_;
     std::string first_coordinate_name_;
     std::string second_coordinate_name_;
     bool vtk_rectilinear_{};
-    std::vector<PhysicalPoint2D> physical_face_points_;
-    std::vector<PhysicalPoint2D> physical_cell_centers_;
-    std::vector<PhysicalPoint2D> physical_first_face_centers_;
-    std::vector<PhysicalPoint2D> physical_second_face_centers_;
-    std::vector<Real> cell_measures_;
-    std::vector<Real> first_face_measures_;
-    std::vector<Real> second_face_measures_;
+    std::vector<BasicPhysicalPoint2D<T>> physical_face_points_;
+    std::vector<BasicPhysicalPoint2D<T>> physical_cell_centers_;
+    std::vector<BasicPhysicalPoint2D<T>> physical_first_face_centers_;
+    std::vector<BasicPhysicalPoint2D<T>> physical_second_face_centers_;
+    std::vector<T> cell_measures_;
+    std::vector<T> first_face_measures_;
+    std::vector<T> second_face_measures_;
 
     [[nodiscard]] static bool physical_point_is_finite(
-        PhysicalPoint2D point
+        BasicPhysicalPoint2D<T> point
     ) noexcept;
 
     void validate_axis_patterns() const;
 
-    template <CoordinateMapping2D Mapping>
-    void build_derived_geometry(const Mapping& mapping) {
-        physical_face_points_.resize(num_faces_x() * num_faces_y());
+    template <class Mapping>
+        requires CoordinateMapping2DFor<Mapping, T>
+    void build_derived_geometry(const Mapping& mapping);
 
-        for (Size j = 0; j < num_faces_y(); ++j) {
-            for (Size i = 0; i < num_faces_x(); ++i) {
-                const PhysicalPoint2D point =
-                    mapping.map(first_face(i), second_face(j));
-
-                require<errors::core::InvalidArgument>(
-                    physical_point_is_finite(point),
-                    id()
-                );
-
-                physical_face_points_[j * num_faces_x() + i] = point;
-            }
-        }
-
-        physical_cell_centers_.resize(num_cells());
-
-        for (Size j = 0; j < num_cells_y(); ++j) {
-            for (Size i = 0; i < num_cells_x(); ++i) {
-                const PhysicalPoint2D point =
-                    mapping.map(first_center(i), second_center(j));
-
-                require<errors::core::InvalidArgument>(
-                    physical_point_is_finite(point),
-                    id()
-                );
-
-                physical_cell_centers_[linear_cell_index(i, j)] = point;
-            }
-        }
-
-        physical_first_face_centers_.resize(num_faces_x() * num_cells_y());
-
-        for (Size j = 0; j < num_cells_y(); ++j) {
-            for (Size i = 0; i < num_faces_x(); ++i) {
-                const PhysicalPoint2D point =
-                    mapping.map(first_face(i), second_center(j));
-
-                require<errors::core::InvalidArgument>(
-                    physical_point_is_finite(point),
-                    id()
-                );
-
-                physical_first_face_centers_[j * num_faces_x() + i] = point;
-            }
-        }
-
-        physical_second_face_centers_.resize(num_cells_x() * num_faces_y());
-
-        for (Size j = 0; j < num_faces_y(); ++j) {
-            for (Size i = 0; i < num_cells_x(); ++i) {
-                const PhysicalPoint2D point =
-                    mapping.map(first_center(i), second_face(j));
-
-                require<errors::core::InvalidArgument>(
-                    physical_point_is_finite(point),
-                    id()
-                );
-
-                physical_second_face_centers_[j * num_cells_x() + i] = point;
-            }
-        }
-
-        cell_measures_.resize(num_cells());
-
-        for (Size j = 0; j < num_cells_y(); ++j) {
-            for (Size i = 0; i < num_cells_x(); ++i) {
-                const Real measure = static_cast<Real>(
-                    mapping.cell_measure(
-                        CoordinateCell2D{
-                            first_face(i),
-                            first_face(i + static_cast<Size>(1)),
-                            second_face(j),
-                            second_face(j + static_cast<Size>(1))
-                        }
-                    )
-                );
-
-                require<errors::core::InvalidArgument>(
-                    std::isfinite(measure) && measure > Real{},
-                    id()
-                );
-
-                cell_measures_[linear_cell_index(i, j)] = measure;
-            }
-        }
-
-        build_face_measures(mapping);
-    }
-
-    template <CoordinateMapping2D Mapping>
-    void build_face_measures(const Mapping& mapping) {
-        first_face_measures_.resize(num_faces_x() * num_cells_y());
-
-        for (Size j = 0; j < num_cells_y(); ++j) {
-            for (Size i = 0; i < num_faces_x(); ++i) {
-                const Real value =
-                    coordinate_metrics::first_face_measure(
-                        mapping,
-                        first_face(i),
-                        second_face(j),
-                        second_face(j + static_cast<Size>(1))
-                    );
-
-                require<errors::core::InvalidArgument>(
-                    std::isfinite(value) && value >= Real{},
-                    id()
-                );
-
-                first_face_measures_[j * num_faces_x() + i] = value;
-            }
-        }
-
-        second_face_measures_.resize(num_cells_x() * num_faces_y());
-
-        for (Size j = 0; j < num_faces_y(); ++j) {
-            for (Size i = 0; i < num_cells_x(); ++i) {
-                const Real value =
-                    coordinate_metrics::second_face_measure(
-                        mapping,
-                        second_face(j),
-                        first_face(i),
-                        first_face(i + static_cast<Size>(1))
-                    );
-
-                require<errors::core::InvalidArgument>(
-                    std::isfinite(value) && value >= Real{},
-                    id()
-                );
-
-                second_face_measures_[j * num_cells_x() + i] = value;
-            }
-        }
-    }
+    template <class Mapping>
+        requires CoordinateMapping2DFor<Mapping, T>
+    void build_face_measures(const Mapping& mapping);
 
     void validate_x_cell_index(Size i) const;
     void validate_y_cell_index(Size j) const;
@@ -297,6 +169,16 @@ private:
     void validate_cell_index(Size i, Size j) const;
 };
 
-std::ostream& operator<<(std::ostream& output, const StructuredGrid2D& grid);
+using StructuredGrid2D = BasicStructuredGrid2D<double>;
+using StructuredGrid2DFloat = BasicStructuredGrid2D<float>;
+using StructuredGrid2DLongDouble = BasicStructuredGrid2D<long double>;
+
+template <std::floating_point T>
+std::ostream& operator<<(
+    std::ostream& output,
+    const BasicStructuredGrid2D<T>& grid
+);
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.tpp>

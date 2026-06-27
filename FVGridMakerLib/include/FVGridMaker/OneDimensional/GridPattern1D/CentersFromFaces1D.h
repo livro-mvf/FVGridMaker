@@ -9,18 +9,13 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <cmath>
+#include <concepts>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
@@ -69,26 +64,27 @@ public:
         return "centers";
     }
 
-    [[nodiscard]] AxisGeometry1D complete_geometry(
-        std::vector<Real> faces,
-        Domain1D
+    template <std::floating_point T>
+    [[nodiscard]] BasicAxisGeometry1D<T> complete_geometry(
+        std::vector<T> faces,
+        BasicDomain1D<T>
     ) const {
         validate_face_count(faces.size());
 
-        std::vector<Real> centers;
+        std::vector<T> centers;
         centers.reserve(faces.size() - static_cast<Size>(1));
 
         for (Size p = 0; p + static_cast<Size>(1) < faces.size(); ++p) {
-            const Real theta = weights_(p);
+            const T theta = static_cast<T>(weights_(p));
             validate_weight(theta);
 
             centers.push_back(
-                (static_cast<Real>(1.0) - theta) * faces[p] +
+                (T{1} - theta) * faces[p] +
                 theta * faces[p + static_cast<Size>(1)]
             );
         }
 
-        return AxisGeometry1D{
+        return BasicAxisGeometry1D<T>{
             std::move(faces),
             std::move(centers),
             std::string{name()}
@@ -103,11 +99,10 @@ private:
         );
     }
 
-    static void validate_weight(Real theta) {
+    template <std::floating_point T>
+    static void validate_weight(T theta) {
         require<errors::core::InvalidArgument>(
-            std::isfinite(theta) &&
-            theta > static_cast<Real>(0.0) &&
-            theta < static_cast<Real>(1.0),
+            std::isfinite(theta) && theta > T{0} && theta < T{1},
             CentersFromFaces1D::id()
         );
     }

@@ -9,32 +9,29 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <cmath>
 #include <concepts>
+#include <limits>
 #include <string_view>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/StrongTypes.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/GridPatternConcept1D.h>
 
 namespace fvgrid {
 
-class Roberts1D final {
+template <std::floating_point T>
+class BasicRoberts1D final {
 public:
+    using value_type = T;
+
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
             "OneDimensional",
@@ -51,97 +48,103 @@ public:
         return id().class_id();
     }
 
-    [[nodiscard]] static Axis1D make(
+    [[nodiscard]] static BasicAxis1D<T> make(
         NVol nvol,
-        Length length,
-        XInit xinit,
-        Beta beta
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
+        BasicBeta<T> beta
     );
 
     template <class Pattern>
-        requires GridPattern1D<std::remove_cvref_t<Pattern>>
-    [[nodiscard]] static Axis1D make(
+        requires GridPattern1DFor<std::remove_cvref_t<Pattern>, T>
+    [[nodiscard]] static BasicAxis1D<T> make(
         NVol nvol,
-        Length length,
-        XInit xinit,
-        Beta beta,
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
+        BasicBeta<T> beta,
         Pattern&& pattern
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
 
         validate_input(nvol, length, xinit, beta);
 
-        const Domain1D domain = Domain1D::from_length(xinit, length);
+        const BasicDomain1D<T> domain = BasicDomain1D<T>::from_length(
+            xinit,
+            length
+        );
 
-        auto map = [xinit, length, beta](Real eta) {
+        auto map = [xinit, length, beta](T eta) {
             return xinit.value() +
-                   length.value() * normalized_coordinate(eta, beta.value());
+                length.value() * normalized_coordinate(eta, beta.value());
         };
 
-        std::vector<Real> primary_coordinates =
-            build_primary_coordinates<PatternType>(
-                nvol.value(),
-                map
-            );
+        std::vector<T> primary_coordinates =
+            build_primary_coordinates<PatternType>(nvol.value(), map);
 
         const auto& pattern_ref = pattern;
 
-        AxisGeometry1D geometry = pattern_ref.complete_geometry(
+        BasicAxisGeometry1D<T> geometry = pattern_ref.complete_geometry(
             std::move(primary_coordinates),
             domain
         );
 
-        return Axis1D::from_geometry(std::move(geometry));
+        return BasicAxis1D<T>::from_geometry(std::move(geometry));
     }
 
 private:
-    [[nodiscard]] static constexpr Real beta_margin() noexcept {
-        return static_cast<Real>(1.0e-12);
+    [[nodiscard]] static constexpr T beta_margin() noexcept {
+        return static_cast<T>(100) * std::numeric_limits<T>::epsilon();
     }
 
     static void validate_input(
         NVol nvol,
-        Length length,
-        XInit xinit,
-        Beta beta
+        BasicLength<T> length,
+        BasicXInit<T> xinit,
+        BasicBeta<T> beta
     );
 
-    [[nodiscard]] static Real normalized_coordinate(
-        Real eta,
-        Real beta
-    );
+    [[nodiscard]] static T normalized_coordinate(T eta, T beta);
 
     template <class PatternType, class CoordinateMap>
-    [[nodiscard]] static std::vector<Real> build_primary_coordinates(
+    [[nodiscard]] static std::vector<T> build_primary_coordinates(
         Size cell_count,
         CoordinateMap&& map
     ) {
         using CoordinateTag = typename PatternType::primary_coordinates;
 
         if constexpr (std::same_as<CoordinateTag, FaceCoordinates1D>) {
-            std::vector<Real> faces(cell_count + static_cast<Size>(1));
-            const Real deta =
-                static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+            std::vector<T> faces(cell_count + static_cast<Size>(1));
+            const T deta = T{1} / static_cast<T>(cell_count);
 
             for (Size i = 0; i <= cell_count; ++i) {
-                faces[i] = map(static_cast<Real>(i) * deta);
+                faces[i] = map(static_cast<T>(i) * deta);
             }
 
             return faces;
         } else {
-            std::vector<Real> centers(cell_count);
-            const Real deta =
-                static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+            std::vector<T> centers(cell_count);
+            const T deta = T{1} / static_cast<T>(cell_count);
 
             for (Size i = 0; i < cell_count; ++i) {
-                centers[i] =
-                    map((static_cast<Real>(i) + static_cast<Real>(0.5)) * deta);
+                centers[i] = map((static_cast<T>(i) + T{0.5}) * deta);
             }
 
             return centers;
         }
     }
 };
+
+using Roberts1D = BasicRoberts1D<double>;
+using Roberts1DFloat = BasicRoberts1D<float>;
+using Roberts1DLongDouble = BasicRoberts1D<long double>;
+
+template <std::floating_point T>
+[[nodiscard]] BasicAxis1D<T> roberts_axis_1d(
+    NVol nvol,
+    BasicLength<T> length,
+    BasicXInit<T> xinit,
+    BasicBeta<T> beta
+);
 
 [[nodiscard]] Axis1D roberts_axis_1d(
     NVol nvol,
@@ -151,7 +154,7 @@ private:
 );
 
 template <class Pattern>
-    requires GridPattern1D<std::remove_cvref_t<Pattern>>
+    requires GridPattern1DFor<std::remove_cvref_t<Pattern>, double>
 [[nodiscard]] Axis1D roberts_axis_1d(
     NVol nvol,
     Length length,
@@ -168,4 +171,21 @@ template <class Pattern>
     );
 }
 
+template <std::floating_point T>
+[[nodiscard]] BasicAxis1D<T> roberts_axis_1d(
+    Size nvol,
+    T xinit,
+    T xfinal,
+    T beta
+);
+
+[[nodiscard]] Axis1D roberts_axis_1d(
+    Size nvol,
+    double xinit,
+    double xfinal,
+    double beta
+);
+
 }  // namespace fvgrid
+
+#include <FVGridMaker/OneDimensional/Distribution1D/Roberts1D.tpp>

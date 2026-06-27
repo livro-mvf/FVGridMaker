@@ -9,21 +9,23 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
+#include <algorithm>
+#include <concepts>
 #include <span>
+#include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
+#include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FacesFromCenters1D.h>
 
 namespace fvgrid {
 
@@ -56,32 +58,131 @@ struct FaceCentered1D final {
         return "faces";
     }
 
-    [[nodiscard]] static std::vector<Real> faces_from_centers(
-        std::span<const Real> centers,
-        Real x_min,
-        Real x_max
-    );
+    template <std::floating_point T>
+    [[nodiscard]] static std::vector<T> faces_from_centers(
+        std::span<const T> centers,
+        T x_min,
+        T x_max
+    ) {
+        const BasicDomain1D<T> domain = BasicDomain1D<T>::from_bounds(
+            BasicXInit<T>{x_min},
+            BasicXFinal<T>{x_max}
+        );
+
+        validate_domain_for_face_centered(domain);
+        validate_centers_for_face_centered(centers, x_min, x_max);
+
+        std::vector<T> center_values(centers.begin(), centers.end());
+
+        BasicAxisGeometry1D<T> geometry = make_midpoint_reconstructor<T>()
+            .complete_geometry(std::move(center_values), domain);
+
+        return std::move(geometry.faces);
+    }
 
     template <class CoordinateMap>
     [[nodiscard]] static std::vector<Real> primary_coordinates_from_map(
         Size cell_count,
         CoordinateMap&& map
     ) {
-        std::vector<Real> centers(cell_count);
-        const Real deta = static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+        return primary_coordinates_from_map<Real>(
+            cell_count,
+            std::forward<CoordinateMap>(map)
+        );
+    }
+
+    template <std::floating_point T, class CoordinateMap>
+    [[nodiscard]] static std::vector<T> primary_coordinates_from_map(
+        Size cell_count,
+        CoordinateMap&& map
+    ) {
+        std::vector<T> centers(cell_count);
+        const T deta = T{1} / static_cast<T>(cell_count);
 
         for (Size i = 0; i < cell_count; ++i) {
-            centers[i] =
-                map((static_cast<Real>(i) + static_cast<Real>(0.5)) * deta);
+            centers[i] = static_cast<T>(
+                map((static_cast<T>(i) + T{0.5}) * deta)
+            );
         }
 
         return centers;
     }
 
-    [[nodiscard]] static AxisGeometry1D complete_geometry(
-        std::vector<Real> centers,
-        Domain1D domain
-    );
+    template <std::floating_point T>
+    [[nodiscard]] static BasicAxisGeometry1D<T> complete_geometry(
+        std::vector<T> centers,
+        BasicDomain1D<T> domain
+    ) {
+        validate_domain_for_face_centered(domain);
+
+        validate_centers_for_face_centered(
+            std::span<const T>{centers.data(), centers.size()},
+            domain.xmin(),
+            domain.xmax()
+        );
+
+        BasicAxisGeometry1D<T> geometry = make_midpoint_reconstructor<T>()
+            .complete_geometry(std::move(centers), domain);
+
+        geometry.pattern_name = std::string{name()};
+
+        return geometry;
+    }
+
+private:
+    template <std::floating_point T>
+    [[nodiscard]] static FacesFromCenters1D<BasicConstantWeight1D<T>>
+    make_midpoint_reconstructor() {
+        return FacesFromCenters1D{BasicConstantWeight1D<T>{T{0.5}}};
+    }
+
+    template <std::floating_point T>
+    static void validate_domain_for_face_centered(BasicDomain1D<T> domain) {
+        require<errors::core::InvalidArgument>(
+            domain.has_bounds(),
+            FaceCentered1D::id()
+        );
+
+        require<errors::grid::InvalidLength>(
+            domain.xmax() > domain.xmin(),
+            FaceCentered1D::id()
+        );
+    }
+
+    template <std::floating_point T>
+    static void validate_centers_for_face_centered(
+        std::span<const T> centers,
+        T x_min,
+        T x_max
+    ) {
+        require<errors::grid::InvalidCenterCount>(
+            !centers.empty(),
+            FaceCentered1D::id()
+        );
+
+        const bool centers_strictly_increasing =
+            std::ranges::adjacent_find(
+                centers,
+                [](T left, T right) {
+                    return !(right > left);
+                }
+            ) == centers.end();
+
+        require<errors::grid::NonIncreasingCenters>(
+            centers_strictly_increasing,
+            FaceCentered1D::id()
+        );
+
+        require<errors::core::OutOfRange>(
+            centers.front() > x_min,
+            FaceCentered1D::id()
+        );
+
+        require<errors::core::OutOfRange>(
+            centers.back() < x_max,
+            FaceCentered1D::id()
+        );
+    }
 };
 
 }  // namespace fvgrid

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <concepts>
 #include <filesystem>
 #include <iosfwd>
 #include <span>
@@ -17,6 +18,15 @@
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
 
 namespace fvgrid {
+
+template <std::floating_point T>
+constexpr std::string_view vtk_scalar_type_name() noexcept {
+    if constexpr (std::same_as<T, float>) {
+        return "float";
+    } else {
+        return "double";
+    }
+}
 
 class LegacyVTKRectilinearGrid2DWriter final {
 public:
@@ -36,32 +46,39 @@ public:
         return id().class_id();
     }
 
+    template <std::floating_point T>
     static void write(
-        const StructuredGrid2D& grid,
+        const BasicStructuredGrid2D<T>& grid,
         const std::filesystem::path& filepath
     );
 
 private:
+    template <std::floating_point T>
     static void write_geometry(
         std::ostream& output,
-        const StructuredGrid2D& grid
+        const BasicStructuredGrid2D<T>& grid
     );
 
+    template <std::floating_point T>
     static void write_coordinate_array(
         std::ostream& output,
         std::string_view vtk_name,
-        std::span<const Real> coordinates
+        std::span<const T> coordinates
     );
 
+    template <std::floating_point T>
     static void write_cell_measure_data(
         std::ostream& output,
-        const StructuredGrid2D& grid
+        const BasicStructuredGrid2D<T>& grid
     );
 };
 
+template <std::floating_point T>
 void write_vtk(
-    const StructuredGrid2D& grid,
+    const BasicStructuredGrid2D<T>& grid,
     const std::filesystem::path& filepath
 );
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/Output/VTK/LegacyVTKRectilinearGrid2DWriter.tpp>

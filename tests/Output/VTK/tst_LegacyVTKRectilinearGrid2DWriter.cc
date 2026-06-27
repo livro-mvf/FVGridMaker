@@ -151,7 +151,7 @@ TEST(LegacyVTKRectilinearGrid2DWriter, WritesLegacyRectilinearGridFile) {
     );
 
     EXPECT_NE(
-        content.find("SCALARS cell_area double 1"),
+        content.find("SCALARS cell_measure double 1"),
         std::string::npos
     );
 
@@ -196,7 +196,7 @@ TEST(LegacyVTKRectilinearGrid2DWriter, WritesCellAreasInRowMajorOrder) {
     const std::string content = read_text_file(output_path);
 
     const std::string expected_cell_area_block =
-        "SCALARS cell_area double 1\n"
+        "SCALARS cell_measure double 1\n"
         "LOOKUP_TABLE default\n"
         "2\n"
         "4\n"

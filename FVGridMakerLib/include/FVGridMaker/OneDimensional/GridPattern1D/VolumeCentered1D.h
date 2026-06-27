@@ -9,19 +9,20 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
+#include <concepts>
 #include <span>
+#include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
+#include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CentersFromFaces1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/ConstantWeight1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
@@ -56,29 +57,74 @@ struct VolumeCentered1D final {
         return "centers";
     }
 
-    [[nodiscard]] static std::vector<Real> centers_from_faces(
-        std::span<const Real> faces
-    );
+    template <std::floating_point T>
+    [[nodiscard]] static std::vector<T> centers_from_faces(
+        std::span<const T> faces
+    ) {
+        validate_face_count_for_volume_centered(faces.size());
+
+        std::vector<T> face_values(faces.begin(), faces.end());
+
+        BasicAxisGeometry1D<T> geometry = make_midpoint_reconstructor<T>()
+            .complete_geometry(std::move(face_values), BasicDomain1D<T>::none());
+
+        return std::move(geometry.centers);
+    }
 
     template <class CoordinateMap>
     [[nodiscard]] static std::vector<Real> primary_coordinates_from_map(
         Size cell_count,
         CoordinateMap&& map
     ) {
-        std::vector<Real> faces(cell_count + 1);
-        const Real deta = static_cast<Real>(1.0) / static_cast<Real>(cell_count);
+        return primary_coordinates_from_map<Real>(
+            cell_count,
+            std::forward<CoordinateMap>(map)
+        );
+    }
+
+    template <std::floating_point T, class CoordinateMap>
+    [[nodiscard]] static std::vector<T> primary_coordinates_from_map(
+        Size cell_count,
+        CoordinateMap&& map
+    ) {
+        std::vector<T> faces(cell_count + static_cast<Size>(1));
+        const T deta = T{1} / static_cast<T>(cell_count);
 
         for (Size i = 0; i <= cell_count; ++i) {
-            faces[i] = map(static_cast<Real>(i) * deta);
+            faces[i] = static_cast<T>(map(static_cast<T>(i) * deta));
         }
 
         return faces;
     }
 
-    [[nodiscard]] static AxisGeometry1D complete_geometry(
-        std::vector<Real> faces,
-        Domain1D domain
-    );
+    template <std::floating_point T>
+    [[nodiscard]] static BasicAxisGeometry1D<T> complete_geometry(
+        std::vector<T> faces,
+        BasicDomain1D<T> domain
+    ) {
+        validate_face_count_for_volume_centered(faces.size());
+
+        BasicAxisGeometry1D<T> geometry = make_midpoint_reconstructor<T>()
+            .complete_geometry(std::move(faces), domain);
+
+        geometry.pattern_name = std::string{name()};
+
+        return geometry;
+    }
+
+private:
+    template <std::floating_point T>
+    [[nodiscard]] static CentersFromFaces1D<BasicConstantWeight1D<T>>
+    make_midpoint_reconstructor() {
+        return CentersFromFaces1D{BasicConstantWeight1D<T>{T{0.5}}};
+    }
+
+    static void validate_face_count_for_volume_centered(Size count) {
+        require<errors::grid::InvalidFaceCount>(
+            count >= static_cast<Size>(2),
+            VolumeCentered1D::id()
+        );
+    }
 };
 
 }  // namespace fvgrid

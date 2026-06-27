@@ -7,13 +7,12 @@
 
 #pragma once
 
+#include <concepts>
 #include <string_view>
 #include <utility>
 
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
-#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
-#include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
@@ -40,67 +39,60 @@ public:
         return id().class_id();
     }
 
-    static void validate_tolerance(Real tolerance);
+    template <std::floating_point T>
+    static void validate_tolerance(T tolerance);
 
-    [[nodiscard]] static LogicalBox2D domain_box(
-        const StructuredGrid2D& grid
+    template <std::floating_point T>
+    [[nodiscard]] static BasicLogicalBox2D<T> domain_box(
+        const BasicStructuredGrid2D<T>& grid
     ) noexcept;
 
-    [[nodiscard]] static LogicalBox2D intersection(
-        const StructuredGrid2D& left,
-        const StructuredGrid2D& right,
-        Real tolerance = Real{}
+    template <std::floating_point T>
+    [[nodiscard]] static BasicLogicalBox2D<T> intersection(
+        const BasicStructuredGrid2D<T>& left,
+        const BasicStructuredGrid2D<T>& right,
+        T tolerance = T{}
     );
 
-    [[nodiscard]] static LogicalBox2D require_box_intersection(
-        const StructuredGrid2D& left,
-        const StructuredGrid2D& right,
-        Real tolerance = Real{}
+    template <std::floating_point T>
+    [[nodiscard]] static BasicLogicalBox2D<T> require_box_intersection(
+        const BasicStructuredGrid2D<T>& left,
+        const BasicStructuredGrid2D<T>& right,
+        T tolerance = T{}
     );
 
-    [[nodiscard]] static StructuredGrid2D clip_to_logical_box(
-        const StructuredGrid2D& grid,
-        LogicalBox2D box,
-        Real tolerance = Real{}
+    template <std::floating_point T>
+    [[nodiscard]] static BasicStructuredGrid2D<T> clip_to_logical_box(
+        const BasicStructuredGrid2D<T>& grid,
+        BasicLogicalBox2D<T> box,
+        T tolerance = T{}
     );
 
-    template <CoordinateMapping2D Mapping>
-    [[nodiscard]] static StructuredGrid2D clip_to_logical_box(
-        const StructuredGrid2D& grid,
-        LogicalBox2D box,
+    template <std::floating_point T, class Mapping>
+        requires CoordinateMapping2DFor<Mapping, T>
+    [[nodiscard]] static BasicStructuredGrid2D<T> clip_to_logical_box(
+        const BasicStructuredGrid2D<T>& grid,
+        BasicLogicalBox2D<T> box,
         const Mapping& mapping,
-        Real tolerance = Real{}
-    ) {
-        validate_tolerance(tolerance);
-        require_area_box(box);
-        require_volume_centered_axes(grid);
-
-        Axis1D first_axis = Operations1D::clip_faces_to_interval(
-            grid.first_axis(),
-            box.first_interval(),
-            tolerance
-        );
-        Axis1D second_axis = Operations1D::clip_faces_to_interval(
-            grid.second_axis(),
-            box.second_interval(),
-            tolerance
-        );
-
-        return StructuredGrid2D{
-            std::move(first_axis),
-            std::move(second_axis),
-            mapping
-        };
-    }
+        T tolerance = T{}
+    );
 
 private:
+    template <std::floating_point T>
     static void require_same_patterns(
-        const StructuredGrid2D& left,
-        const StructuredGrid2D& right
+        const BasicStructuredGrid2D<T>& left,
+        const BasicStructuredGrid2D<T>& right
     );
 
-    static void require_area_box(LogicalBox2D box);
-    static void require_volume_centered_axes(const StructuredGrid2D& grid);
+    template <std::floating_point T>
+    static void require_area_box(BasicLogicalBox2D<T> box);
+
+    template <std::floating_point T>
+    static void require_volume_centered_axes(
+        const BasicStructuredGrid2D<T>& grid
+    );
 };
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/TwoDimensional/Operations2D/Operations2D.tpp>

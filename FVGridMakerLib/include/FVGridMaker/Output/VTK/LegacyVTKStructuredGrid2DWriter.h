@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <concepts>
 #include <filesystem>
 #include <iosfwd>
 #include <string_view>
@@ -34,21 +35,26 @@ public:
         return id().class_id();
     }
 
+    template <std::floating_point T>
     static void write(
-        const StructuredGrid2D& grid,
+        const BasicStructuredGrid2D<T>& grid,
         const std::filesystem::path& filepath
     );
 
 private:
+    template <std::floating_point T>
     static void write_geometry(
         std::ostream& output,
-        const StructuredGrid2D& grid
+        const BasicStructuredGrid2D<T>& grid
     );
 
+    template <std::floating_point T>
     static void write_cell_measure_data(
         std::ostream& output,
-        const StructuredGrid2D& grid
+        const BasicStructuredGrid2D<T>& grid
     );
 };
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/Output/VTK/LegacyVTKStructuredGrid2DWriter.tpp>

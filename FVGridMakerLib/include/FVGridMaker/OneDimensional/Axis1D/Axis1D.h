@@ -9,9 +9,6 @@
 
 #pragma once
 
-// ----------------------------------------------------------------------------
-// C++ standard library includes
-// ----------------------------------------------------------------------------
 #include <concepts>
 #include <iosfwd>
 #include <span>
@@ -19,28 +16,30 @@
 #include <string_view>
 #include <vector>
 
-// ----------------------------------------------------------------------------
-// FVGridMaker includes
-// ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 
 namespace fvgrid {
 
-class Axis1D final {
+template <std::floating_point T>
+class BasicAxis1D final {
 public:
-    Axis1D() = delete;
+    using value_type = T;
 
-    explicit Axis1D(std::vector<Real> faces);
+    BasicAxis1D() = delete;
 
-    Axis1D(
-        std::vector<Real> faces,
-        std::vector<Real> centers,
+    explicit BasicAxis1D(std::vector<T> faces);
+
+    BasicAxis1D(
+        std::vector<T> faces,
+        std::vector<T> centers,
         std::string pattern_name
     );
 
-    [[nodiscard]] static Axis1D from_geometry(AxisGeometry1D geometry);
+    [[nodiscard]] static BasicAxis1D from_geometry(
+        BasicAxisGeometry1D<T> geometry
+    );
 
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{
@@ -61,33 +60,33 @@ public:
     [[nodiscard]] Size num_cells() const noexcept;
     [[nodiscard]] Size num_faces() const noexcept;
 
-    [[nodiscard]] std::span<const Real> faces() const noexcept;
-    [[nodiscard]] std::span<const Real> centers() const noexcept;
+    [[nodiscard]] std::span<const T> faces() const noexcept;
+    [[nodiscard]] std::span<const T> centers() const noexcept;
 
-    [[nodiscard]] std::span<const Real> dx_faces() const noexcept;
-    [[nodiscard]] std::span<const Real> dx_centers() const noexcept;
+    [[nodiscard]] std::span<const T> dx_faces() const noexcept;
+    [[nodiscard]] std::span<const T> dx_centers() const noexcept;
 
-    [[nodiscard]] std::span<const Real> cell_lengths() const noexcept;
+    [[nodiscard]] std::span<const T> cell_lengths() const noexcept;
 
-    [[nodiscard]] Real face(Size i) const noexcept;
-    [[nodiscard]] Real center(Size p) const noexcept;
+    [[nodiscard]] T face(Size i) const noexcept;
+    [[nodiscard]] T center(Size p) const noexcept;
 
-    [[nodiscard]] Real west_face(Size p) const noexcept;
-    [[nodiscard]] Real east_face(Size p) const noexcept;
+    [[nodiscard]] T west_face(Size p) const noexcept;
+    [[nodiscard]] T east_face(Size p) const noexcept;
 
-    [[nodiscard]] Real cell_length(Size p) const noexcept;
-    [[nodiscard]] Real center_distance(Size i) const noexcept;
+    [[nodiscard]] T cell_length(Size p) const noexcept;
+    [[nodiscard]] T center_distance(Size i) const noexcept;
 
-    [[nodiscard]] Real DxP(Size p) const noexcept;
-    [[nodiscard]] Real DxW(Size p) const noexcept;
-    [[nodiscard]] Real DxE(Size p) const noexcept;
+    [[nodiscard]] T DxP(Size p) const noexcept;
+    [[nodiscard]] T DxW(Size p) const noexcept;
+    [[nodiscard]] T DxE(Size p) const noexcept;
 
-    [[nodiscard]] Real deltaxw(Size p) const noexcept;
-    [[nodiscard]] Real deltaxe(Size p) const noexcept;
+    [[nodiscard]] T deltaxw(Size p) const noexcept;
+    [[nodiscard]] T deltaxe(Size p) const noexcept;
 
-    [[nodiscard]] Real xmin() const noexcept;
-    [[nodiscard]] Real xmax() const noexcept;
-    [[nodiscard]] Real length() const noexcept;
+    [[nodiscard]] T xmin() const noexcept;
+    [[nodiscard]] T xmax() const noexcept;
+    [[nodiscard]] T length() const noexcept;
 
     [[nodiscard]] std::string_view pattern_name() const noexcept;
 
@@ -100,10 +99,10 @@ public:
     }
 
 private:
-    std::vector<Real> faces_;
-    std::vector<Real> centers_;
-    std::vector<Real> dx_faces_;
-    std::vector<Real> dx_centers_;
+    std::vector<T> faces_;
+    std::vector<T> centers_;
+    std::vector<T> dx_faces_;
+    std::vector<T> dx_centers_;
 
     std::string pattern_name_{"VolumeCentered1D"};
 
@@ -111,6 +110,13 @@ private:
     void rebuild_metrics();
 };
 
-std::ostream& operator<<(std::ostream& os, const Axis1D& axis);
+using Axis1D = BasicAxis1D<double>;
+using Axis1DFloat = BasicAxis1D<float>;
+using Axis1DLongDouble = BasicAxis1D<long double>;
+
+template <std::floating_point T>
+std::ostream& operator<<(std::ostream& os, const BasicAxis1D<T>& axis);
 
 }  // namespace fvgrid
+
+#include <FVGridMaker/OneDimensional/Axis1D/Axis1D.tpp>
