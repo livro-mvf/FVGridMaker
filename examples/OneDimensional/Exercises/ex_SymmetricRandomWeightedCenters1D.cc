@@ -35,20 +35,17 @@
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Custom1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateKind1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/CoordinateTags1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Coordinates1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
 
 namespace {
 
 struct FacesPonderadasDosCentros1D final {
+    using primary_coordinates = fvgrid::CenterCoordinates1D;
+
     [[nodiscard]] static constexpr std::string_view name() noexcept {
         return "FacesPonderadasDosCentros1D";
-    }
-
-    [[nodiscard]] static constexpr fvgrid::CoordinateKind1D input_kind()
-        noexcept {
-        return fvgrid::CoordinateKind1D::Centers;
     }
 
     [[nodiscard]] static fvgrid::AxisGeometry1D complete_geometry(
@@ -169,7 +166,7 @@ private:
         if (residual > tolerancia) {
             std::cout << "  centros[" << i << "] + centros[" << j
                       << "] difere de 2*xmeio por "
-                << residual << '\n';
+                      << residual << '\n';
             passou = false;
         }
     }
@@ -218,8 +215,7 @@ void avisar_espacamentos_pequenos(
     }
 }
 
-void imprimir_razao_de_espacamentos(const fvgrid::Axis1D& malha)
-{
+void imprimir_razao_de_espacamentos(const fvgrid::Axis1D& malha) {
     const auto dx = malha.dx_faces();
     const auto [min_it, max_it] = std::minmax_element(dx.begin(), dx.end());
 
@@ -256,8 +252,7 @@ void imprimir_razao_de_espacamentos(const fvgrid::Axis1D& malha)
     return (aprovados == total) ? 0u : 1u;
 }
 
-void imprimir_mensagem_final()
-{
+void imprimir_mensagem_final() {
     std::cout << "\nAplicacoes e recomendacoes\n";
     std::cout << "--------------------------\n";
     std::cout << "1. A classe MalhaSimetrica1D permanece no exercicio; ";
@@ -268,10 +263,9 @@ void imprimir_mensagem_final()
     std::cout << "definido pelo usuario antes de reutiliza-lo em outros casos.\n";
 }
 
-} // namespace
+}  // namespace
 
-int main()
-{
+int main() {
     try {
         const fvgrid::Length comprimento{1.0};
         const fvgrid::NVol numero_de_volumes{9};
