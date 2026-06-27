@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -18,6 +19,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
@@ -186,6 +188,29 @@ TEST(Axis1D, BuildsFromCompleteFacesAndCenters) {
     EXPECT_DOUBLE_EQ(axis.centers()[1], 0.8);
 }
 
+TEST(Axis1D, BuildsFromAxisGeometry) {
+    AxisGeometry1D geometry{
+        std::vector<Real>{0.0, 0.5, 1.0},
+        std::vector<Real>{0.2, 0.8},
+        "CustomPattern1D"
+    };
+
+    const Axis1D axis = Axis1D::from_geometry(std::move(geometry));
+
+    EXPECT_EQ(axis.num_faces(), static_cast<Size>(3));
+    EXPECT_EQ(axis.num_cells(), static_cast<Size>(2));
+    EXPECT_EQ(axis.pattern_name(), std::string_view{"CustomPattern1D"});
+
+    ASSERT_EQ(axis.faces().size(), static_cast<Size>(3));
+    EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
+    EXPECT_DOUBLE_EQ(axis.faces()[1], 0.5);
+    EXPECT_DOUBLE_EQ(axis.faces()[2], 1.0);
+
+    ASSERT_EQ(axis.centers().size(), static_cast<Size>(2));
+    EXPECT_DOUBLE_EQ(axis.centers()[0], 0.2);
+    EXPECT_DOUBLE_EQ(axis.centers()[1], 0.8);
+}
+
 TEST(Axis1D, ComputesMetricsFromCompleteFacesAndCenters) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},
@@ -205,7 +230,7 @@ TEST(Axis1D, ComputesMetricsFromCompleteFacesAndCenters) {
 
 TEST(Axis1D, RejectsEmptyFacesInVolumeCenteredReconstruction) {
     try {
-        const Axis1D axis{{}};
+        const Axis1D axis{std::vector<Real>{}};
     } catch (const FVGridException& exception) {
         EXPECT_EQ(
             exception.record().code,

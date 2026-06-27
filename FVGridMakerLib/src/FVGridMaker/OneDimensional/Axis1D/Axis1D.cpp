@@ -54,6 +54,14 @@ Axis1D::Axis1D(
     rebuild_metrics();
 }
 
+Axis1D Axis1D::from_geometry(AxisGeometry1D geometry) {
+    return Axis1D{
+        std::move(geometry.faces),
+        std::move(geometry.centers),
+        geometry.pattern_name
+    };
+}
+
 Size Axis1D::num_cells() const noexcept {
     return centers_.size();
 }
@@ -223,17 +231,15 @@ std::ostream& operator<<(std::ostream& os, const Axis1D& axis) {
 
             if (has_cell_data) {
                 os << std::setw(16) << center
-                   << std::setw(16) << dx_face;
+                   << std::setw(16) << dx_face
+                   << std::setw(16) << dx_center;
             } else {
-                os << std::setw(16) << ""
-                   << std::setw(16) << "";
+                os << std::setw(16) << "-"
+                   << std::setw(16) << "-"
+                   << std::setw(16) << dx_center;
             }
 
-            os << std::setw(16) << dx_center;
-
-            if (has_cell_data) {
-                os << '\n';
-            }
+            os << '\n';
         }
     );
 

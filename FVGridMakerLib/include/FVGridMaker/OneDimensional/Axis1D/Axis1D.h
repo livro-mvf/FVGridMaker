@@ -24,6 +24,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 
 namespace fvgrid {
 
@@ -40,6 +41,8 @@ public:
         std::vector<Real> centers,
         std::string_view pattern_name
     );
+
+    [[nodiscard]] static Axis1D from_geometry(AxisGeometry1D geometry);
 
     [[nodiscard]] static constexpr ID id() noexcept {
         return ID{

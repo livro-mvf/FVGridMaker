@@ -70,11 +70,7 @@ public:
             domain
         );
 
-        return Axis1D{
-            std::move(geometry.faces),
-            std::move(geometry.centers),
-            geometry.pattern_name
-        };
+        return Axis1D::from_geometry(std::move(geometry));
     }
 };
 
