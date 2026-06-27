@@ -133,6 +133,61 @@ TEST(Axis1D, StoresCustomPatternName) {
     EXPECT_EQ(axis.pattern_name(), std::string_view{"CustomPattern1D"});
 }
 
+TEST(Axis1D, RejectsEmptyPatternName) {
+    try {
+        const Axis1D axis{
+            {0.0, 0.5, 1.0},
+            ""
+        };
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.CORE.INVALID_ARGUMENT"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Core"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.1d.axis.Axis1D"}
+        );
+        return;
+    }
+
+    FAIL() << "Axis1D did not reject an empty pattern name.";
+}
+
+TEST(Axis1D, RejectsEmptyPatternNameFromAxisGeometry) {
+    try {
+        AxisGeometry1D geometry{
+            std::vector<Real>{0.0, 0.5, 1.0},
+            std::vector<Real>{0.2, 0.8},
+            ""
+        };
+
+        const Axis1D axis = Axis1D::from_geometry(std::move(geometry));
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.CORE.INVALID_ARGUMENT"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Core"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Axis1D"}
+        );
+        EXPECT_EQ(
+            exception.record().source.class_id(),
+            std::string_view{"fvgrid.1d.axis.Axis1D"}
+        );
+        return;
+    }
+
+    FAIL() << "Axis1D did not reject an empty pattern name from geometry.";
+}
+
 TEST(Axis1D, RejectsBuiltInPatternQueriesForCustomPatternName) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},

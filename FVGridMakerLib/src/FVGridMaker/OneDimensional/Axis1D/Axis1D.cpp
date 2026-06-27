@@ -117,6 +117,11 @@ void Axis1D::validate_geometry() const {
         Axis1D::id()
     );
 
+    require<errors::core::InvalidArgument>(
+        !pattern_name_.empty(),
+        Axis1D::id()
+    );
+
     const bool faces_are_finite = std::ranges::all_of(
         faces_,
         [](Real value) {
