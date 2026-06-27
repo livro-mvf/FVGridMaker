@@ -108,7 +108,8 @@ TEST(Axis1D, DetectsVolumeCenteredPatternByType) {
 TEST(Axis1D, StoresExplicitFaceCenteredPatternName) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},
-        FaceCentered1D::name()
+        {0.25, 0.75},
+        std::string{FaceCentered1D::name()}
     };
 
     EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
@@ -117,7 +118,8 @@ TEST(Axis1D, StoresExplicitFaceCenteredPatternName) {
 TEST(Axis1D, DetectsExplicitFaceCenteredPatternByType) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},
-        FaceCentered1D::name()
+        {0.25, 0.75},
+        std::string{FaceCentered1D::name()}
     };
 
     EXPECT_TRUE(axis.has_pattern<FaceCentered1D>());
@@ -127,6 +129,7 @@ TEST(Axis1D, DetectsExplicitFaceCenteredPatternByType) {
 TEST(Axis1D, StoresCustomPatternName) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},
+        {0.25, 0.75},
         "CustomPattern1D"
     };
 
@@ -137,6 +140,7 @@ TEST(Axis1D, RejectsEmptyPatternName) {
     try {
         const Axis1D axis{
             {0.0, 0.5, 1.0},
+            {0.25, 0.75},
             ""
         };
     } catch (const FVGridException& exception) {
@@ -191,6 +195,7 @@ TEST(Axis1D, RejectsEmptyPatternNameFromAxisGeometry) {
 TEST(Axis1D, RejectsBuiltInPatternQueriesForCustomPatternName) {
     const Axis1D axis{
         {0.0, 0.5, 1.0},
+        {0.25, 0.75},
         "CustomPattern1D"
     };
 
@@ -201,7 +206,12 @@ TEST(Axis1D, RejectsBuiltInPatternQueriesForCustomPatternName) {
 TEST(Axis1D, OwnsDynamicPatternName) {
     Axis1D axis = [] {
         std::string dynamic_name{"DynamicPattern1D"};
-        return Axis1D{{0.0, 0.5, 1.0}, dynamic_name};
+
+        return Axis1D{
+            {0.0, 0.5, 1.0},
+            {0.25, 0.75},
+            dynamic_name
+        };
     }();
 
     EXPECT_EQ(axis.pattern_name(), std::string_view{"DynamicPattern1D"});
@@ -281,6 +291,61 @@ TEST(Axis1D, ComputesMetricsFromCompleteFacesAndCenters) {
     EXPECT_DOUBLE_EQ(axis.dx_centers()[0], 0.2);
     EXPECT_DOUBLE_EQ(axis.dx_centers()[1], 0.6);
     EXPECT_DOUBLE_EQ(axis.dx_centers()[2], 0.2);
+}
+
+TEST(Axis1D, ProvidesScalarCoordinateAccessors) {
+    const Axis1D axis{{0.0, 0.5, 1.0, 2.0}};
+
+    EXPECT_DOUBLE_EQ(axis.face(0), 0.0);
+    EXPECT_DOUBLE_EQ(axis.face(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.face(2), 1.0);
+    EXPECT_DOUBLE_EQ(axis.face(3), 2.0);
+
+    EXPECT_DOUBLE_EQ(axis.center(0), 0.25);
+    EXPECT_DOUBLE_EQ(axis.center(1), 0.75);
+    EXPECT_DOUBLE_EQ(axis.center(2), 1.5);
+}
+
+TEST(Axis1D, ProvidesCellFaceAccessors) {
+    const Axis1D axis{{0.0, 0.5, 1.0, 2.0}};
+
+    EXPECT_DOUBLE_EQ(axis.west_face(0), 0.0);
+    EXPECT_DOUBLE_EQ(axis.east_face(0), 0.5);
+
+    EXPECT_DOUBLE_EQ(axis.west_face(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.east_face(1), 1.0);
+
+    EXPECT_DOUBLE_EQ(axis.west_face(2), 1.0);
+    EXPECT_DOUBLE_EQ(axis.east_face(2), 2.0);
+}
+
+TEST(Axis1D, ProvidesFiniteVolumeDistanceAccessors) {
+    const Axis1D axis{{0.0, 0.5, 1.0, 2.0}};
+
+    EXPECT_DOUBLE_EQ(axis.cell_length(0), 0.5);
+    EXPECT_DOUBLE_EQ(axis.cell_length(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.cell_length(2), 1.0);
+
+    EXPECT_DOUBLE_EQ(axis.center_distance(0), 0.25);
+    EXPECT_DOUBLE_EQ(axis.center_distance(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.center_distance(2), 0.75);
+    EXPECT_DOUBLE_EQ(axis.center_distance(3), 0.5);
+
+    EXPECT_DOUBLE_EQ(axis.DxP(0), 0.5);
+    EXPECT_DOUBLE_EQ(axis.DxP(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.DxP(2), 1.0);
+
+    EXPECT_DOUBLE_EQ(axis.DxW(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.DxW(2), 0.5);
+
+    EXPECT_DOUBLE_EQ(axis.DxE(0), 0.5);
+    EXPECT_DOUBLE_EQ(axis.DxE(1), 1.0);
+
+    EXPECT_DOUBLE_EQ(axis.deltaxw(1), 0.5);
+    EXPECT_DOUBLE_EQ(axis.deltaxw(2), 0.75);
+
+    EXPECT_DOUBLE_EQ(axis.deltaxe(0), 0.5);
+    EXPECT_DOUBLE_EQ(axis.deltaxe(1), 0.75);
 }
 
 TEST(Axis1D, RejectsEmptyFacesInVolumeCenteredReconstruction) {

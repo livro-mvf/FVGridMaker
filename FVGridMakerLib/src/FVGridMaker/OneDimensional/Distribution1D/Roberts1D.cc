@@ -40,6 +40,7 @@ Axis1D Roberts1D::make(
 void Roberts1D::validate_input(
     NVol nvol,
     Length length,
+    XInit xinit,
     Beta beta
 ) {
     require<errors::grid::InvalidNVol>(
@@ -48,12 +49,19 @@ void Roberts1D::validate_input(
     );
 
     require<errors::grid::InvalidLength>(
-        length.value() > static_cast<Real>(0.0),
+        std::isfinite(length.value()) &&
+            length.value() > static_cast<Real>(0.0),
+        Roberts1D::id()
+    );
+
+    require<errors::core::InvalidArgument>(
+        std::isfinite(xinit.value()),
         Roberts1D::id()
     );
 
     require<errors::grid::InvalidBeta>(
-        beta.value() > static_cast<Real>(1.0),
+        std::isfinite(beta.value()) &&
+            beta.value() > static_cast<Real>(1.0) + beta_margin(),
         Roberts1D::id()
     );
 }

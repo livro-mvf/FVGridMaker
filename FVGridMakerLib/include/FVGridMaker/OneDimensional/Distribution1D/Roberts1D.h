@@ -69,7 +69,7 @@ public:
     ) {
         using PatternType = std::remove_cvref_t<Pattern>;
 
-        validate_input(nvol, length, beta);
+        validate_input(nvol, length, xinit, beta);
 
         const Domain1D domain = Domain1D::from_length(xinit, length);
 
@@ -95,9 +95,14 @@ public:
     }
 
 private:
+    [[nodiscard]] static constexpr Real beta_margin() noexcept {
+        return static_cast<Real>(1.0e-12);
+    }
+
     static void validate_input(
         NVol nvol,
         Length length,
+        XInit xinit,
         Beta beta
     );
 

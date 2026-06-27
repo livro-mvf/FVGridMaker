@@ -66,7 +66,7 @@ public:
         const auto& pattern_ref = pattern;
 
         AxisGeometry1D geometry = pattern_ref.complete_geometry(
-            coordinates.release_values(),
+            std::move(coordinates).release_values(),
             domain
         );
 

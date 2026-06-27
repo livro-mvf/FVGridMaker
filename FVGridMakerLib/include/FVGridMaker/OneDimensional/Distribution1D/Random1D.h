@@ -100,6 +100,7 @@ public:
         validate_input(
             nvol,
             length,
+            xinit,
             min_spacing,
             interval_count_for_pattern<PatternType>(nvol)
         );
@@ -134,10 +135,19 @@ private:
     static void validate_input(
         NVol nvol,
         Length length,
+        XInit xinit,
         MinSpacing min_spacing,
         Size interval_count
     );
 
+    // Builds a normalized random partition of total_length.
+    //
+    // This is not the same as sampling sorted independent random faces
+    // uniformly over the admissible simplex. The routine generates positive
+    // random weights, normalizes their free part, and then adds min_spacing
+    // to each interval. It is intended as a deterministic stress-test mesh
+    // generator controlled by Seed, not as a statistical sampler with a
+    // prescribed probability law for mesh spacings.
     [[nodiscard]] static std::vector<Real> build_random_partition(
         Size interval_count,
         Real total_length,

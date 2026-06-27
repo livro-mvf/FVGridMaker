@@ -34,12 +34,10 @@ public:
 
     explicit Axis1D(std::vector<Real> faces);
 
-    Axis1D(std::vector<Real> faces, std::string_view pattern_name);
-
     Axis1D(
         std::vector<Real> faces,
         std::vector<Real> centers,
-        std::string_view pattern_name
+        std::string pattern_name
     );
 
     [[nodiscard]] static Axis1D from_geometry(AxisGeometry1D geometry);
@@ -70,6 +68,22 @@ public:
     [[nodiscard]] std::span<const Real> dx_centers() const noexcept;
 
     [[nodiscard]] std::span<const Real> cell_lengths() const noexcept;
+
+    [[nodiscard]] Real face(Size i) const noexcept;
+    [[nodiscard]] Real center(Size p) const noexcept;
+
+    [[nodiscard]] Real west_face(Size p) const noexcept;
+    [[nodiscard]] Real east_face(Size p) const noexcept;
+
+    [[nodiscard]] Real cell_length(Size p) const noexcept;
+    [[nodiscard]] Real center_distance(Size i) const noexcept;
+
+    [[nodiscard]] Real DxP(Size p) const noexcept;
+    [[nodiscard]] Real DxW(Size p) const noexcept;
+    [[nodiscard]] Real DxE(Size p) const noexcept;
+
+    [[nodiscard]] Real deltaxw(Size p) const noexcept;
+    [[nodiscard]] Real deltaxe(Size p) const noexcept;
 
     [[nodiscard]] Real xmin() const noexcept;
     [[nodiscard]] Real xmax() const noexcept;

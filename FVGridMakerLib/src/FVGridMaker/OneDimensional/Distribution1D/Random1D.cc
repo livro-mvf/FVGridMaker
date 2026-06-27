@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <cmath>
 #include <limits>
 #include <random>
 #include <vector>
@@ -60,6 +61,7 @@ Axis1D Random1D::make(
 void Random1D::validate_input(
     NVol nvol,
     Length length,
+    XInit xinit,
     MinSpacing min_spacing,
     Size interval_count
 ) {
@@ -69,12 +71,19 @@ void Random1D::validate_input(
     );
 
     require<errors::grid::InvalidLength>(
-        length.value() > static_cast<Real>(0.0),
+        std::isfinite(length.value()) &&
+            length.value() > static_cast<Real>(0.0),
+        Random1D::id()
+    );
+
+    require<errors::core::InvalidArgument>(
+        std::isfinite(xinit.value()),
         Random1D::id()
     );
 
     require<errors::grid::InvalidMinSpacing>(
-        min_spacing.value() >= static_cast<Real>(0.0),
+        std::isfinite(min_spacing.value()) &&
+            min_spacing.value() >= static_cast<Real>(0.0),
         Random1D::id()
     );
 
@@ -93,7 +102,6 @@ std::vector<Real> Random1D::build_random_partition(
     Real min_spacing,
     std::mt19937_64& random_engine
 ) {
-    std::vector<Real> weights(interval_count);
     std::vector<Real> partition(interval_count);
 
     const Real required_minimum =
@@ -117,14 +125,15 @@ std::vector<Real> Random1D::build_random_partition(
     Real weight_sum = static_cast<Real>(0.0);
 
     for (Size i = 0; i < interval_count; ++i) {
-        weights[i] =
+        partition[i] =
             distribution(random_engine) + std::numeric_limits<Real>::epsilon();
-        weight_sum += weights[i];
+
+        weight_sum += partition[i];
     }
 
     for (Size i = 0; i < interval_count; ++i) {
         partition[i] =
-            min_spacing + remaining_length * weights[i] / weight_sum;
+            min_spacing + remaining_length * partition[i] / weight_sum;
     }
 
     return partition;

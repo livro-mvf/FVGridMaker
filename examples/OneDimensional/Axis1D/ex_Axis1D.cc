@@ -17,12 +17,10 @@
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 
 int main() {
     const fvgrid::Axis1D axis{
-        std::vector<fvgrid::Real>{0.0, 0.25, 0.5, 1.0},
-        fvgrid::FaceCentered1D::name()
+        std::vector<fvgrid::Real>{0.0, 0.25, 0.5, 1.0}
     };
 
     std::cout << "Axis1D example\n";
@@ -50,6 +48,28 @@ int main() {
         std::cout << cell_length << ' ';
     }
     std::cout << '\n';
+
+    std::cout << "finite-volume distances\n";
+
+    for (fvgrid::Size p = 0; p < axis.num_cells(); ++p) {
+        std::cout << "cell " << p
+                  << " west_face=" << axis.west_face(p)
+                  << " center=" << axis.center(p)
+                  << " east_face=" << axis.east_face(p)
+                  << " DxP=" << axis.DxP(p);
+
+        if (p > 0) {
+            std::cout << " DxW=" << axis.DxW(p)
+                      << " deltaxw=" << axis.deltaxw(p);
+        }
+
+        if (p + static_cast<fvgrid::Size>(1) < axis.num_cells()) {
+            std::cout << " DxE=" << axis.DxE(p)
+                      << " deltaxe=" << axis.deltaxe(p);
+        }
+
+        std::cout << '\n';
+    }
 
     return 0;
 }

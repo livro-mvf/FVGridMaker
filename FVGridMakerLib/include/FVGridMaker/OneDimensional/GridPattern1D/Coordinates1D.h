@@ -30,23 +30,23 @@ public:
     [[nodiscard]] static Coordinates1D faces(std::vector<Real> values) {
         return Coordinates1D{
             std::move(values),
-            StorageTag::Faces
+            true
         };
     }
 
     [[nodiscard]] static Coordinates1D centers(std::vector<Real> values) {
         return Coordinates1D{
             std::move(values),
-            StorageTag::Centers
+            false
         };
     }
 
     template <PrimaryCoordinateTag1D Tag>
     [[nodiscard]] bool has_tag() const noexcept {
         if constexpr (std::same_as<Tag, FaceCoordinates1D>) {
-            return tag_ == StorageTag::Faces;
+            return is_face_coordinates_;
         } else {
-            return tag_ == StorageTag::Centers;
+            return !is_face_coordinates_;
         }
     }
 
@@ -54,25 +54,20 @@ public:
         return values_;
     }
 
-    [[nodiscard]] std::vector<Real> release_values() noexcept {
+    [[nodiscard]] std::vector<Real> release_values() && noexcept {
         return std::move(values_);
     }
 
 private:
-    enum class StorageTag {
-        Faces,
-        Centers
-    };
-
     Coordinates1D(
         std::vector<Real> values,
-        StorageTag tag
+        bool is_face_coordinates
     ) noexcept
         : values_(std::move(values)),
-          tag_(tag) {}
+          is_face_coordinates_(is_face_coordinates) {}
 
     std::vector<Real> values_;
-    StorageTag tag_;
+    bool is_face_coordinates_;
 };
 
 }  // namespace fvgrid

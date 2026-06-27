@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <utility>
 #include <vector>
 
 // ----------------------------------------------------------------------------
@@ -59,7 +60,7 @@ TEST(Coordinates1D, ReleasesStoredValues) {
         std::vector<Real>{0.0, 0.5, 1.0}
     );
 
-    std::vector<Real> values = coordinates.release_values();
+    std::vector<Real> values = std::move(coordinates).release_values();
 
     ASSERT_EQ(values.size(), static_cast<Size>(3));
     EXPECT_DOUBLE_EQ(values[0], 0.0);

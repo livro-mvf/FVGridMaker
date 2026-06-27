@@ -12,6 +12,7 @@
 // ----------------------------------------------------------------------------
 #include <limits>
 #include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -271,12 +272,14 @@ TEST(Operations1D, RejectsInfiniteTolerance) {
 TEST(Operations1D, ChecksPatternCompatibility) {
     const Axis1D left{
         std::vector<Real>{0.0, 0.5, 1.0},
-        std::string_view{"PatternA"}
+        std::vector<Real>{0.25, 0.75},
+        std::string{"PatternA"}
     };
 
     const Axis1D right{
         std::vector<Real>{0.0, 0.5, 1.0},
-        std::string_view{"PatternB"}
+        std::vector<Real>{0.25, 0.75},
+        std::string{"PatternB"}
     };
 
     EXPECT_FALSE(Operations1D::same_pattern(left, right));
@@ -320,7 +323,7 @@ TEST(Operations1D, RejectsCompatibilityBetweenFaceCenteredAndClippedAxes) {
     const Axis1D face_centered_axis{
         std::vector<Real>{0.0, 0.5, 1.0},
         std::vector<Real>{0.2, 0.8},
-        FaceCentered1D::name()
+        std::string{FaceCentered1D::name()}
     };
 
     const Axis1D source_axis{

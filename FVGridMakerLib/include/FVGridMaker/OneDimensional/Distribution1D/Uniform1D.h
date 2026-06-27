@@ -50,7 +50,8 @@ public:
 private:
     static void validate_input(
         NVol nvol,
-        Length length
+        Length length,
+        XInit xinit
     );
 };
 

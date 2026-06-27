@@ -21,6 +21,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 
 namespace fvgrid {
@@ -132,6 +133,11 @@ Axis1D Operations1D::clip_faces_to_interval(
 
     require<errors::operation::EmptyGridIntersection>(
         interval.is_interval(),
+        Operations1D::id()
+    );
+
+    require<errors::operation::IncompatibleGridPatterns>(
+        axis.has_pattern<VolumeCentered1D>(),
         Operations1D::id()
     );
 

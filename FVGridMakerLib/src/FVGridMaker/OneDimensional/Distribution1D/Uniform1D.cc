@@ -10,6 +10,7 @@
 // ----------------------------------------------------------------------------
 // C++ standard library includes
 // ----------------------------------------------------------------------------
+#include <cmath>
 #include <utility>
 #include <vector>
 
@@ -30,7 +31,7 @@ Axis1D Uniform1D::make(
     Length length,
     XInit xinit
 ) {
-    validate_input(nvol, length);
+    validate_input(nvol, length, xinit);
 
     const Size cell_count = nvol.value();
     const Real dx = length.value() / static_cast<Real>(cell_count);
@@ -52,7 +53,8 @@ Axis1D Uniform1D::make(
 
 void Uniform1D::validate_input(
     NVol nvol,
-    Length length
+    Length length,
+    XInit xinit
 ) {
     require<errors::grid::InvalidNVol>(
         nvol.value() > 0,
@@ -60,7 +62,13 @@ void Uniform1D::validate_input(
     );
 
     require<errors::grid::InvalidLength>(
-        length.value() > static_cast<Real>(0.0),
+        std::isfinite(length.value()) &&
+            length.value() > static_cast<Real>(0.0),
+        Uniform1D::id()
+    );
+
+    require<errors::core::InvalidArgument>(
+        std::isfinite(xinit.value()),
         Uniform1D::id()
     );
 }

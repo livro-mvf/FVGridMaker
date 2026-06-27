@@ -10,10 +10,18 @@
 #pragma once
 
 // ----------------------------------------------------------------------------
+// C++ standard library includes
+// ----------------------------------------------------------------------------
+#include <string_view>
+
+// ----------------------------------------------------------------------------
 // FVGridMaker includes
 // ----------------------------------------------------------------------------
+#include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/StrongTypes.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
+#include <FVGridMaker/ErrorHandling/ThrowError.h>
 
 namespace fvgrid {
 
@@ -41,19 +49,50 @@ public:
         return Domain1D{xinit.value(), xfinal.value(), true};
     }
 
+    [[nodiscard]] static constexpr ID id() noexcept {
+        return ID{
+            "OneDimensional",
+            "Domain1D",
+            "fvgrid.1d.pattern.Domain1D"
+        };
+    }
+
+    [[nodiscard]] static constexpr std::string_view class_name() noexcept {
+        return id().class_name();
+    }
+
+    [[nodiscard]] static constexpr std::string_view class_id() noexcept {
+        return id().class_id();
+    }
+
     [[nodiscard]] constexpr bool has_bounds() const noexcept {
         return has_bounds_;
     }
 
-    [[nodiscard]] constexpr Real xmin() const noexcept {
+    [[nodiscard]] Real xmin() const {
+        require<errors::core::InvalidArgument>(
+            has_bounds_,
+            Domain1D::id()
+        );
+
         return xmin_;
     }
 
-    [[nodiscard]] constexpr Real xmax() const noexcept {
+    [[nodiscard]] Real xmax() const {
+        require<errors::core::InvalidArgument>(
+            has_bounds_,
+            Domain1D::id()
+        );
+
         return xmax_;
     }
 
-    [[nodiscard]] constexpr Real length() const noexcept {
+    [[nodiscard]] Real length() const {
+        require<errors::core::InvalidArgument>(
+            has_bounds_,
+            Domain1D::id()
+        );
+
         return xmax_ - xmin_;
     }
 

@@ -69,6 +69,11 @@
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 
 // ----------------------------------------------------------------------------
+// Stable public API: One-dimensional quality metrics
+// ----------------------------------------------------------------------------
+#include <FVGridMaker/OneDimensional/Quality1D/Quality1D.h>
+
+// ----------------------------------------------------------------------------
 // Stable public API: One-dimensional output
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/Output/CSV/Axis1DCSVWriter.h>
