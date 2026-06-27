@@ -162,10 +162,7 @@ Axis1D Operations1D::clip_faces_to_interval(
         Operations1D::id()
     );
 
-    return Axis1D{
-        std::move(clipped_faces),
-        Operations1D::clipped_pattern_name()
-    };
+    return Axis1D{std::move(clipped_faces)};
 }
 
 }  // namespace fvgrid

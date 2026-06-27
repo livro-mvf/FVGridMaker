@@ -44,11 +44,6 @@ public:
         return id().class_id();
     }
 
-    [[nodiscard]] static constexpr std::string_view clipped_pattern_name()
-        noexcept {
-        return "Operations1D::clip_faces_to_interval";
-    }
-
     static void validate_tolerance(Real tolerance);
 
     [[nodiscard]] static bool same_pattern(

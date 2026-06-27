@@ -20,6 +20,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/AxisInterval1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 
@@ -79,8 +80,14 @@ TEST(AxisInterval1D, InvalidBoundsBecomeEmpty) {
 }
 
 TEST(Operations1D, StoresClassIdentity) {
-    EXPECT_EQ(Operations1D::id().module(), std::string_view{"OneDimensional"});
-    EXPECT_EQ(Operations1D::id().class_name(), std::string_view{"Operations1D"});
+    EXPECT_EQ(
+        Operations1D::id().module(),
+        std::string_view{"OneDimensional"}
+    );
+    EXPECT_EQ(
+        Operations1D::id().class_name(),
+        std::string_view{"Operations1D"}
+    );
     EXPECT_EQ(
         Operations1D::id().class_id(),
         std::string_view{"fvgrid.1d.operations.Operations1D"}
@@ -207,13 +214,12 @@ TEST(Operations1D, RejectsRequiredPointIntersection) {
 
     try {
         [[maybe_unused]] const AxisInterval1D interval =
-         Operations1D::require_interval_intersection(left, right);
+            Operations1D::require_interval_intersection(left, right);
     } catch (const FVGridException& exception) {
         EXPECT_EQ(
             exception.record().code,
             std::string_view{"FVGRID.OPERATION.EMPTY_GRID_INTERSECTION"}
         );
-    
         EXPECT_EQ(exception.record().category, std::string_view{"Operation"});
         EXPECT_EQ(
             exception.record().source.class_name(),
@@ -323,7 +329,7 @@ TEST(Operations1D, ClipsFacesToInterval) {
     const Axis1D clipped =
         Operations1D::clip_faces_to_interval(axis, interval, 1.0e-12);
 
-    EXPECT_EQ(clipped.pattern_name(), Operations1D::clipped_pattern_name());
+    EXPECT_EQ(clipped.pattern_name(), VolumeCentered1D::name());
 
     ASSERT_EQ(clipped.faces().size(), static_cast<Size>(5));
     EXPECT_DOUBLE_EQ(clipped.faces()[0], 0.2);
@@ -349,6 +355,8 @@ TEST(Operations1D, ClipsFacesToIntervalWithoutInteriorFaces) {
     const Axis1D clipped =
         Operations1D::clip_faces_to_interval(axis, interval, 1.0e-12);
 
+    EXPECT_EQ(clipped.pattern_name(), VolumeCentered1D::name());
+
     ASSERT_EQ(clipped.faces().size(), static_cast<Size>(2));
     EXPECT_DOUBLE_EQ(clipped.faces()[0], 0.1);
     EXPECT_DOUBLE_EQ(clipped.faces()[1], 0.2);
@@ -363,7 +371,7 @@ TEST(Operations1D, RejectsClipToEmptyOrPointInterval) {
     };
 
     try {
-        const Axis1D clipped =
+        [[maybe_unused]] const Axis1D clipped =
             Operations1D::clip_faces_to_interval(
                 axis,
                 AxisInterval1D::point(0.5)
