@@ -20,6 +20,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/AxisInterval1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
@@ -296,6 +297,61 @@ TEST(Operations1D, ChecksPatternCompatibility) {
     }
 
     FAIL() << "Operations1D accepted incompatible grid patterns.";
+}
+
+TEST(Operations1D, AcceptsCompatibilityBetweenDefaultAndClippedAxes) {
+    const Axis1D axis{
+        std::vector<Real>{0.0, 0.25, 0.5, 0.75, 1.0}
+    };
+
+    const AxisInterval1D interval = AxisInterval1D::from_bounds(0.2, 0.8);
+
+    const Axis1D clipped =
+        Operations1D::clip_faces_to_interval(axis, interval, 1.0e-12);
+
+    EXPECT_TRUE(axis.has_pattern<VolumeCentered1D>());
+    EXPECT_TRUE(clipped.has_pattern<VolumeCentered1D>());
+    EXPECT_TRUE(Operations1D::same_pattern(axis, clipped));
+
+    EXPECT_NO_THROW(Operations1D::require_same_pattern(axis, clipped));
+}
+
+TEST(Operations1D, RejectsCompatibilityBetweenFaceCenteredAndClippedAxes) {
+    const Axis1D face_centered_axis{
+        std::vector<Real>{0.0, 0.5, 1.0},
+        std::vector<Real>{0.2, 0.8},
+        FaceCentered1D::name()
+    };
+
+    const Axis1D source_axis{
+        std::vector<Real>{0.0, 0.25, 0.5, 0.75, 1.0}
+    };
+
+    const AxisInterval1D interval = AxisInterval1D::from_bounds(0.2, 0.8);
+
+    const Axis1D clipped =
+        Operations1D::clip_faces_to_interval(source_axis, interval, 1.0e-12);
+
+    EXPECT_TRUE(face_centered_axis.has_pattern<FaceCentered1D>());
+    EXPECT_TRUE(clipped.has_pattern<VolumeCentered1D>());
+    EXPECT_FALSE(Operations1D::same_pattern(face_centered_axis, clipped));
+
+    try {
+        Operations1D::require_same_pattern(face_centered_axis, clipped);
+    } catch (const FVGridException& exception) {
+        EXPECT_EQ(
+            exception.record().code,
+            std::string_view{"FVGRID.OPERATION.INCOMPATIBLE_GRID_PATTERNS"}
+        );
+        EXPECT_EQ(exception.record().category, std::string_view{"Operation"});
+        EXPECT_EQ(
+            exception.record().source.class_name(),
+            std::string_view{"Operations1D"}
+        );
+        return;
+    }
+
+    FAIL() << "Operations1D accepted incompatible clipped axis patterns.";
 }
 
 TEST(Operations1D, RemovesNearDuplicateCoordinates) {
