@@ -1,8 +1,8 @@
 // ============================================================================
-// Arquivo: man_powerLawGrid.cc
+// Arquivo: man_robertsGrid.cc
 // Projeto: FVGridMaker
 // Versão: consulte <FVGridMaker/Core/Version.h>
-// Descrição: Programa de manual para gerar e imprimir uma malha 1D por lei de potência.
+// Descrição: Programa de manual para gerar e imprimir uma malha 1D de Roberts.
 // Autor: João Flávio Vieira de Vasconcellos
 //
 // SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
@@ -27,26 +27,25 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include <FVGridMaker/FVGridMaker.h>
 
 int main() {
     //
-    // Este exemplo mostra como gerar uma nova malha unidimensional a partir de
-    // uma função de mapeamento.
+    // Este exemplo gera uma malha 1D pela transformação de Roberts.
     //
-    // A ideia central é simples:
+    // A malha de Roberts é uma malha não uniforme suave. Ela é útil quando se
+    // deseja concentrar volumes próximos às fronteiras sem introduzir saltos
+    // aleatórios entre volumes vizinhos.
     //
-    // 1. definir uma função x(eta), com 0 <= eta <= 1;
-    // 2. usar essa função para gerar as faces da malha;
-    // 3. informar à biblioteca que essas faces são as coordenadas primárias;
-    // 4. usar VolumeCentered1D para reconstruir os centros dos volumes.
+    // O parâmetro beta controla a intensidade da transformação. A biblioteca
+    // exige beta > 1.
     //
-    // No padrão volume centrado, as faces são conhecidas primeiro. Os centros
-    // são calculados depois a partir das faces.
+    // Neste exemplo, usamos explicitamente o padrão VolumeCentered1D. Assim, as
+    // faces são geradas pela transformação de Roberts e os centros ficam nos
+    // pontos médios dos volumes.
     //
 
     using Scalar = fvgrid::Real;
@@ -55,60 +54,21 @@ int main() {
     const fvgrid::Size nvol = 10;
     const Scalar xinit = Scalar{0.0};
     const Scalar xfinal = Scalar{1.0};
-    const Scalar gamma = Scalar{2.0};
+    const Scalar beta = Scalar{2.0};
 
-    const Scalar length = xfinal - xinit;
-
-    //
-    // Aqui definimos o novo padrão de distribuição das faces.
-    //
-    // A variável eta pertence ao intervalo lógico [0, 1]. A função abaixo
-    // transforma eta na coordenada física x.
-    //
-    // Para gamma = 1, a malha é uniforme.
-    // Para gamma > 1, a malha fica mais refinada perto de xinit.
-    // Para 0 < gamma < 1, a malha fica mais refinada perto de xfinal.
-    //
-
-    const auto power_law_map = [xinit, length, gamma](Scalar eta) {
-        return xinit + length * std::pow(eta, gamma);
-    };
-
-    //
-    // VolumeCentered1D::primary_coordinates_from_map gera as coordenadas
-    // primárias do padrão volume centrado.
-    //
-    // Como o padrão é volume centrado, essas coordenadas primárias são as faces.
-    // Para nvol volumes, são geradas nvol + 1 faces.
-    //
-    // Neste exemplo:
-    //
-    // eta = 0/10, 1/10, 2/10, ..., 10/10.
-    //
-
-    std::vector<Scalar> faces =
-        fvgrid::VolumeCentered1D::primary_coordinates_from_map<Scalar>(
-            nvol,
-            power_law_map
+    if (!(std::isfinite(beta) && beta > Scalar{1.0})) {
+        throw std::invalid_argument(
+            "O parâmetro beta deve ser finito e maior que 1."
         );
+    }
 
-    //
-    // Agora construímos o eixo unidimensional.
-    //
-    // BasicCoordinates1D<Scalar>::faces informa que o vetor contém faces.
-    // VolumeCentered1D informa que os centros devem ser reconstruídos a partir
-    // dessas faces.
-    //
-
-    const Axis axis = fvgrid::custom_axis_1d(
-        fvgrid::BasicCoordinates1D<Scalar>::faces(std::move(faces)),
+    const Axis axis = fvgrid::roberts_axis_1d(
+        fvgrid::NVol{nvol},
+        fvgrid::Length{xfinal - xinit},
+        fvgrid::XInit{xinit},
+        fvgrid::Beta{beta},
         fvgrid::VolumeCentered1D{}
     );
-
-    //
-    // Usamos um formato numérico fixo para tornar a saída estável e fácil de
-    // comparar com o resultado impresso no manual.
-    //
 
     std::cout << std::fixed << std::setprecision(6);
 
@@ -132,35 +92,27 @@ int main() {
     std::cout << "xmax              : " << axis.xmax() << '\n';
     std::cout << "comprimento       : " << axis.length() << '\n';
 
-    //
-    // Em seguida, imprimimos manualmente algumas propriedades globais da malha.
-    //
-
     std::cout << "\nResumo manual da malha gerada\n";
     std::cout << "=============================\n";
     std::cout << "O bloco abaixo imprime algumas propriedades globais da malha:\n";
     std::cout << "número de volumes, número de faces, limite inferior, limite\n";
-    std::cout << "superior, comprimento total do domínio e expoente usado.\n\n";
+    std::cout << "superior, comprimento total do domínio e parâmetro beta.\n\n";
 
     std::cout << "número de volumes : " << axis.num_cells() << '\n';
     std::cout << "número de faces   : " << axis.num_faces() << '\n';
     std::cout << "xmin              : " << axis.xmin() << '\n';
     std::cout << "xmax              : " << axis.xmax() << '\n';
     std::cout << "comprimento       : " << axis.length() << '\n';
-    std::cout << "expoente gamma    : " << gamma << '\n';
+    std::cout << "beta              : " << beta << '\n';
     std::cout << "padrão            : " << axis.pattern_name() << '\n';
 
-    //
-    // Agora imprimimos as coordenadas das faces.
-    //
+    constexpr int id_width = 6;
+    constexpr int value_width = 14;
 
     std::cout << "\nCoordenadas das faces\n";
     std::cout << "=====================\n";
     std::cout << "O bloco abaixo imprime a coordenada de cada face da malha.\n";
-    std::cout << "Como gamma = 2, as primeiras faces ficam mais próximas entre si.\n\n";
-
-    constexpr int id_width = 6;
-    constexpr int value_width = 14;
+    std::cout << "Na malha de Roberts, as faces não ficam igualmente espaçadas.\n\n";
 
     std::cout << std::right
               << std::setw(id_width) << "i"
@@ -175,10 +127,6 @@ int main() {
                   << std::setw(value_width) << axis.face(i)
                   << '\n';
     }
-
-    //
-    // Por fim, imprimimos as informações geométricas associadas aos volumes.
-    //
 
     std::cout << "\nInformações geométricas dos volumes\n";
     std::cout << "===================================\n";
@@ -207,6 +155,36 @@ int main() {
     }
 
     //
+    // Indicadores simples de concentração.
+    //
+    // A razão entre o maior e o menor volume dá uma primeira medida da
+    // intensidade da não uniformidade produzida pela transformação.
+    //
+
+    Scalar min_dx = axis.cell_length(0);
+    Scalar max_dx = axis.cell_length(0);
+
+    for (fvgrid::Size p = 1; p < axis.num_cells(); ++p) {
+        const Scalar dx = axis.cell_length(p);
+
+        if (dx < min_dx) {
+            min_dx = dx;
+        }
+
+        if (dx > max_dx) {
+            max_dx = dx;
+        }
+    }
+
+    std::cout << "\nIndicadores simples de concentração\n";
+    std::cout << "===================================\n";
+    std::cout << "O bloco abaixo resume a variação dos comprimentos dos volumes.\n\n";
+
+    std::cout << "menor dx          : " << min_dx << '\n';
+    std::cout << "maior dx          : " << max_dx << '\n';
+    std::cout << "razão max/min     : " << max_dx / min_dx << '\n';
+
+    //
     // Teste simples de consistência geométrica.
     //
     // Em uma malha 1D, o somatório dos comprimentos dos volumes deve reproduzir
@@ -216,8 +194,9 @@ int main() {
     //
     //     soma(dx[p]) = xmax - xmin.
     //
-    // Como estamos usando números de ponto flutuante, a comparação é feita com
-    // uma pequena tolerância.
+    // Na malha de Roberts, os volumes não têm o mesmo comprimento. Ainda assim,
+    // a malha deve preencher exatamente o intervalo geométrico definido por
+    // xmin e xmax.
     //
 
     Scalar sum_dx = Scalar{0.0};
@@ -237,6 +216,8 @@ int main() {
 
     std::cout << "soma dos dx      : " << sum_dx << '\n';
     std::cout << "comprimento eixo : " << expected_length << '\n';
+
+    std::cout << std::scientific << std::setprecision(6);
     std::cout << "erro absoluto    : " << error << '\n';
     std::cout << "tolerância       : " << tolerance << '\n';
 

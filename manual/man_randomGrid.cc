@@ -82,16 +82,25 @@ int main() {
 
     std::cout << std::fixed << std::setprecision(6);
 
-    // Primeiro, imprimimos a representação textual padrão fornecida pela
-    // biblioteca para o objeto Axis1D.
+    //
+    // Primeiro, imprimimos uma visão compacta da malha.
+    //
+    // Esta seção substitui a saída bruta do operador << por rótulos em
+    // português, mantendo o foco didático do programa de manual.
+    //
 
-    std::cout << "\nResumo automático gerado pelo operador <<\n";
-    std::cout << "========================================\n";
-    std::cout << "O bloco abaixo mostra a representação textual padrão de Axis1D.\n";
-    std::cout << "Essa impressão é fornecida diretamente pela biblioteca e serve\n";
-    std::cout << "para uma inspeção rápida da malha criada.\n\n";
+    std::cout << "\nResumo compacto da malha\n";
+    std::cout << "========================\n";
+    std::cout << "O bloco abaixo apresenta uma visão compacta da malha gerada:\n";
+    std::cout << "padrão de centralização, quantidade de faces e volumes,\n";
+    std::cout << "limites físicos e comprimento total do domínio.\n\n";
 
-    std::cout << axis << '\n';
+    std::cout << "padrão            : " << axis.pattern_name() << '\n';
+    std::cout << "número de faces   : " << axis.num_faces() << '\n';
+    std::cout << "número de volumes : " << axis.num_cells() << '\n';
+    std::cout << "xmin              : " << axis.xmin() << '\n';
+    std::cout << "xmax              : " << axis.xmax() << '\n';
+    std::cout << "comprimento       : " << axis.length() << '\n';
 
     // Em seguida, imprimimos manualmente algumas propriedades globais da malha.
 

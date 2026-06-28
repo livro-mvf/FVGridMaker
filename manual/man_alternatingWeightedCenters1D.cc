@@ -117,12 +117,25 @@ int main() {
 
     std::cout << std::fixed << std::setprecision(6);
 
-    std::cout << "\nResumo automático gerado pelo operador <<\n";
-    std::cout << "========================================\n";
-    std::cout << "O bloco abaixo mostra a representação textual padrão de Axis1D.\n";
-    std::cout << "O padrão deve aparecer como CentersFromFaces1D.\n\n";
+    //
+    // Primeiro, imprimimos uma visão compacta da malha.
+    //
+    // Esta seção substitui a saída bruta do operador << por rótulos em
+    // português, mantendo o foco didático do programa de manual.
+    //
 
-    std::cout << axis << '\n';
+    std::cout << "\nResumo compacto da malha\n";
+    std::cout << "========================\n";
+    std::cout << "O bloco abaixo apresenta uma visão compacta da malha gerada:\n";
+    std::cout << "padrão de centralização, quantidade de faces e volumes,\n";
+    std::cout << "limites físicos e comprimento total do domínio.\n\n";
+
+    std::cout << "padrão            : " << axis.pattern_name() << '\n';
+    std::cout << "número de faces   : " << axis.num_faces() << '\n';
+    std::cout << "número de volumes : " << axis.num_cells() << '\n';
+    std::cout << "xmin              : " << axis.xmin() << '\n';
+    std::cout << "xmax              : " << axis.xmax() << '\n';
+    std::cout << "comprimento       : " << axis.length() << '\n';
 
     std::cout << "\nResumo manual da malha gerada\n";
     std::cout << "=============================\n";
