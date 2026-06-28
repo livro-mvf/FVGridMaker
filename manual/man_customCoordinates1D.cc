@@ -53,11 +53,18 @@ void print_axis_report(
     std::cout << std::string(title.size(), '=') << "\n";
     std::cout << explanation << "\n\n";
 
-    std::cout << "Resumo automático gerado pelo operador <<\n";
-    std::cout << "========================================\n\n";
+    std::cout << "Resumo compacto da malha\n";
+    std::cout << "========================\n";
+    std::cout << "O bloco abaixo apresenta uma visão compacta da malha gerada:\n";
+    std::cout << "padrão de centralização, quantidade de faces e volumes,\n";
+    std::cout << "limites físicos e comprimento total do domínio.\n\n";
 
-    std::cout << axis << '\n';
-
+    std::cout << "padrão            : " << axis.pattern_name() << '\n';
+    std::cout << "número de faces   : " << axis.num_faces() << '\n';
+    std::cout << "número de volumes : " << axis.num_cells() << '\n';
+    std::cout << "xmin              : " << axis.xmin() << '\n';
+    std::cout << "xmax              : " << axis.xmax() << '\n';
+    std::cout << "comprimento       : " << axis.length() << '\n';
     std::cout << "\nResumo manual da malha gerada\n";
     std::cout << "=============================\n";
     std::cout << "O bloco abaixo imprime algumas propriedades globais da malha.\n\n";
@@ -67,10 +74,11 @@ void print_axis_report(
     std::cout << "xmin              : " << axis.xmin() << '\n';
     std::cout << "xmax              : " << axis.xmax() << '\n';
     std::cout << "comprimento       : " << axis.length() << '\n';
-    std::cout << "pattern           : " << axis.pattern_name() << '\n';
+    std::cout << "padrão            : " << axis.pattern_name() << '\n';
 
     std::cout << "\nCoordenadas das faces\n";
-    std::cout << "=====================\n\n";
+    std::cout << "=====================\n";
+    std::cout << "O bloco abaixo imprime a coordenada de cada face da malha.\n\n";
 
     std::cout << std::right
               << std::setw(id_width) << "i"
@@ -87,7 +95,10 @@ void print_axis_report(
     }
 
     std::cout << "\nInformações geométricas dos volumes\n";
-    std::cout << "===================================\n\n";
+    std::cout << "===================================\n";
+    std::cout << "O bloco abaixo imprime, para cada volume finito, a coordenada\n";
+    std::cout << "da face oeste, a coordenada do centro, a coordenada da face leste\n";
+    std::cout << "e o comprimento do volume.\n\n";
 
     std::cout << std::right
               << std::setw(id_width) << "p"
@@ -126,27 +137,29 @@ void print_axis_report(
 
     std::cout << "\nTeste de consistência geométrica\n";
     std::cout << "================================\n";
-    std::cout << "Caso testado      : " << label << '\n';
-    std::cout << "soma dos dx       : " << std::fixed << std::setprecision(6)
+    std::cout << "O bloco abaixo verifica se a soma dos comprimentos dos volumes\n";
+    std::cout << "reproduz o comprimento total do domínio.\n\n";
+    std::cout << "caso testado     : " << label << '\n';
+    std::cout << "soma dos dx      : " << std::fixed << std::setprecision(6)
               << sum_dx << '\n';
-    std::cout << "comprimento eixo  : " << expected_length << '\n';
+    std::cout << "comprimento eixo : " << expected_length << '\n';
 
     const std::ios_base::fmtflags old_flags = std::cout.flags();
     const std::streamsize old_precision = std::cout.precision();
 
     std::cout << std::scientific << std::setprecision(6);
-    std::cout << "erro absoluto     : " << error << '\n';
-    std::cout << "tolerância        : " << tolerance << '\n';
+    std::cout << "erro absoluto    : " << error << '\n';
+    std::cout << "tolerância       : " << tolerance << '\n';
 
     std::cout.flags(old_flags);
     std::cout.precision(old_precision);
 
     if (error <= tolerance) {
-        std::cout << "resultado         : OK\n";
+        std::cout << "resultado        : OK\n";
         return true;
     }
 
-    std::cout << "resultado         : FALHOU\n";
+    std::cout << "resultado        : FALHOU\n";
     return false;
 }
 
