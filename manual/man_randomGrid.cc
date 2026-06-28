@@ -2,7 +2,7 @@
 // Arquivo: man_randomGrid.cc
 // Projeto: FVGridMaker
 // Versão: consulte <FVGridMaker/Core/Version.h>
-// Descrição: Programa para exercitar randomGrid em FVGridMaker.
+// Descrição: Programa de manual para gerar e imprimir uma malha 1D aleatória.
 // Autor: João Flávio Vieira de Vasconcellos
 //
 // SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
@@ -23,11 +23,9 @@
 // Este software é fornecido sem garantias de qualquer natureza. Consulte o arquivo
 // LICENSE, na raiz do repositório, para o texto completo da licença.
 // ============================================================================
-// File: man_randomGrid.cc
-// Project: FVGridMaker
-// Description: Gera e imprime uma malha aleatoria unidimensional.
 
 #include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -35,13 +33,13 @@
 #include <FVGridMaker/FVGridMaker.h>
 
 int main() {
-    // Este exemplo gera uma malha aleatoria em uma dimensao.
+    // Este exemplo gera uma malha aleatória em uma dimensão.
     //
-    // O dominio eh o intervalo [0, 1], dividido em 10 volumes
-    // finitos. 
+    // O domínio é o intervalo [0, 1], dividido em 10 volumes
+    // finitos.
     //
-    // A semente fixa torna a malha reproduzivel. Assim, o mesmo programa gera
-    // sempre a mesma malha, o que e importante para um exemplo de manual.
+    // A semente fixa torna a malha reproduzível. Assim, o mesmo programa gera
+    // sempre a mesma malha, o que é importante para um exemplo de manual.
     //
 
     using Scalar = fvgrid::Real;
@@ -52,24 +50,25 @@ int main() {
     const Scalar xfinal = Scalar{1.0};
     const fvgrid::UInt64 seed = 20260627;
 
-//    
-//  Caso deseje usar uma semente diferente, desbloquei o bloco abaixo e bloquei a definicao de seed acima. 
-//  A semente sera gerada a partir do tempo atual, o que significa que cada execucao do programa
-//  gerara uma malha diferente. Para fins de reproducao, a semente deve ser fixada, como no exemplo acima.
-//
-
-// const fvgrid::UInt64 seed = static_cast<fvgrid::UInt64>(
-//     std::chrono::high_resolution_clock::now()
-//         .time_since_epoch()
-//         .count()
-// );
-
-
-    // random_axis_1d<Scalar> cria uma malha aleatoria no intervalo [xinit,
-    // xfinal]. As faces externas ficam fixas em xinit e xfinal, enquanto as
-    // faces internas sao distribuidas de forma aleatoria.
     //
-    // Como a semente foi fixada, o resultado e deterministico.
+    // Para usar uma malha diferente a cada execução, comente a definição fixa
+    // de seed acima e ative o bloco abaixo. A semente passará a ser obtida a
+    // partir do relógio do sistema.
+    //
+    // Para exemplos de manual, a semente fixa é preferível, pois torna a saída
+    // reproduzível.
+    //
+    // const fvgrid::UInt64 seed = static_cast<fvgrid::UInt64>(
+    //     std::chrono::high_resolution_clock::now()
+    //         .time_since_epoch()
+    //         .count()
+    // );
+
+    // random_axis_1d<Scalar> cria uma malha aleatória no intervalo [xinit,
+    // xfinal]. As faces externas ficam fixas em xinit e xfinal, enquanto as
+    // faces internas são distribuídas de forma aleatória.
+    //
+    // Como a semente foi fixada, o resultado é determinístico.
 
     const Axis axis = fvgrid::random_axis_1d<Scalar>(
         nvol,
@@ -78,19 +77,19 @@ int main() {
         seed
     );
 
-    // Usamos um formato numerico fixo para tornar a saida estavel e facil de
+    // Usamos um formato numérico fixo para tornar a saída estável e fácil de
     // comparar com o resultado impresso no manual.
 
     std::cout << std::fixed << std::setprecision(6);
 
-    // Primeiro, imprimimos a representacao textual padrao fornecida pela
+    // Primeiro, imprimimos a representação textual padrão fornecida pela
     // biblioteca para o objeto Axis1D.
 
-    std::cout << "\nResumo automatico gerado pelo operador <<\n";
+    std::cout << "\nResumo automático gerado pelo operador <<\n";
     std::cout << "========================================\n";
-    std::cout << "O bloco abaixo mostra a representacao textual padrao de Axis1D.\n";
-    std::cout << "Essa impressao e fornecida diretamente pela biblioteca e serve\n";
-    std::cout << "para uma inspecao rapida da malha criada.\n\n";
+    std::cout << "O bloco abaixo mostra a representação textual padrão de Axis1D.\n";
+    std::cout << "Essa impressão é fornecida diretamente pela biblioteca e serve\n";
+    std::cout << "para uma inspeção rápida da malha criada.\n\n";
 
     std::cout << axis << '\n';
 
@@ -99,11 +98,11 @@ int main() {
     std::cout << "\nResumo manual da malha gerada\n";
     std::cout << "=============================\n";
     std::cout << "O bloco abaixo imprime algumas propriedades globais da malha:\n";
-    std::cout << "numero de volumes, numero de faces, limite inferior, limite\n";
-    std::cout << "superior, comprimento total do dominio e semente usada.\n\n";
+    std::cout << "número de volumes, número de faces, limite inferior, limite\n";
+    std::cout << "superior, comprimento total do domínio e semente usada.\n\n";
 
-    std::cout << "numero de volumes : " << axis.num_cells() << '\n';
-    std::cout << "numero de faces   : " << axis.num_faces() << '\n';
+    std::cout << "número de volumes : " << axis.num_cells() << '\n';
+    std::cout << "número de faces   : " << axis.num_faces() << '\n';
     std::cout << "xmin              : " << axis.xmin() << '\n';
     std::cout << "xmax              : " << axis.xmax() << '\n';
     std::cout << "comprimento       : " << axis.length() << '\n';
@@ -111,9 +110,9 @@ int main() {
 
     // Agora imprimimos as coordenadas das faces.
     //
-    // Como foram gerados 10 volumes, a malha possui 11 faces. Os indices das
-    // faces variam de 0 ate 10. A diferenca em relacao a malha uniforme e que
-    // as distancias entre faces consecutivas nao precisam ser iguais.
+    // Como foram gerados 10 volumes, a malha possui 11 faces. Os índices das
+    // faces variam de 0 até 10. A diferença em relação à malha uniforme é que
+    // as distâncias entre faces consecutivas não precisam ser iguais.
 
     std::cout << "\nCoordenadas das faces\n";
     std::cout << "=====================\n";
@@ -138,13 +137,13 @@ int main() {
                   << '\n';
     }
 
-    // Por fim, imprimimos as informacoes geometricas associadas aos volumes.
+    // Por fim, imprimimos as informações geométricas associadas aos volumes.
     //
     // Para cada volume finito, mostramos a face oeste, o centro, a face leste
-    // e o comprimento do volume. Em uma malha aleatoria, os valores de dx
+    // e o comprimento do volume. Em uma malha aleatória, os valores de dx
     // normalmente variam de volume para volume.
 
-    std::cout << "\nInformacoes geometricas dos volumes\n";
+    std::cout << "\nInformações geométricas dos volumes\n";
     std::cout << "===================================\n";
     std::cout << "O bloco abaixo imprime, para cada volume finito, a coordenada\n";
     std::cout << "da face oeste, a coordenada do centro, a coordenada da face leste\n";
@@ -168,6 +167,53 @@ int main() {
                   << std::setw(value_width) << axis.east_face(p)
                   << std::setw(value_width) << axis.cell_length(p)
                   << '\n';
+    }
+
+    //
+    // Teste simples de consistência geométrica.
+    //
+    // Em uma malha 1D, o somatório dos comprimentos dos volumes deve reproduzir
+    // o comprimento total do domínio.
+    //
+    // Isto é,
+    //
+    //     soma(dx[p]) = xmax - xmin.
+    //
+    // Na malha aleatória, as faces internas mudam de posição e os volumes não
+    // têm, em geral, o mesmo comprimento. Ainda assim, a malha deve ocupar
+    // exatamente o mesmo domínio físico definido por xinit e xfinal.
+    //
+    // Como estamos usando números de ponto flutuante, a comparação é feita com
+    // uma pequena tolerância.
+    //
+
+    Scalar sum_dx = Scalar{0.0};
+
+    for (fvgrid::Size p = 0; p < axis.num_cells(); ++p) {
+        sum_dx += axis.cell_length(p);
+    }
+
+    const Scalar expected_length = axis.length();
+    const Scalar error = std::abs(sum_dx - expected_length);
+    const Scalar tolerance = Scalar{1.0e-12};
+
+    std::cout << "\nTeste de consistência geométrica\n";
+    std::cout << "================================\n";
+    std::cout << "O bloco abaixo verifica se a soma dos comprimentos dos volumes\n";
+    std::cout << "reproduz o comprimento total do domínio.\n";
+    std::cout << "Mesmo com faces internas aleatórias, a malha deve continuar\n";
+    std::cout << "ocupando exatamente o intervalo [xmin, xmax].\n\n";
+
+    std::cout << "soma dos dx      : " << sum_dx << "\n";
+    std::cout << "comprimento eixo : " << expected_length << "\n";
+    std::cout << "erro absoluto    : " << error << "\n";
+    std::cout << "tolerância       : " << tolerance << "\n";
+
+    if (error <= tolerance) {
+        std::cout << "resultado        : OK\n";
+    } else {
+        std::cout << "resultado        : FALHOU\n";
+        return 1;
     }
 
     return 0;

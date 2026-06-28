@@ -1,8 +1,8 @@
 // ============================================================================
-// Arquivo: man_uniformGrid.cc
+// Arquivo: man_powerLawGrid.cc
 // Projeto: FVGridMaker
 // Versão: consulte <FVGridMaker/Core/Version.h>
-// Descrição: Programa de manual para gerar e imprimir uma malha 1D uniforme.
+// Descrição: Programa de manual para gerar e imprimir uma malha 1D por lei de potência.
 // Autor: João Flávio Vieira de Vasconcellos
 //
 // SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
@@ -28,15 +28,25 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <FVGridMaker/FVGridMaker.h>
 
 int main() {
     //
-    // A malha é intencionalmente simples.
+    // Este exemplo mostra como gerar uma nova malha unidimensional a partir de
+    // uma função de mapeamento.
     //
-    // Definimos o domínio cartesiano unidimensional [0, 1] e o dividimos em
-    // 10 volumes finitos de mesmo comprimento.
+    // A ideia central é simples:
+    //
+    // 1. definir uma função x(eta), com 0 <= eta <= 1;
+    // 2. usar essa função para gerar as faces da malha;
+    // 3. informar à biblioteca que essas faces são as coordenadas primárias;
+    // 4. usar VolumeCentered1D para reconstruir os centros dos volumes.
+    //
+    // No padrão volume centrado, as faces são conhecidas primeiro. Os centros
+    // são calculados depois a partir das faces.
     //
 
     using Scalar = fvgrid::Real;
@@ -45,53 +55,103 @@ int main() {
     const fvgrid::Size nvol = 10;
     const Scalar xinit = Scalar{0.0};
     const Scalar xfinal = Scalar{1.0};
+    const Scalar gamma = Scalar{2.0};
 
-    // uniform_axis_1d<Scalar> cria as coordenadas das faces e constrói o objeto
-    // BasicAxis1D<Scalar> correspondente. Neste exemplo, Scalar é fvgrid::Real,
-    // que atualmente é um alias para double.
+    const Scalar length = xfinal - xinit;
 
-    const Axis axis = fvgrid::uniform_axis_1d<Scalar>(nvol, xinit, xfinal);
+    //
+    // Aqui definimos o novo padrão de distribuição das faces.
+    //
+    // A variável eta pertence ao intervalo lógico [0, 1]. A função abaixo
+    // transforma eta na coordenada física x.
+    //
+    // Para gamma = 1, a malha é uniforme.
+    // Para gamma > 1, a malha fica mais refinada perto de xinit.
+    // Para 0 < gamma < 1, a malha fica mais refinada perto de xfinal.
+    //
 
+    const auto power_law_map = [xinit, length, gamma](Scalar eta) {
+        return xinit + length * std::pow(eta, gamma);
+    };
+
+    //
+    // VolumeCentered1D::primary_coordinates_from_map gera as coordenadas
+    // primárias do padrão volume centrado.
+    //
+    // Como o padrão é volume centrado, essas coordenadas primárias são as faces.
+    // Para nvol volumes, são geradas nvol + 1 faces.
+    //
+    // Neste exemplo:
+    //
+    // eta = 0/10, 1/10, 2/10, ..., 10/10.
+    //
+
+    std::vector<Scalar> faces =
+        fvgrid::VolumeCentered1D::primary_coordinates_from_map<Scalar>(
+            nvol,
+            power_law_map
+        );
+
+    //
+    // Agora construímos o eixo unidimensional.
+    //
+    // BasicCoordinates1D<Scalar>::faces informa que o vetor contém faces.
+    // VolumeCentered1D informa que os centros devem ser reconstruídos a partir
+    // dessas faces.
+    //
+
+    const Axis axis = fvgrid::custom_axis_1d(
+        fvgrid::BasicCoordinates1D<Scalar>::faces(std::move(faces)),
+        fvgrid::VolumeCentered1D{}
+    );
+
+    //
     // Usamos um formato numérico fixo para tornar a saída estável e fácil de
     // comparar com o resultado impresso no manual.
+    //
 
     std::cout << std::fixed << std::setprecision(6);
 
+    //
     // Primeiro, imprimimos a representação textual padrão fornecida pela
     // biblioteca para o objeto Axis1D.
+    //
 
     std::cout << "\nResumo automático gerado pelo operador <<\n";
     std::cout << "========================================\n";
     std::cout << "O bloco abaixo mostra a representação textual padrão de Axis1D.\n";
     std::cout << "Essa impressão é fornecida diretamente pela biblioteca e serve\n";
-    std::cout << "para uma inspeção rápida da malha criada.\n\n";
+    std::cout << "para uma inspeção rápida da malha criada.\n";
+    std::cout << "O padrão deve aparecer como VolumeCentered1D.\n\n";
 
     std::cout << axis << '\n';
 
+    //
     // Em seguida, imprimimos manualmente algumas propriedades globais da malha.
+    //
 
     std::cout << "\nResumo manual da malha gerada\n";
     std::cout << "=============================\n";
     std::cout << "O bloco abaixo imprime algumas propriedades globais da malha:\n";
     std::cout << "número de volumes, número de faces, limite inferior, limite\n";
-    std::cout << "superior e comprimento total do domínio.\n\n";
+    std::cout << "superior, comprimento total do domínio e expoente usado.\n\n";
 
     std::cout << "número de volumes : " << axis.num_cells() << '\n';
     std::cout << "número de faces   : " << axis.num_faces() << '\n';
     std::cout << "xmin              : " << axis.xmin() << '\n';
     std::cout << "xmax              : " << axis.xmax() << '\n';
     std::cout << "comprimento       : " << axis.length() << '\n';
+    std::cout << "expoente gamma    : " << gamma << '\n';
+    std::cout << "padrão            : " << axis.pattern_name() << '\n';
 
+    //
     // Agora imprimimos as coordenadas das faces.
     //
-    // Como foram gerados 10 volumes, a malha possui 11 faces. Os índices das
-    // faces variam de 0 até 10.
 
     std::cout << "\nCoordenadas das faces\n";
     std::cout << "=====================\n";
     std::cout << "O bloco abaixo imprime a coordenada de cada face da malha.\n";
-    std::cout << "Como foram gerados 10 volumes, a malha possui 11 faces.\n";
-    std::cout << "Os índices das faces variam de 0 até 10.\n\n";
+    std::cout << "Como gamma = 2, as primeiras faces ficam mais próximas entre si.\n\n";
 
     constexpr int id_width = 6;
     constexpr int value_width = 14;
@@ -110,10 +170,9 @@ int main() {
                   << '\n';
     }
 
+    //
     // Por fim, imprimimos as informações geométricas associadas aos volumes.
     //
-    // Para cada volume finito, mostramos a face oeste, o centro, a face leste
-    // e o comprimento do volume.
 
     std::cout << "\nInformações geométricas dos volumes\n";
     std::cout << "===================================\n";
@@ -151,10 +210,6 @@ int main() {
     //
     //     soma(dx[p]) = xmax - xmin.
     //
-    // Na malha uniforme, todos os volumes têm o mesmo comprimento, mas a
-    // verificação continua sendo importante: ela confirma que a discretização
-    // preenche o domínio sem lacunas e sem sobreposição de volumes.
-    //
     // Como estamos usando números de ponto flutuante, a comparação é feita com
     // uma pequena tolerância.
     //
@@ -172,14 +227,12 @@ int main() {
     std::cout << "\nTeste de consistência geométrica\n";
     std::cout << "================================\n";
     std::cout << "O bloco abaixo verifica se a soma dos comprimentos dos volumes\n";
-    std::cout << "reproduz o comprimento total do domínio.\n";
-    std::cout << "Na malha uniforme, isso equivale a verificar que nvol * dx\n";
-    std::cout << "fecha exatamente o intervalo geométrico [xmin, xmax].\n\n";
+    std::cout << "reproduz o comprimento total do domínio.\n\n";
 
-    std::cout << "soma dos dx      : " << sum_dx << "\n";
-    std::cout << "comprimento eixo : " << expected_length << "\n";
-    std::cout << "erro absoluto    : " << error << "\n";
-    std::cout << "tolerância       : " << tolerance << "\n";
+    std::cout << "soma dos dx      : " << sum_dx << '\n';
+    std::cout << "comprimento eixo : " << expected_length << '\n';
+    std::cout << "erro absoluto    : " << error << '\n';
+    std::cout << "tolerância       : " << tolerance << '\n';
 
     if (error <= tolerance) {
         std::cout << "resultado        : OK\n";

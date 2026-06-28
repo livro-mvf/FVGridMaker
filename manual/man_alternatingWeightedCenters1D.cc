@@ -1,8 +1,8 @@
 // ============================================================================
-// Arquivo: man_uniformGrid.cc
+// Arquivo: man_alternatingWeightedCenters1D.cc
 // Projeto: FVGridMaker
 // Versão: consulte <FVGridMaker/Core/Version.h>
-// Descrição: Programa de manual para gerar e imprimir uma malha 1D uniforme.
+// Descrição: Programa de manual para gerar e imprimir uma malha 1D com centros ponderados alternados.
 // Autor: João Flávio Vieira de Vasconcellos
 //
 // SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
@@ -27,16 +27,31 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <stdexcept>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <FVGridMaker/FVGridMaker.h>
 
 int main() {
     //
-    // A malha é intencionalmente simples.
+    // Este exemplo cria uma malha 1D que não usa nem o padrão face centrada
+    // nem o padrão volume centrado usual.
     //
-    // Definimos o domínio cartesiano unidimensional [0, 1] e o dividimos em
-    // 10 volumes finitos de mesmo comprimento.
+    // As faces são obtidas de uma malha uniforme criada pela própria biblioteca.
+    // Depois, os centros são reconstruídos a partir dessas faces por uma regra
+    // de pesos alternados.
+    //
+    // Nos volumes pares:
+    //
+    //     x_P = x_W + alpha * (x_E - x_W).
+    //
+    // Nos volumes ímpares:
+    //
+    //     x_P = x_W + (1 - alpha) * (x_E - x_W).
+    //
+    // Quando alpha = 0.5, o padrão volta ao caso volume centrado usual.
     //
 
     using Scalar = fvgrid::Real;
@@ -45,56 +60,89 @@ int main() {
     const fvgrid::Size nvol = 10;
     const Scalar xinit = Scalar{0.0};
     const Scalar xfinal = Scalar{1.0};
+    const Scalar alpha = Scalar{0.20};
 
-    // uniform_axis_1d<Scalar> cria as coordenadas das faces e constrói o objeto
-    // BasicAxis1D<Scalar> correspondente. Neste exemplo, Scalar é fvgrid::Real,
-    // que atualmente é um alias para double.
+    if (!(std::isfinite(alpha) && alpha > Scalar{0.0} && alpha < Scalar{1.0})) {
+        throw std::invalid_argument(
+            "O parâmetro alpha deve pertencer ao intervalo aberto (0, 1)."
+        );
+    }
 
-    const Axis axis = fvgrid::uniform_axis_1d<Scalar>(nvol, xinit, xfinal);
+    //
+    // Primeiro, criamos uma malha uniforme com o gerador da biblioteca.
+    //
+    // Aqui, essa malha uniforme é usada apenas como fonte das faces. Os centros
+    // dela não serão usados no eixo final.
+    //
 
-    // Usamos um formato numérico fixo para tornar a saída estável e fácil de
-    // comparar com o resultado impresso no manual.
+    const Axis uniform_axis =
+        fvgrid::uniform_axis_1d<Scalar>(nvol, xinit, xfinal);
+
+    //
+    // custom_axis_1d recebe as coordenadas primárias em um std::vector.
+    // Por isso, copiamos as faces da malha uniforme auxiliar para um std::vector.
+    //
+
+    std::vector<Scalar> faces(
+        uniform_axis.faces().begin(),
+        uniform_axis.faces().end()
+    );
+
+    //
+    // Esta é a regra de pesos.
+    //
+    // Para volumes pares, ela retorna alpha.
+    // Para volumes ímpares, ela retorna 1 - alpha.
+    //
+
+    const auto alternating_weight = [alpha](fvgrid::Size p) {
+        if (p % static_cast<fvgrid::Size>(2) == 0) {
+            return alpha;
+        }
+
+        return Scalar{1.0} - alpha;
+    };
+
+    //
+    // CentersFromFaces1D é o reconstrutor parametrizado da biblioteca.
+    //
+    // Ele recebe faces como coordenadas primárias e calcula os centros com a
+    // regra de pesos fornecida.
+    //
+
+    const Axis axis = fvgrid::custom_axis_1d(
+        fvgrid::BasicCoordinates1D<Scalar>::faces(std::move(faces)),
+        fvgrid::CentersFromFaces1D{alternating_weight}
+    );
 
     std::cout << std::fixed << std::setprecision(6);
-
-    // Primeiro, imprimimos a representação textual padrão fornecida pela
-    // biblioteca para o objeto Axis1D.
 
     std::cout << "\nResumo automático gerado pelo operador <<\n";
     std::cout << "========================================\n";
     std::cout << "O bloco abaixo mostra a representação textual padrão de Axis1D.\n";
-    std::cout << "Essa impressão é fornecida diretamente pela biblioteca e serve\n";
-    std::cout << "para uma inspeção rápida da malha criada.\n\n";
+    std::cout << "O padrão deve aparecer como CentersFromFaces1D.\n\n";
 
     std::cout << axis << '\n';
 
-    // Em seguida, imprimimos manualmente algumas propriedades globais da malha.
-
     std::cout << "\nResumo manual da malha gerada\n";
     std::cout << "=============================\n";
-    std::cout << "O bloco abaixo imprime algumas propriedades globais da malha:\n";
-    std::cout << "número de volumes, número de faces, limite inferior, limite\n";
-    std::cout << "superior e comprimento total do domínio.\n\n";
+    std::cout << "O bloco abaixo imprime algumas propriedades globais da malha.\n\n";
 
     std::cout << "número de volumes : " << axis.num_cells() << '\n';
     std::cout << "número de faces   : " << axis.num_faces() << '\n';
     std::cout << "xmin              : " << axis.xmin() << '\n';
     std::cout << "xmax              : " << axis.xmax() << '\n';
     std::cout << "comprimento       : " << axis.length() << '\n';
+    std::cout << "alpha             : " << alpha << '\n';
+    std::cout << "padrão            : " << axis.pattern_name() << '\n';
 
-    // Agora imprimimos as coordenadas das faces.
-    //
-    // Como foram gerados 10 volumes, a malha possui 11 faces. Os índices das
-    // faces variam de 0 até 10.
+    constexpr int id_width = 6;
+    constexpr int value_width = 14;
 
     std::cout << "\nCoordenadas das faces\n";
     std::cout << "=====================\n";
     std::cout << "O bloco abaixo imprime a coordenada de cada face da malha.\n";
-    std::cout << "Como foram gerados 10 volumes, a malha possui 11 faces.\n";
-    std::cout << "Os índices das faces variam de 0 até 10.\n\n";
-
-    constexpr int id_width = 6;
-    constexpr int value_width = 14;
+    std::cout << "As faces vieram de uma malha uniforme gerada pela biblioteca.\n\n";
 
     std::cout << std::right
               << std::setw(id_width) << "i"
@@ -110,30 +158,28 @@ int main() {
                   << '\n';
     }
 
-    // Por fim, imprimimos as informações geométricas associadas aos volumes.
-    //
-    // Para cada volume finito, mostramos a face oeste, o centro, a face leste
-    // e o comprimento do volume.
-
     std::cout << "\nInformações geométricas dos volumes\n";
     std::cout << "===================================\n";
-    std::cout << "O bloco abaixo imprime, para cada volume finito, a coordenada\n";
-    std::cout << "da face oeste, a coordenada do centro, a coordenada da face leste\n";
-    std::cout << "e o comprimento do volume.\n\n";
+    std::cout << "O bloco abaixo mostra a alternância da posição dos centros.\n";
+    std::cout << "Volumes pares usam alpha. Volumes ímpares usam 1 - alpha.\n\n";
 
     std::cout << std::right
               << std::setw(id_width) << "p"
+              << std::setw(value_width) << "peso"
               << std::setw(value_width) << "face_oeste"
               << std::setw(value_width) << "centro"
               << std::setw(value_width) << "face_leste"
               << std::setw(value_width) << "dx"
               << '\n';
 
-    std::cout << std::string(id_width + 4 * value_width, '-') << '\n';
+    std::cout << std::string(id_width + 5 * value_width, '-') << '\n';
 
     for (fvgrid::Size p = 0; p < axis.num_cells(); ++p) {
+        const Scalar weight = alternating_weight(p);
+
         std::cout << std::right
                   << std::setw(id_width) << p
+                  << std::setw(value_width) << weight
                   << std::setw(value_width) << axis.west_face(p)
                   << std::setw(value_width) << axis.center(p)
                   << std::setw(value_width) << axis.east_face(p)
@@ -144,19 +190,9 @@ int main() {
     //
     // Teste simples de consistência geométrica.
     //
-    // Em uma malha 1D, o somatório dos comprimentos dos volumes deve reproduzir
-    // o comprimento total do domínio.
-    //
-    // Isto é,
-    //
-    //     soma(dx[p]) = xmax - xmin.
-    //
-    // Na malha uniforme, todos os volumes têm o mesmo comprimento, mas a
-    // verificação continua sendo importante: ela confirma que a discretização
-    // preenche o domínio sem lacunas e sem sobreposição de volumes.
-    //
-    // Como estamos usando números de ponto flutuante, a comparação é feita com
-    // uma pequena tolerância.
+    // O posicionamento dos centros não deve alterar os comprimentos dos
+    // volumes. Portanto, a soma dos dx deve continuar reproduzindo o
+    // comprimento total do domínio.
     //
 
     Scalar sum_dx = Scalar{0.0};
@@ -172,14 +208,12 @@ int main() {
     std::cout << "\nTeste de consistência geométrica\n";
     std::cout << "================================\n";
     std::cout << "O bloco abaixo verifica se a soma dos comprimentos dos volumes\n";
-    std::cout << "reproduz o comprimento total do domínio.\n";
-    std::cout << "Na malha uniforme, isso equivale a verificar que nvol * dx\n";
-    std::cout << "fecha exatamente o intervalo geométrico [xmin, xmax].\n\n";
+    std::cout << "reproduz o comprimento total do domínio.\n\n";
 
-    std::cout << "soma dos dx      : " << sum_dx << "\n";
-    std::cout << "comprimento eixo : " << expected_length << "\n";
-    std::cout << "erro absoluto    : " << error << "\n";
-    std::cout << "tolerância       : " << tolerance << "\n";
+    std::cout << "soma dos dx      : " << sum_dx << '\n';
+    std::cout << "comprimento eixo : " << expected_length << '\n';
+    std::cout << "erro absoluto    : " << error << '\n';
+    std::cout << "tolerância       : " << tolerance << '\n';
 
     if (error <= tolerance) {
         std::cout << "resultado        : OK\n";
