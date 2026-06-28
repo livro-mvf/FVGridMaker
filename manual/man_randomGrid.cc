@@ -1,7 +1,33 @@
+// ============================================================================
+// Arquivo: man_randomGrid.cc
+// Projeto: FVGridMaker
+// Versão: consulte <FVGridMaker/Core/Version.h>
+// Descrição: Programa para exercitar randomGrid em FVGridMaker.
+// Autor: João Flávio Vieira de Vasconcellos
+//
+// SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Este arquivo faz parte do FVGridMaker.
+//
+// Licença: BSD 3-Clause.
+// É permitido usar, copiar, modificar e redistribuir este arquivo, em código-fonte
+// ou forma binária, com ou sem modificações, desde que sejam preservados os avisos
+// de copyright, esta identificação de licença e as condições descritas no arquivo
+// LICENSE.
+//
+// O nome do autor, de colaboradores ou de instituições associadas ao projeto não
+// pode ser usado para endossar ou promover produtos derivados sem autorização
+// prévia por escrito.
+//
+// Este software é fornecido sem garantias de qualquer natureza. Consulte o arquivo
+// LICENSE, na raiz do repositório, para o texto completo da licença.
+// ============================================================================
 // File: man_randomGrid.cc
 // Project: FVGridMaker
 // Description: Gera e imprime uma malha aleatoria unidimensional.
 
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <string>
@@ -9,14 +35,14 @@
 #include <FVGridMaker/FVGridMaker.h>
 
 int main() {
-    // Este segundo exemplo gera uma malha aleatoria em uma dimensao.
+    // Este exemplo gera uma malha aleatoria em uma dimensao.
     //
-    // O dominio continua sendo o intervalo [0, 1], dividido em 10 volumes
-    // finitos. A diferenca em relacao ao primeiro exemplo e que agora os
-    // volumes nao possuem necessariamente o mesmo comprimento.
+    // O dominio eh o intervalo [0, 1], dividido em 10 volumes
+    // finitos. 
     //
     // A semente fixa torna a malha reproduzivel. Assim, o mesmo programa gera
     // sempre a mesma malha, o que e importante para um exemplo de manual.
+    //
 
     using Scalar = fvgrid::Real;
     using Axis = fvgrid::BasicAxis1D<Scalar>;
@@ -25,6 +51,19 @@ int main() {
     const Scalar xinit = Scalar{0.0};
     const Scalar xfinal = Scalar{1.0};
     const fvgrid::UInt64 seed = 20260627;
+
+//    
+//  Caso deseje usar uma semente diferente, desbloquei o bloco abaixo e bloquei a definicao de seed acima. 
+//  A semente sera gerada a partir do tempo atual, o que significa que cada execucao do programa
+//  gerara uma malha diferente. Para fins de reproducao, a semente deve ser fixada, como no exemplo acima.
+//
+
+// const fvgrid::UInt64 seed = static_cast<fvgrid::UInt64>(
+//     std::chrono::high_resolution_clock::now()
+//         .time_since_epoch()
+//         .count()
+// );
+
 
     // random_axis_1d<Scalar> cria uma malha aleatoria no intervalo [xinit,
     // xfinal]. As faces externas ficam fixas em xinit e xfinal, enquanto as

@@ -1,3 +1,28 @@
+// ============================================================================
+// Arquivo: man_uniformGrid.cc
+// Projeto: FVGridMaker
+// Versão: consulte <FVGridMaker/Core/Version.h>
+// Descrição: Programa  para exercitar  uniformGrid em FVGridMaker.
+// Autor: João Flávio Vieira de Vasconcellos
+//
+// SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
+// SPDX-License-Identifier: BSD-3-Clause
+//
+// Este arquivo faz parte do FVGridMaker.
+//
+// Licença: BSD 3-Clause.
+// É permitido usar, copiar, modificar e redistribuir este arquivo, em código-fonte
+// ou forma binária, com ou sem modificações, desde que sejam preservados os avisos
+// de copyright, esta identificação de licença e as condições descritas no arquivo
+// LICENSE.
+//
+// O nome do autor, de colaboradores ou de instituições associadas ao projeto não
+// pode ser usado para endossar ou promover produtos derivados sem autorização
+// prévia por escrito.
+//
+// Este software é fornecido sem garantias de qualquer natureza. Consulte o arquivo
+// LICENSE, na raiz do repositório, para o texto completo da licença.
+// ============================================================================
 // File: man_uniformGrid.cc
 // Project: FVGridMaker
 // Description: Gera e imprime uma malha cartesiana uniforme unidimensional.
@@ -9,11 +34,12 @@
 #include <FVGridMaker/FVGridMaker.h>
 
 int main() {
-    // A primeira malha do manual é intencionalmente simples.
+    //
+    // A malha é intencionalmente simples.
     //
     // Definimos o domínio cartesiano unidimensional [0, 1] e o dividimos em
-    // 10 volumes finitos de mesmo comprimento. Em uma dimensão, uma malha com
-    // nvol volumes finitos possui nvol + 1 faces.
+    // 10 volumes finitos de mesmo comprimento.
+    //
 
     using Scalar = fvgrid::Real;
     using Axis = fvgrid::BasicAxis1D<Scalar>;
@@ -118,4 +144,5 @@ int main() {
     }
 
     return 0;
+
 }
