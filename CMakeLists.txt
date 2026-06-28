@@ -31,6 +31,10 @@ if(TARGET run_all_examples)
     list(APPEND FVG_RUN_ALL_TARGETS run_all_examples)
 endif()
 
+if(TARGET run_all_manual_programs)
+    list(APPEND FVG_RUN_ALL_TARGETS run_all_manual_programs)
+endif()
+
 if(TARGET run_all_capitulos)
     list(APPEND FVG_RUN_ALL_TARGETS run_all_capitulos)
 endif()

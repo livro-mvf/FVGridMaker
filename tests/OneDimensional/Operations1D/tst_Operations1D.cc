@@ -404,6 +404,25 @@ TEST(Operations1D, ClipsFacesToInterval) {
     EXPECT_DOUBLE_EQ(clipped.centers()[3], 0.775);
 }
 
+TEST(Operations1D, ClipsFaceCenteredAxisToInterval) {
+    const Axis1D axis{
+        std::vector<Real>{0.0, 0.25, 0.5, 0.75, 1.0},
+        std::vector<Real>{0.125, 0.375, 0.625, 0.875},
+        std::string{FaceCentered1D::name()}
+    };
+
+    const AxisInterval1D interval = AxisInterval1D::from_bounds(0.2, 0.8);
+
+    const Axis1D clipped =
+        Operations1D::clip_faces_to_interval(axis, interval, 1.0e-12);
+
+    EXPECT_EQ(clipped.pattern_name(), FaceCentered1D::name());
+    EXPECT_DOUBLE_EQ(clipped.faces().front(), 0.2);
+    EXPECT_DOUBLE_EQ(clipped.faces().back(), 0.8);
+    ASSERT_EQ(clipped.centers().size(), static_cast<Size>(2));
+    EXPECT_DOUBLE_EQ(clipped.centers()[0], 0.375);
+    EXPECT_DOUBLE_EQ(clipped.centers()[1], 0.625);
+}
 TEST(Operations1D, ClipsFacesToIntervalWithoutInteriorFaces) {
     const Axis1D axis{
         std::vector<Real>{0.0, 0.25, 0.5, 0.75, 1.0}

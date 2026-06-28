@@ -3,3 +3,5 @@ build/
 /.vscode
 /FVGridMakerLibOld
 /scripts
+/build_docs
+/build-tests

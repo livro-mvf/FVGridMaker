@@ -10,7 +10,7 @@
 
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 
 namespace fvgrid {
 
@@ -21,7 +21,7 @@ BasicAxis1D<T> BasicRoberts1D<T>::make(
     BasicXInit<T> xinit,
     BasicBeta<T> beta
 ) {
-    return make(nvol, length, xinit, beta, VolumeCentered1D{});
+    return make(nvol, length, xinit, beta, FaceCentered1D{});
 }
 
 template <std::floating_point T>

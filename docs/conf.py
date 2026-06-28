@@ -44,3 +44,7 @@ doxygen_xml = os.environ.get("FVG_DOXYGEN_XML_DIR", "")
 breathe_projects = {"FVGridMaker": doxygen_xml} if doxygen_xml else {}
 breathe_default_project = "FVGridMaker"
 breathe_default_members = ("members", "undoc-members")
+
+# Breathe/Sphinx may emit duplicate C++ declarations for template deduction guides
+# in the generated Doxygen index. Keep other warnings strict.
+suppress_warnings = ['duplicate_declaration.cpp']

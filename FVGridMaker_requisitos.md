@@ -524,8 +524,8 @@ Coordinates1D
 Construtores/fábricas obrigatórios:
 
 ```text
-Coordinates1D::faces(std::vector<Real>);
-Coordinates1D::centers(std::vector<Real>);
+Coordinates1D::faces(std::vector<Real>);  // API double; BasicCoordinates1D<T> para outros escalares
+Coordinates1D::centers(std::vector<Real>);  // API double; BasicCoordinates1D<T> para outros escalares
 ```
 
 `Coordinates1D` deve fornecer:
@@ -828,7 +828,7 @@ escrever VTK Legacy ASCII;
 usar DATASET RECTILINEAR_GRID quando o sistema permitir;
 usar DATASET STRUCTURED_GRID quando necessário;
 escrever coordenadas de pontos;
-escrever cell_area como CELL_DATA;
+escrever cell_measure como CELL_DATA;
 lançar erro tipado em falha de abertura ou escrita.
 ```
 
@@ -865,7 +865,8 @@ x_center();
 y_center();
 x_cell_length();
 y_cell_length();
-cell_area();
+cell_logical_area();
+cell_area();  // alias de compatibilidade para area logica
 cell_measure();
 physical_face_point();
 ```

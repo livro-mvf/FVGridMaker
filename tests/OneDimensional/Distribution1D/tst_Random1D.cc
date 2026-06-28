@@ -27,7 +27,7 @@
 
 namespace fvgrid {
 
-TEST(Random1D, BuildsDefaultVolumeCenteredAxis) {
+TEST(Random1D, BuildsDefaultFaceCenteredAxis) {
     const Axis1D axis = Random1D::make(
         NVol{5},
         Length{1.0},
@@ -37,7 +37,7 @@ TEST(Random1D, BuildsDefaultVolumeCenteredAxis) {
 
     EXPECT_EQ(axis.num_cells(), static_cast<Size>(5));
     EXPECT_EQ(axis.num_faces(), static_cast<Size>(6));
-    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
 
     EXPECT_DOUBLE_EQ(axis.faces().front(), 0.0);
     EXPECT_DOUBLE_EQ(axis.faces().back(), 1.0);
@@ -56,7 +56,7 @@ TEST(Random1D, BuildsShiftedDefaultAxis) {
     EXPECT_DOUBLE_EQ(axis.faces().back(), 1.0);
 }
 
-TEST(Random1D, SameSeedReproducesVolumeCenteredAxis) {
+TEST(Random1D, SameSeedReproducesDefaultFaceCenteredAxis) {
     const Axis1D first = Random1D::make(
         NVol{8},
         Length{1.0},
@@ -83,7 +83,7 @@ TEST(Random1D, SameSeedReproducesVolumeCenteredAxis) {
     }
 }
 
-TEST(Random1D, DifferentSeedsCanProduceDifferentVolumeCenteredAxes) {
+TEST(Random1D, DifferentSeedsCanProduceDifferentDefaultFaceCenteredAxes) {
     const Axis1D first = Random1D::make(
         NVol{8},
         Length{1.0},
@@ -110,7 +110,7 @@ TEST(Random1D, DifferentSeedsCanProduceDifferentVolumeCenteredAxes) {
     EXPECT_TRUE(any_difference);
 }
 
-TEST(Random1D, VolumeCenteredAxisHasIncreasingFaces) {
+TEST(Random1D, DefaultFaceCenteredAxisHasIncreasingFaces) {
     const Axis1D axis = Random1D::make(
         NVol{12},
         Length{1.0},
@@ -123,7 +123,7 @@ TEST(Random1D, VolumeCenteredAxisHasIncreasingFaces) {
     }
 }
 
-TEST(Random1D, VolumeCenteredAxisHasPositiveCellLengths) {
+TEST(Random1D, DefaultFaceCenteredAxisHasPositiveCellLengths) {
     const Axis1D axis = Random1D::make(
         NVol{12},
         Length{1.0},
@@ -256,7 +256,7 @@ TEST(Random1D, FreeFunctionUsesDefaultPattern) {
         Seed{7}
     );
 
-    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
     EXPECT_EQ(axis.num_cells(), static_cast<Size>(5));
 }
 
@@ -269,8 +269,8 @@ TEST(Random1D, FreeFunctionSupportsMinimumSpacing) {
         MinSpacing{0.05}
     );
 
-    for (Size i = 0; i < axis.cell_lengths().size(); ++i) {
-        EXPECT_GE(axis.cell_lengths()[i], 0.049999999999);
+    for (Size i = 0; i < axis.dx_centers().size(); ++i) {
+        EXPECT_GE(axis.dx_centers()[i], 0.049999999999);
     }
 }
 

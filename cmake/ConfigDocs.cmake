@@ -50,7 +50,7 @@ add_custom_target(sphinx_html
         "FVG_DOXYGEN_XML_DIR=${FVG_DOXYGEN_XML_DIR}"
         "FVG_VERSION=${FVG_VERSION_FULL}"
         "${Python3_EXECUTABLE}" -m sphinx
-        -W --keep-going -b html
+        -E -W --keep-going -b html
         "${FVG_DOCS_SOURCE_DIR}"
         "${FVG_DOCS_HTML_DIR}"
     DEPENDS ${FVG_DOCS_DEPENDENCIES}

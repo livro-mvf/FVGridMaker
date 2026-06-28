@@ -90,7 +90,7 @@ BasicStructuredGrid2D<T> Operations2D::clip_to_logical_box(
 ) {
     validate_tolerance(tolerance);
     require_area_box(box);
-    require_volume_centered_axes(grid);
+    require_clippable_axis_patterns(grid);
 
     BasicAxis1D<T> first_axis = Operations1D::clip_faces_to_interval(
         grid.first_axis(),
@@ -128,12 +128,18 @@ void Operations2D::require_area_box(BasicLogicalBox2D<T> box) {
 }
 
 template <std::floating_point T>
-void Operations2D::require_volume_centered_axes(
+void Operations2D::require_clippable_axis_patterns(
     const BasicStructuredGrid2D<T>& grid
 ) {
-    require<errors::operation::IncompatibleGridPatterns>(
+    const bool both_volume_centered =
         grid.first_axis().template has_pattern<VolumeCentered1D>() &&
-            grid.second_axis().template has_pattern<VolumeCentered1D>(),
+        grid.second_axis().template has_pattern<VolumeCentered1D>();
+    const bool both_face_centered =
+        grid.first_axis().template has_pattern<FaceCentered1D>() &&
+        grid.second_axis().template has_pattern<FaceCentered1D>();
+
+    require<errors::operation::IncompatibleGridPatterns>(
+        both_volume_centered || both_face_centered,
         id()
     );
 }

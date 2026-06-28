@@ -18,6 +18,6 @@ padrão do C++.
    architecture/index
    examples/index
    chapters/index
-   development/testing
+   development/index
    api/index
 

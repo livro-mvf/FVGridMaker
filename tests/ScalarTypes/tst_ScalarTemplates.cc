@@ -19,6 +19,7 @@
 #include <FVGridMaker/OneDimensional/Distribution1D/Roberts1D.h>
 #include <FVGridMaker/OneDimensional/Distribution1D/Uniform1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Coordinates1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 #include <FVGridMaker/OneDimensional/Quality1D/Quality1D.h>
 #include <FVGridMaker/Output/CSV/Axis1DCSVWriter.h>
@@ -106,6 +107,7 @@ void expect_distribution_builders_preserve_type() {
     static_assert(std::same_as<decltype(uniform), const BasicAxis1D<T>>);
 
     EXPECT_EQ(uniform.num_cells(), static_cast<Size>(4));
+    EXPECT_EQ(uniform.pattern_name(), FaceCentered1D::name());
     expect_near_scalar(uniform.xmin(), scalar<T>(-1.0L));
     expect_near_scalar(uniform.xmax(), scalar<T>(1.0L));
 
@@ -134,6 +136,7 @@ void expect_distribution_builders_preserve_type() {
     static_assert(std::same_as<decltype(random), const BasicAxis1D<T>>);
 
     EXPECT_EQ(random.num_cells(), static_cast<Size>(5));
+    EXPECT_EQ(random.pattern_name(), FaceCentered1D::name());
     expect_near_scalar(random.xmin(), scalar<T>(0.0L));
     expect_near_scalar(random.xmax(), scalar<T>(1.0L));
 
@@ -160,6 +163,7 @@ void expect_distribution_builders_preserve_type() {
     static_assert(std::same_as<decltype(roberts), const BasicAxis1D<T>>);
 
     EXPECT_EQ(roberts.num_cells(), static_cast<Size>(4));
+    EXPECT_EQ(roberts.pattern_name(), FaceCentered1D::name());
     expect_near_scalar(roberts.xmin(), scalar<T>(0.0L));
     expect_near_scalar(roberts.xmax(), scalar<T>(1.0L));
 

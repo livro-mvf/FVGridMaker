@@ -199,14 +199,24 @@ TEST(Operations2D, RejectsIncompatiblePatternsBetweenGrids) {
     );
 }
 
-TEST(Operations2D, RejectsClipOfNonVolumeCenteredAxes) {
+TEST(Operations2D, ClipsFaceCenteredGridToLogicalBox) {
     const StructuredGrid2D face_grid{face_centered_axis(), face_centered_axis()};
-    const LogicalBox2D box = Operations2D::domain_box(face_grid);
-
-    EXPECT_THROW(
-        (void)Operations2D::clip_to_logical_box(face_grid, box),
-        FVGridException
+    const LogicalBox2D box = LogicalBox2D::from_intervals(
+        AxisInterval1D::from_bounds(0.25, 1.75),
+        AxisInterval1D::from_bounds(0.25, 1.75)
     );
+
+    const StructuredGrid2D clipped = Operations2D::clip_to_logical_box(
+        face_grid,
+        box
+    );
+
+    EXPECT_EQ(clipped.first_axis().pattern_name(), FaceCentered1D::name());
+    EXPECT_EQ(clipped.second_axis().pattern_name(), FaceCentered1D::name());
+    EXPECT_DOUBLE_EQ(clipped.first_face(0), 0.25);
+    EXPECT_DOUBLE_EQ(clipped.first_face(clipped.num_faces_x() - 1), 1.75);
+    EXPECT_DOUBLE_EQ(clipped.second_face(0), 0.25);
+    EXPECT_DOUBLE_EQ(clipped.second_face(clipped.num_faces_y() - 1), 1.75);
 }
 
 TEST(Operations2D, RejectsInvalidTolerance) {

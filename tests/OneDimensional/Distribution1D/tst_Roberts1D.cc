@@ -34,7 +34,7 @@ namespace {
 
 }  // namespace
 
-TEST(Roberts1D, BuildsDefaultVolumeCenteredAxis) {
+TEST(Roberts1D, BuildsDefaultFaceCenteredAxis) {
     const Axis1D axis = Roberts1D::make(
         NVol{8},
         Length{1.0},
@@ -44,7 +44,7 @@ TEST(Roberts1D, BuildsDefaultVolumeCenteredAxis) {
 
     EXPECT_EQ(axis.num_cells(), static_cast<Size>(8));
     EXPECT_EQ(axis.num_faces(), static_cast<Size>(9));
-    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
 }
 
 TEST(Roberts1D, DefaultPatternUsesDomainBounds) {
@@ -168,7 +168,7 @@ TEST(Roberts1D, FreeFunctionUsesDefaultPattern) {
         Beta{1.5}
     );
 
-    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
     EXPECT_EQ(axis.num_cells(), static_cast<Size>(8));
 }
 

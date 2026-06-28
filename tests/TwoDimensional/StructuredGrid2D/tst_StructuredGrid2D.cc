@@ -22,6 +22,7 @@
 // ----------------------------------------------------------------------------
 #include <FVGridMaker/ErrorHandling/FVGridException.h>
 #include <FVGridMaker/OneDimensional/Axis1D/Axis1D.h>
+#include <FVGridMaker/OneDimensional/Distribution1D/Uniform1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
 #include <FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h>
@@ -337,6 +338,17 @@ TEST(StructuredGrid2D, PrintsCoordinateSystemAndIndependentAxes) {
     );
 }
 
+TEST(StructuredGrid2D, BuildsFromDefaultGeneratedFaceCenteredAxes) {
+    StructuredGrid2D grid{
+        Uniform1D::make(NVol{2}, Length{2.0}, XInit{0.0}),
+        Uniform1D::make(NVol{3}, Length{3.0}, XInit{0.0})
+    };
+
+    EXPECT_EQ(grid.first_axis().pattern_name(), FaceCentered1D::name());
+    EXPECT_EQ(grid.second_axis().pattern_name(), FaceCentered1D::name());
+    EXPECT_EQ(grid.num_cells_x(), static_cast<Size>(2));
+    EXPECT_EQ(grid.num_cells_y(), static_cast<Size>(3));
+}
 TEST(StructuredGrid2D, BuildsFromTwoVolumeCenteredAxes) {
     const StructuredGrid2D grid{
         Axis1D{std::vector<Real>{0.0, 1.0, 2.0}},

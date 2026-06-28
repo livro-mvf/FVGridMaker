@@ -13,6 +13,7 @@
 
 #include <FVGridMaker/Core/ID.h>
 #include <FVGridMaker/Core/Types.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 #include <FVGridMaker/OneDimensional/Operations1D/Operations1D.h>
 #include <FVGridMaker/TwoDimensional/CoordinateSystem2D/CoordinateSystem2D.h>
@@ -88,7 +89,7 @@ private:
     static void require_area_box(BasicLogicalBox2D<T> box);
 
     template <std::floating_point T>
-    static void require_volume_centered_axes(
+    static void require_clippable_axis_patterns(
         const BasicStructuredGrid2D<T>& grid
     );
 };

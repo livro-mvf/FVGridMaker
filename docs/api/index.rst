@@ -1,7 +1,15 @@
-Referência da API C++
+Referencia da API C++
 =====================
 
-Esta seção é gerada a partir dos headers públicos com Doxygen e Breathe.
+Esta seção organiza a superficie publica de FVGridMaker em duas camadas:
+
+* paginas tematicas, escritas para leitura humana e revisao academica;
+* referencia completa, gerada a partir dos headers publicos com Doxygen e
+  Breathe.
+
+As declaracoes C++ geradas aparecem em um unico ponto, em
+:doc:`complete`. Isso evita duplicacao de simbolos no Sphinx e torna o build
+estrito util: qualquer aviso passa a indicar um problema real de documentacao.
 
 .. toctree::
    :maxdepth: 2
@@ -10,4 +18,5 @@ Esta seção é gerada a partir dos headers públicos com Doxygen e Breathe.
    one_dimensional
    two_dimensional
    output
-
+   files
+   complete

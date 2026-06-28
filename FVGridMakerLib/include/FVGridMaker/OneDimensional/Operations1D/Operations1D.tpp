@@ -14,6 +14,7 @@
 
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
 
 namespace fvgrid {
@@ -131,39 +132,68 @@ BasicAxis1D<T> Operations1D::clip_faces_to_interval(
         Operations1D::id()
     );
 
+    if (axis.template has_pattern<VolumeCentered1D>()) {
+        std::vector<T> clipped_faces;
+        clipped_faces.reserve(axis.faces().size() + static_cast<Size>(2));
+
+        clipped_faces.push_back(interval.lower());
+
+        for (const T face : axis.faces()) {
+            const bool strictly_inside =
+                face > interval.lower() + tolerance &&
+                face < interval.upper() - tolerance;
+
+            if (strictly_inside) {
+                clipped_faces.push_back(face);
+            }
+        }
+
+        clipped_faces.push_back(interval.upper());
+
+        clipped_faces = unique_sorted_coordinates(
+            std::span<const T>{clipped_faces.data(), clipped_faces.size()},
+            tolerance
+        );
+
+        require<errors::operation::EmptyGridIntersection>(
+            clipped_faces.size() >= static_cast<Size>(2),
+            Operations1D::id()
+        );
+
+        return BasicAxis1D<T>{std::move(clipped_faces)};
+    }
+
     require<errors::operation::IncompatibleGridPatterns>(
-        axis.template has_pattern<VolumeCentered1D>(),
+        axis.template has_pattern<FaceCentered1D>(),
         Operations1D::id()
     );
 
-    std::vector<T> clipped_faces;
-    clipped_faces.reserve(axis.faces().size() + static_cast<Size>(2));
+    std::vector<T> clipped_centers;
+    clipped_centers.reserve(axis.centers().size() + static_cast<Size>(1));
 
-    clipped_faces.push_back(interval.lower());
-
-    for (const T face : axis.faces()) {
+    for (const T center : axis.centers()) {
         const bool strictly_inside =
-            face > interval.lower() + tolerance &&
-            face < interval.upper() - tolerance;
+            center > interval.lower() + tolerance &&
+            center < interval.upper() - tolerance;
 
         if (strictly_inside) {
-            clipped_faces.push_back(face);
+            clipped_centers.push_back(center);
         }
     }
 
-    clipped_faces.push_back(interval.upper());
+    if (clipped_centers.empty()) {
+        clipped_centers.push_back(T{0.5} * (interval.lower() + interval.upper()));
+    }
 
-    clipped_faces = unique_sorted_coordinates(
-        std::span<const T>{clipped_faces.data(), clipped_faces.size()},
-        tolerance
+    BasicAxisGeometry1D<T> geometry = FaceCentered1D::complete_geometry(
+        std::move(clipped_centers),
+        BasicDomain1D<T>::from_bounds(
+            BasicXInit<T>{interval.lower()},
+            BasicXFinal<T>{interval.upper()}
+        )
     );
 
-    require<errors::operation::EmptyGridIntersection>(
-        clipped_faces.size() >= static_cast<Size>(2),
-        Operations1D::id()
-    );
-
-    return BasicAxis1D<T>{std::move(clipped_faces)};
+    return BasicAxis1D<T>::from_geometry(std::move(geometry));
 }
 
 }  // namespace fvgrid

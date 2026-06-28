@@ -43,7 +43,7 @@ int main() {
         fvgrid::FaceCentered1D{}
     );
 
-    std::cout << "Roberts1D default volume-centred axis\n";
+    std::cout << "Roberts1D default face-centred axis\n";
     std::cout << malha << "\n";
 
     std::cout << "Roberts1D explicit volume-centred axis\n";

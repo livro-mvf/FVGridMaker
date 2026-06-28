@@ -1,99 +1,104 @@
 include_guard()
 
-set(FVG_EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/manual")
-
-if(NOT EXISTS "${FVG_EXAMPLES_DIR}")
-    set(FVG_EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Manual")
-endif()
-
-if(NOT EXISTS "${FVG_EXAMPLES_DIR}")
-    message(WARNING "Examples directory was not found.")
+if(NOT BUILD_EXAMPLES)
     return()
 endif()
 
-file(GLOB_RECURSE FVG_EXAMPLE_SOURCES CONFIGURE_DEPENDS
-    "${FVG_EXAMPLES_DIR}/ex_*.cpp"
-    "${FVG_EXAMPLES_DIR}/ex_*.cxx"
-    "${FVG_EXAMPLES_DIR}/ex_*.cc"
+set(FVG_MANUAL_EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/manual")
+
+if(NOT EXISTS "${FVG_MANUAL_EXAMPLES_DIR}")
+    set(FVG_MANUAL_EXAMPLES_DIR "${CMAKE_CURRENT_SOURCE_DIR}/Manual")
+endif()
+
+if(NOT EXISTS "${FVG_MANUAL_EXAMPLES_DIR}")
+    return()
+endif()
+
+file(GLOB_RECURSE FVG_MANUAL_PROGRAM_SOURCES CONFIGURE_DEPENDS
+    "${FVG_MANUAL_EXAMPLES_DIR}/man_*.cpp"
+    "${FVG_MANUAL_EXAMPLES_DIR}/man_*.cxx"
+    "${FVG_MANUAL_EXAMPLES_DIR}/man_*.cc"
 )
 
-if(NOT FVG_EXAMPLE_SOURCES)
-    message(WARNING
-        "No example entry-point files matching ex_*.cpp, ex_*.cxx or "
-        "ex_*.cc were found in '${FVG_EXAMPLES_DIR}'."
+if(NOT FVG_MANUAL_PROGRAM_SOURCES)
+    message(STATUS
+        "No manual entry-point files matching man_*.cpp, "
+        "man_*.cxx or man_*.cc were found in "
+        "'${FVG_MANUAL_EXAMPLES_DIR}'."
     )
     return()
 endif()
 
-set(FVG_EXAMPLE_RUN_TARGETS)
+set(FVG_MANUAL_PROGRAM_RUN_TARGETS)
 
-foreach(FVG_EXAMPLE_SOURCE IN LISTS FVG_EXAMPLE_SOURCES)
+foreach(FVG_MANUAL_PROGRAM_SOURCE IN LISTS FVG_MANUAL_PROGRAM_SOURCES)
     file(RELATIVE_PATH
-        FVG_EXAMPLE_RELATIVE_PATH
-        "${FVG_EXAMPLES_DIR}"
-        "${FVG_EXAMPLE_SOURCE}"
+        FVG_MANUAL_PROGRAM_RELATIVE_PATH
+        "${FVG_MANUAL_EXAMPLES_DIR}"
+        "${FVG_MANUAL_PROGRAM_SOURCE}"
     )
 
-    get_filename_component(FVG_EXAMPLE_NAME
-        "${FVG_EXAMPLE_RELATIVE_PATH}"
+    get_filename_component(FVG_MANUAL_PROGRAM_NAME
+        "${FVG_MANUAL_PROGRAM_RELATIVE_PATH}"
         NAME_WE
     )
 
-    set(FVG_EXAMPLE_NAME_TOKEN "${FVG_EXAMPLE_NAME}")
+    set(FVG_MANUAL_PROGRAM_NAME_TOKEN "${FVG_MANUAL_PROGRAM_NAME}")
 
-    if(FVG_EXAMPLE_NAME_TOKEN MATCHES "^ex_(.+)$")
-        set(FVG_EXAMPLE_NAME_TOKEN "${CMAKE_MATCH_1}")
+    if(FVG_MANUAL_PROGRAM_NAME_TOKEN MATCHES "^man_(.+)$")
+        set(FVG_MANUAL_PROGRAM_NAME_TOKEN "${CMAKE_MATCH_1}")
     endif()
 
-    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" FVG_EXAMPLE_NAME_TOKEN
-        "${FVG_EXAMPLE_NAME_TOKEN}"
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" FVG_MANUAL_PROGRAM_NAME_TOKEN
+        "${FVG_MANUAL_PROGRAM_NAME_TOKEN}"
     )
 
-    set(FVG_EXAMPLE_TARGET "ex_${FVG_EXAMPLE_NAME_TOKEN}")
+    set(FVG_MANUAL_PROGRAM_TARGET "man_${FVG_MANUAL_PROGRAM_NAME_TOKEN}")
 
-    if(TARGET "${FVG_EXAMPLE_TARGET}")
+    if(TARGET "${FVG_MANUAL_PROGRAM_TARGET}")
         message(FATAL_ERROR
-            "Duplicate example target detected: ${FVG_EXAMPLE_TARGET}. "
-            "Example executable names must be unique."
+            "Duplicate manual program target detected: "
+            "${FVG_MANUAL_PROGRAM_TARGET}. "
+            "Manual program executable names must be unique."
         )
     endif()
 
-    add_executable("${FVG_EXAMPLE_TARGET}"
-        "${FVG_EXAMPLE_SOURCE}"
+    add_executable("${FVG_MANUAL_PROGRAM_TARGET}"
+        "${FVG_MANUAL_PROGRAM_SOURCE}"
     )
 
-    target_link_libraries("${FVG_EXAMPLE_TARGET}"
+    target_link_libraries("${FVG_MANUAL_PROGRAM_TARGET}"
         PRIVATE
             FVGridMaker::FVGridMaker
     )
 
-    target_compile_features("${FVG_EXAMPLE_TARGET}"
+    target_compile_features("${FVG_MANUAL_PROGRAM_TARGET}"
         PRIVATE
             cxx_std_20
     )
 
-    set_target_properties("${FVG_EXAMPLE_TARGET}"
+    set_target_properties("${FVG_MANUAL_PROGRAM_TARGET}"
         PROPERTIES
             CXX_STANDARD 20
             CXX_STANDARD_REQUIRED ON
             CXX_EXTENSIONS OFF
-            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/examples"
+            RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin/manual"
     )
 
-    add_custom_target("run_${FVG_EXAMPLE_TARGET}"
-        COMMAND "$<TARGET_FILE:${FVG_EXAMPLE_TARGET}>"
-        DEPENDS "${FVG_EXAMPLE_TARGET}"
+    add_custom_target("run_${FVG_MANUAL_PROGRAM_TARGET}"
+        COMMAND "$<TARGET_FILE:${FVG_MANUAL_PROGRAM_TARGET}>"
+        DEPENDS "${FVG_MANUAL_PROGRAM_TARGET}"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
         VERBATIM
     )
 
-    list(APPEND FVG_EXAMPLE_RUN_TARGETS
-        "run_${FVG_EXAMPLE_TARGET}"
+    list(APPEND FVG_MANUAL_PROGRAM_RUN_TARGETS
+        "run_${FVG_MANUAL_PROGRAM_TARGET}"
     )
 endforeach()
 
-if(FVG_EXAMPLE_RUN_TARGETS)
-    add_custom_target(run_all_examples
-        DEPENDS ${FVG_EXAMPLE_RUN_TARGETS}
+if(FVG_MANUAL_PROGRAM_RUN_TARGETS)
+    add_custom_target(run_all_manual_programs
+        DEPENDS ${FVG_MANUAL_PROGRAM_RUN_TARGETS}
     )
 endif()

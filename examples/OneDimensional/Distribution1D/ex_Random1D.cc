@@ -45,7 +45,7 @@ int main() {
         fvgrid::FaceCentered1D{}
     );
 
-    std::cout << "Random1D default volume-centred axis\n";
+    std::cout << "Random1D default face-centred axis\n";
     std::cout << default_axis << "\n\n";
 
     std::cout << "Random1D explicit volume-centred axis\n";

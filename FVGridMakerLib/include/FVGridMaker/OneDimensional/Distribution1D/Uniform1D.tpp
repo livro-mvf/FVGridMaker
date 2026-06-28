@@ -14,7 +14,7 @@
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/AxisGeometry1D.h>
 #include <FVGridMaker/OneDimensional/GridPattern1D/Domain1D.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 
 namespace fvgrid {
 
@@ -30,14 +30,14 @@ BasicAxis1D<T> BasicUniform1D<T>::make(
     const T dx = length.value() / static_cast<T>(cell_count);
     const T x0 = xinit.value();
 
-    std::vector<T> faces(cell_count + static_cast<Size>(1));
+    std::vector<T> centers(cell_count);
 
-    for (Size i = 0; i <= cell_count; ++i) {
-        faces[i] = x0 + static_cast<T>(i) * dx;
+    for (Size i = 0; i < cell_count; ++i) {
+        centers[i] = x0 + (static_cast<T>(i) + T{0.5}) * dx;
     }
 
-    BasicAxisGeometry1D<T> geometry = VolumeCentered1D::complete_geometry(
-        std::move(faces),
+    BasicAxisGeometry1D<T> geometry = FaceCentered1D::complete_geometry(
+        std::move(centers),
         BasicDomain1D<T>::from_length(xinit, length)
     );
 

@@ -13,7 +13,7 @@
 
 #include <FVGridMaker/ErrorHandling/BuiltInErrors.h>
 #include <FVGridMaker/ErrorHandling/ThrowError.h>
-#include <FVGridMaker/OneDimensional/GridPattern1D/VolumeCentered1D.h>
+#include <FVGridMaker/OneDimensional/GridPattern1D/FaceCentered1D.h>
 
 namespace fvgrid {
 
@@ -30,7 +30,7 @@ BasicAxis1D<T> BasicRandom1D<T>::make(
         xinit,
         seed,
         BasicMinSpacing<T>{T{}},
-        VolumeCentered1D{}
+        FaceCentered1D{}
     );
 }
 
@@ -48,7 +48,7 @@ BasicAxis1D<T> BasicRandom1D<T>::make(
         xinit,
         seed,
         min_spacing,
-        VolumeCentered1D{}
+        FaceCentered1D{}
     );
 }
 

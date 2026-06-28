@@ -46,7 +46,7 @@ TEST(Axis1D, StoresFaces) {
     EXPECT_DOUBLE_EQ(axis.faces()[2], 1.0);
 }
 
-TEST(Axis1D, ComputesCentersFromFacesUsingVolumeCenteredDefault) {
+TEST(Axis1D, ComputesCentersFromExplicitFaces) {
     const Axis1D axis{{0.0, 0.5, 1.0, 2.0}};
 
     ASSERT_EQ(axis.centers().size(), static_cast<Size>(3));
@@ -92,7 +92,7 @@ TEST(Axis1D, ComputesBoundsAndLength) {
     EXPECT_DOUBLE_EQ(axis.length(), 3.0);
 }
 
-TEST(Axis1D, UsesVolumeCenteredPatternByDefault) {
+TEST(Axis1D, BuildsFromExplicitFacesAsVolumeCentered) {
     const Axis1D axis{{0.0, 0.5, 1.0}};
 
     EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());

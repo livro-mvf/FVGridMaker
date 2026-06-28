@@ -53,7 +53,7 @@ concept UniformAxis1DFreeFunctionAcceptsPatternArgument =
 
 }  // namespace
 
-TEST(Uniform1D, BuildsUniformAxisWithCanonicalPattern) {
+TEST(Uniform1D, BuildsUniformAxisWithDefaultFaceCenteredPattern) {
     const Axis1D axis = Uniform1D::make(
         NVol{4},
         Length{1.0},
@@ -62,7 +62,7 @@ TEST(Uniform1D, BuildsUniformAxisWithCanonicalPattern) {
 
     EXPECT_EQ(axis.num_cells(), static_cast<Size>(4));
     EXPECT_EQ(axis.num_faces(), static_cast<Size>(5));
-    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
 }
 
 TEST(Uniform1D, ComputesUniformFaces) {
@@ -140,7 +140,7 @@ TEST(Uniform1D, SupportsShiftedInitialCoordinate) {
     EXPECT_DOUBLE_EQ(axis.centers()[1], 2.0);
 }
 
-TEST(Uniform1D, FreeFunctionUsesCanonicalPattern) {
+TEST(Uniform1D, FreeFunctionUsesDefaultFaceCenteredPattern) {
     const Axis1D axis = uniform_axis_1d(
         NVol{4},
         Length{1.0},
@@ -149,7 +149,7 @@ TEST(Uniform1D, FreeFunctionUsesCanonicalPattern) {
 
     EXPECT_EQ(axis.num_cells(), static_cast<Size>(4));
     EXPECT_EQ(axis.num_faces(), static_cast<Size>(5));
-    EXPECT_EQ(axis.pattern_name(), VolumeCentered1D::name());
+    EXPECT_EQ(axis.pattern_name(), FaceCentered1D::name());
 
     EXPECT_DOUBLE_EQ(axis.faces()[0], 0.0);
     EXPECT_DOUBLE_EQ(axis.faces()[4], 1.0);
