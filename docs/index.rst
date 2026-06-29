@@ -17,7 +17,6 @@ padrão do C++.
    user_guide/index
    architecture/index
    examples/index
-   chapters/index
    development/index
    api/index
 
