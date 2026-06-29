@@ -1,120 +1,209 @@
 /* docs/_static/custom.css */
-/* Customizações para parecer mais com PETSc */
+/* Identidade cromática FVGridMaker: sóbria, clara e próxima do manual. */
 
-/* Layout geral mais limpo */
-body {
-    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+:root {
+    --fvg-blue: #3f5f96;
+    --fvg-blue-dark: #2c4774;
+    --fvg-blue-soft: #eef3fb;
+    --fvg-text: #222222;
+    --fvg-muted: #666666;
+    --fvg-border: #d9dee8;
+    --fvg-sidebar: #f7f8fa;
+    --fvg-code-bg: #f3f5f8;
+    --fvg-note: #2f7d62;
+    --fvg-note-bg: #eef7f2;
+
+    --pst-color-primary: #3f5f96;
+    --pst-color-secondary: #2c4774;
+    --pst-color-link: #3f5f96;
+    --pst-color-link-hover: #2c4774;
+    --pst-color-border: #d9dee8;
+    --pst-color-inline-code: #2c4774;
+    --pst-color-inline-code-links: #2c4774;
 }
 
-/* Headers mais compactos */
+/* Fundo geral e texto */
+html, body {
+    background-color: #ffffff;
+    color: var(--fvg-text);
+}
+
+/* Cabeçalhos */
 h1, h2, h3, h4, h5, h6 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
 }
 
-/* Código mais legível */
-code {
-    background-color: #f8f9fa;
-    border: 1px solid #eaecf0;
-    border-radius: 3px;
-    padding: 2px 4px;
-    font-size: 0.9em;
+h1 {
+    border-bottom: 1px solid var(--fvg-border);
+    padding-bottom: 0.35rem;
 }
 
-pre {
-    background-color: #f8f9fa;
-    border: 1px solid #eaecf0;
-    border-radius: 5px;
-    padding: 1em;
+h2 {
+    margin-top: 2rem;
 }
 
-/* Sidebar mais limpa */
+/* Links */
+a {
+    color: var(--fvg-blue);
+}
+
+a:hover {
+    color: var(--fvg-blue-dark);
+}
+
+/* Barra superior */
+.bd-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--fvg-border);
+    box-shadow: none;
+}
+
+.navbar-brand {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+.navbar-brand p.title {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+/* Sidebar */
 .bd-sidebar {
-    border-right: 1px solid #dee2e6;
+    background-color: var(--fvg-sidebar);
+    border-right: 1px solid var(--fvg-border);
 }
 
 .bd-sidebar .nav {
-    font-size: 0.9rem;
+    font-size: 0.92rem;
 }
 
-/* Tabelas estilo PETSc */
+.bd-sidebar-primary {
+    background-color: var(--fvg-sidebar);
+}
+
+/* Sumário da página */
+.bd-toc {
+    border-left: 1px solid var(--fvg-border);
+}
+
+/* Código inline */
+code {
+    background-color: var(--fvg-code-bg);
+    border: 1px solid var(--fvg-border);
+    border-radius: 3px;
+    color: var(--fvg-blue-dark);
+    padding: 0.1rem 0.25rem;
+    font-size: 0.90em;
+}
+
+/* Blocos de código */
+pre {
+    background-color: var(--fvg-code-bg);
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+/* Blocos de código gerados pelo Sphinx/Pygments */
+.highlight {
+    background-color: var(--fvg-code-bg);
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+}
+
+.highlight pre {
+    border: none;
+    background-color: transparent;
+}
+
+/* Tabelas */
 table {
     border-collapse: collapse;
     width: 100%;
-    margin: 1em 0;
+    margin: 1.2rem 0;
 }
 
 table th {
-    background-color: #f8f9fa;
-    border: 1px solid #dee2e6;
-    padding: 0.5em;
+    background-color: var(--fvg-blue-soft);
+    border: 1px solid var(--fvg-border);
+    color: var(--fvg-blue-dark);
+    padding: 0.5rem;
     text-align: left;
     font-weight: 600;
 }
 
 table td {
-    border: 1px solid #dee2e6;
-    padding: 0.5em;
+    border: 1px solid var(--fvg-border);
+    padding: 0.5rem;
 }
 
-/* API documentation mais limpa */
-.breathe-sectiondef {
-    margin-bottom: 2em;
+/* Admonitions: observações e notas */
+.admonition,
+div.admonition {
+    border: 1px solid var(--fvg-border);
+    border-left: 4px solid var(--fvg-blue);
+    background-color: #ffffff;
+    box-shadow: none;
 }
 
-.breathe-sectiondef h3 {
-    border-bottom: 2px solid #007acc;
-    padding-bottom: 0.5em;
-    margin-bottom: 1em;
+.admonition-title {
+    background-color: var(--fvg-blue-soft);
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
 }
 
-.breathe-sectiondef .breathe-sectiondef-content {
-    margin-left: 1em;
+/* Notas com cor próxima das observações do manual */
+.admonition.note,
+div.note {
+    border-left-color: var(--fvg-note);
+    background-color: var(--fvg-note-bg);
 }
 
-/* Doxygen groups mais organizados */
-.doxygen-group {
-    margin-bottom: 2em;
+.admonition.note > .admonition-title,
+div.note > .admonition-title {
+    background-color: var(--fvg-note-bg);
+    color: var(--fvg-note);
 }
 
-.doxygen-group h2 {
-    color: #2c3e50;
-    border-bottom: 1px solid #bdc3c7;
-    padding-bottom: 0.5em;
-}
-
-/* Melhorar espaçamento em listas de parâmetros */
-.breathe-parameter-list {
-    margin: 0.5em 0;
-}
-
-.breathe-parameter-name {
-    font-weight: bold;
-    color: #2c3e50;
-}
-
-/* Navbar mais compacta */
-.navbar-brand {
-    font-weight: bold;
-    font-size: 1.2rem;
-}
-
-/* Cards do grid mais elegantes */
+/* Cards do sphinx-design */
 .sd-card {
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    transition: box-shadow 0.2s ease-in-out;
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+    box-shadow: none;
 }
 
 .sd-card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: none;
 }
 
-/* Footer minimalista */
+.sd-card-title {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+/* API Breathe/Doxygen */
+.breathe-sectiondef {
+    margin-bottom: 2rem;
+}
+
+.breathe-sectiondef h3 {
+    border-bottom: 1px solid var(--fvg-border);
+    color: var(--fvg-blue-dark);
+    padding-bottom: 0.4rem;
+}
+
+.breathe-parameter-name {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+/* Rodapé */
 footer {
-    border-top: 1px solid #dee2e6;
-    margin-top: 3em;
-    padding-top: 1em;
+    border-top: 1px solid var(--fvg-border);
+    color: var(--fvg-muted);
+    margin-top: 3rem;
+    padding-top: 1rem;
     font-size: 0.9rem;
-    color: #6c757d;
 }

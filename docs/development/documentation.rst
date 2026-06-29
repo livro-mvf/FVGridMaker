@@ -1,192 +1,118 @@
 
-Estratégia de testes
-====================
+Documentação
+============
 
-Esta página descreve a parte pública da estratégia de testes do
-FVGridMaker. O objetivo não é listar todos os testes da suíte, mas
-explicar quais contratos de comportamento são protegidos e como o usuário
-ou desenvolvedor pode executar a validação localmente.
+Esta página descreve como a documentação HTML do FVGridMaker é gerada e
+qual papel cada ferramenta exerce no processo.
 
-Os testes públicos devem ser lidos como documentação executável: eles
-registram propriedades que a biblioteca deve preservar ao longo do
-desenvolvimento. Detalhes internos de implementação podem mudar; os
-contratos de comportamento da API pública não devem mudar sem decisão
-explícita.
+A documentação combina três camadas:
 
-Objetivo dos testes
--------------------
+* páginas escritas manualmente em reStructuredText ou Markdown;
+* referência da API C++ extraída dos headers públicos com Doxygen;
+* integração entre Sphinx e Doxygen por meio do Breathe.
 
-A suíte de testes verifica três grupos de propriedades:
+Como gerar a documentação HTML
+------------------------------
 
-* invariantes geométricas, como ordenação de faces, positividade de
-  medidas e consistência entre centros e faces;
-* contratos de indexação e armazenamento, como a ordem linear
-  ``row-major`` em malhas bidimensionais;
-* operações de entrada, saída e manipulação de malhas, como escrita CSV,
-  escrita VTK, interseção, recorte e relatórios de qualidade.
-
-A documentação pública dos testes deve enfatizar essas propriedades, e
-não a estrutura interna de cada caso de teste.
-
-Como compilar os testes
------------------------
-
-Configure um diretório de build dedicado aos testes:
+Crie um ambiente Python para a documentação:
 
 .. code-block:: bash
 
-   cmake -S . -B build_tests \
-     -DBUILD_TESTS=ON \
-     -DBUILD_TESTING=ON \
+   python3 -m venv .venv-docs
+   source .venv-docs/bin/activate
+   python -m pip install --upgrade pip
+   python -m pip install -r docs/requirements.txt
+
+Configure um diretório de build dedicado:
+
+.. code-block:: bash
+
+   cmake -S . -B build_docs \
+     -DBUILD_DOCUMENTATION=ON \
      -DBUILD_EXAMPLES=OFF \
-     -DBUILD_DOCUMENTATION=OFF
+     -DBUILD_TESTS=OFF
 
-Em seguida, compile todos os testes:
-
-.. code-block:: bash
-
-   cmake --build build_tests -j
-
-O projeto usa GoogleTest. Quando o GoogleTest não é encontrado no sistema,
-o CMake pode baixá-lo automaticamente, desde que
-``FVG_TESTS_FETCH_GOOGLETEST`` esteja ativado.
-
-Como executar todos os testes
------------------------------
-
-Há duas formas usuais de executar a suíte.
-
-A primeira usa o alvo agregado criado pelo projeto:
+Gere a documentação:
 
 .. code-block:: bash
 
-   cmake --build build_tests --target run_all_tests -j
+   cmake --build build_docs --target docs -j
 
-A segunda usa diretamente o CTest:
-
-.. code-block:: bash
-
-   ctest --test-dir build_tests --output-on-failure
-
-O CTest é útil quando se deseja integração com ferramentas de CI ou saída
-padronizada por caso de teste.
-
-Como executar um teste específico
----------------------------------
-
-Cada arquivo de teste gera um executável próprio. Para rodar apenas um
-grupo específico, use o alvo ``run_<nome_do_alvo>`` criado pelo CMake.
-
-Por exemplo, se o alvo do teste for ``tst_Core_Types``, o comando será:
-
-.. code-block:: bash
-
-   cmake --build build_tests --target run_tst_Core_Types
-
-O nome exato do alvo depende do caminho do arquivo dentro da pasta
-``tests``. Em caso de dúvida, liste os alvos disponíveis:
-
-.. code-block:: bash
-
-   cmake --build build_tests --target help | grep tst_
-
-Convenção de nomes
-------------------
-
-A suíte considera como pontos de entrada os arquivos com os padrões:
+As páginas HTML são gravadas em:
 
 .. code-block:: text
 
-   tst_*.cpp
-   tst_*.cxx
-   tst_*.cc
+   build_docs/docs/html
 
-Esses arquivos devem ficar dentro da pasta ``tests``. O nome do arquivo e
-o caminho relativo dentro dessa pasta são usados para construir o nome do
-alvo CMake correspondente.
-
-Testes como contrato público
-----------------------------
-
-A tabela abaixo resume quais comportamentos devem ser tratados como
-contratos públicos da biblioteca.
-
-.. list-table:: Contratos públicos protegidos pelos testes
-   :header-rows: 1
-   :widths: 28 72
-
-   * - Componente
-     - Contrato protegido
-   * - ``Axis1D``
-     - Contagem coerente de faces, centros e volumes; coordenadas finitas;
-       faces ordenadas; centros compatíveis com as faces.
-   * - Geradores 1D
-     - Geração de eixos válidos para distribuições uniformes, aleatórias,
-       de Roberts e customizadas; rejeição de parâmetros impossíveis.
-   * - Padrões 1D
-     - Coerência entre eixos centrados em faces e eixos centrados em volumes;
-       preservação do domínio e dos tipos de coordenada.
-   * - ``Operations1D``
-     - Interseção de intervalos, recorte, tolerâncias válidas e tratamento
-       de interseções vazias.
-   * - ``StructuredGrid2D``
-     - Composição tensorial de dois eixos 1D; indexação linear ``row-major``;
-       contagem correta de células; acesso consistente a faces, centros,
-       áreas lógicas e medidas físicas.
-   * - Sistemas de coordenadas 2D
-     - Diferença entre área lógica e medida física; fórmulas cartesianas,
-       polares, axisimétricas cilíndricas, axisimétricas esféricas e
-       mapeamentos customizados.
-   * - ``Operations2D``
-     - Caixa lógica do domínio, interseção entre malhas e recorte para uma
-       caixa lógica válida.
-   * - ``Quality2D``
-     - Medidas mínimas e máximas, razões entre células, áreas computacionais
-       e medidas de faces.
-   * - Saída CSV/VTK
-     - Criação de arquivos, ordem dos dados, conteúdo geométrico e falhas
-       controladas de escrita.
-
-O que não deve ser tratado como contrato público
-------------------------------------------------
-
-Nem todo detalhe testado deve ser documentado como garantia da API.
-Em particular, os seguintes pontos podem mudar sem quebrar o contrato
-público, desde que o comportamento observável seja preservado:
-
-* nomes de funções auxiliares usadas apenas dentro dos testes;
-* organização interna dos arquivos em subpastas;
-* decomposição de um caso de teste em vários testes menores;
-* mensagens internas muito específicas, quando o tipo de erro e o contexto
-  continuarem claros;
-* detalhes de implementação que não aparecem na interface pública.
-
-Essa separação evita que a documentação pública congele decisões internas
-do projeto. O papel da documentação é explicar o comportamento garantido,
-não reproduzir a suíte linha por linha.
-
-Verificação de memória
-----------------------
-
-Quando ``BUILD_MEMCHECK`` está ativado e o ``valgrind`` está disponível,
-o projeto também pode criar alvos de verificação de memória. Para configurar
-esse modo:
+Para abrir a página inicial no WSL:
 
 .. code-block:: bash
 
-   cmake -S . -B build_memcheck \
-     -DBUILD_TESTS=ON \
-     -DBUILD_TESTING=ON \
-     -DBUILD_MEMCHECK=ON \
-     -DBUILD_EXAMPLES=OFF \
-     -DBUILD_DOCUMENTATION=OFF
+   explorer.exe "$(wslpath -w build_docs/docs/html/index.html)"
 
-Para executar todos os alvos de verificação de memória:
+ou, em um ambiente Linux com interface gráfica:
 
 .. code-block:: bash
 
-   cmake --build build_memcheck --target memcheck_all_tests -j
+   xdg-open build_docs/docs/html/index.html
 
-Use essa etapa antes de alterações maiores em estruturas de armazenamento,
-operações de escrita ou rotinas que manipulam muitos objetos temporários.
+Papel do Sphinx
+---------------
+
+O Sphinx organiza as páginas da documentação, monta a navegação lateral,
+processa as páginas ``.rst`` e ``.md`` e gera o HTML final.
+
+O alvo CMake ``docs`` chama o alvo ``sphinx_html``. A geração é feita com
+avisos tratados como erro, para evitar que referências quebradas ou páginas
+malformadas passem despercebidas.
+
+Papel do Doxygen
+----------------
+
+O Doxygen lê os headers públicos da biblioteca e gera a representação XML
+da API C++. Esse XML é usado pelo Sphinx, por meio do Breathe, para montar
+as páginas de referência da API.
+
+Quando o Doxygen está instalado, o alvo ``doxygen_xml`` é executado antes
+do Sphinx. Quando o Doxygen não está disponível, a documentação conceitual
+ainda pode ser gerada, mas a referência automática da API fica incompleta.
+
+Papel do Breathe
+----------------
+
+O Breathe conecta a saída XML do Doxygen ao Sphinx. Ele permite que as
+páginas da documentação incluam classes, funções, aliases e estruturas C++
+documentadas nos headers públicos.
+
+Organização das páginas
+-----------------------
+
+A árvore principal da documentação é definida em:
+
+.. code-block:: text
+
+   docs/index.rst
+
+As páginas de desenvolvimento ficam em:
+
+.. code-block:: text
+
+   docs/development/
+
+A página ``testing.rst`` documenta a estratégia pública de testes. A página
+``documentation.rst`` deve tratar apenas do processo de geração, manutenção
+e organização da documentação.
+
+Verificação rápida
+------------------
+
+Depois de qualquer alteração estrutural nos arquivos ``.rst``, gere a
+documentação novamente:
+
+.. code-block:: bash
+
+   cmake --build build_docs --target docs -j
+
+Se a geração terminar com ``build succeeded.``, a árvore Sphinx está
+coerente.
 
