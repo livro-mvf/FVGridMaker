@@ -2,7 +2,8 @@
 // Arquivo: man_quality1D.cc
 // Projeto: FVGridMaker
 // Versão: consulte <FVGridMaker/Core/Version.h>
-// Descrição: Programa de manual para avaliar métricas de qualidade de malhas 1D.
+// Descrição: Programa de manual para avaliar métricas simples de qualidade de
+//            malhas 1D usando o módulo Quality1D da própria biblioteca.
 // Autor: João Flávio Vieira de Vasconcellos
 //
 // SPDX-FileCopyrightText: 2026 João Flávio Vieira de Vasconcellos
@@ -27,10 +28,8 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <limits>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include <FVGridMaker/FVGridMaker.h>
 
@@ -39,219 +38,139 @@ namespace {
 using Scalar = fvgrid::Real;
 using Axis = fvgrid::BasicAxis1D<Scalar>;
 
-constexpr int id_width = 6;
+constexpr int label_width = 26;
 constexpr int value_width = 16;
 
-struct QualityMetrics final {
-    Scalar sum_dx{};
-    Scalar expected_length{};
-    Scalar closure_error{};
-    Scalar min_dx{};
-    Scalar max_dx{};
-    Scalar mean_dx{};
-    Scalar relative_stddev{};
-    Scalar concentration_ratio{};
-    Scalar max_local_ratio{};
-    fvgrid::Size min_index{};
-    fvgrid::Size max_index{};
-};
-
-[[nodiscard]] QualityMetrics compute_quality_metrics(const Axis& axis) {
-    QualityMetrics metrics;
-
-    const fvgrid::Size n = axis.num_cells();
-
-    metrics.expected_length = axis.length();
-    metrics.min_dx = std::numeric_limits<Scalar>::max();
-    metrics.max_dx = Scalar{0.0};
-    metrics.max_local_ratio = Scalar{1.0};
-
-    std::vector<Scalar> dx_values(n);
-
-    for (fvgrid::Size p = 0; p < n; ++p) {
-        const Scalar dx = axis.cell_length(p);
-
-        dx_values[p] = dx;
-        metrics.sum_dx += dx;
-
-        if (dx < metrics.min_dx) {
-            metrics.min_dx = dx;
-            metrics.min_index = p;
-        }
-
-        if (dx > metrics.max_dx) {
-            metrics.max_dx = dx;
-            metrics.max_index = p;
-        }
-    }
-
-    metrics.mean_dx = metrics.sum_dx / static_cast<Scalar>(n);
-    metrics.closure_error = std::abs(metrics.sum_dx - metrics.expected_length);
-    metrics.concentration_ratio = metrics.max_dx / metrics.min_dx;
-
-    Scalar variance = Scalar{0.0};
-
-    for (fvgrid::Size p = 0; p < n; ++p) {
-        const Scalar diff = dx_values[p] - metrics.mean_dx;
-        variance += diff * diff;
-    }
-
-    variance /= static_cast<Scalar>(n);
-    metrics.relative_stddev = std::sqrt(variance) / metrics.mean_dx;
-
-    for (fvgrid::Size p = 1; p < n; ++p) {
-        const Scalar left = dx_values[p - static_cast<fvgrid::Size>(1)];
-        const Scalar right = dx_values[p];
-
-        const Scalar local_ratio = (left > right)
-            ? left / right
-            : right / left;
-
-        if (local_ratio > metrics.max_local_ratio) {
-            metrics.max_local_ratio = local_ratio;
-        }
-    }
-
-    return metrics;
-}
-
-void print_scientific_value(std::string_view label, Scalar value) {
-    const std::ios_base::fmtflags old_flags = std::cout.flags();
-    const std::streamsize old_precision = std::cout.precision();
-
-    std::cout << std::scientific << std::setprecision(6);
-    std::cout << label << value << '\n';
-
-    std::cout.flags(old_flags);
-    std::cout.precision(old_precision);
-}
-
-void print_quality_report(
-    const Axis& axis,
-    std::string_view title,
-    std::string_view explanation
-) {
-    const QualityMetrics metrics = compute_quality_metrics(axis);
-
+//
+// Imprime as métricas de qualidade de um eixo.
+//
+// O ponto central deste exemplo está aqui: as métricas NÃO são recalculadas à
+// mão. Elas vêm do módulo Quality1D da própria biblioteca, por meio da função
+// quality_metrics_1d, que devolve um QualityMetrics1D já preenchido.
+//
+// A única conta feita manualmente é o desvio relativo dos comprimentos, que a
+// biblioteca não fornece. Ele serve para ilustrar que o usuário pode compor
+// suas próprias medidas a partir dos dados geométricos do eixo, quando precisar
+// de algo que ainda não existe na biblioteca.
+//
+void print_quality_report(const Axis& axis, std::string_view title) {
     std::cout << std::fixed << std::setprecision(6);
 
     std::cout << "\n" << title << "\n";
     std::cout << std::string(title.size(), '=') << "\n";
-    std::cout << explanation << "\n\n";
-
-    std::cout << "Resumo compacto da malha\n";
-    std::cout << "========================\n";
-    std::cout << "O bloco abaixo apresenta uma visão compacta da malha gerada:\n";
-    std::cout << "padrão de centralização, quantidade de faces e volumes,\n";
-    std::cout << "limites físicos e comprimento total do domínio.\n\n";
     std::cout << "padrão            : " << axis.pattern_name() << '\n';
-    std::cout << "número de faces   : " << axis.num_faces() << '\n';
     std::cout << "número de volumes : " << axis.num_cells() << '\n';
-    std::cout << "xmin              : " << axis.xmin() << '\n';
-    std::cout << "xmax              : " << axis.xmax() << '\n';
-    std::cout << "comprimento       : " << axis.length() << '\n';
+    std::cout << "comprimento       : " << axis.length() << "\n\n";
 
-    std::cout << "\nMétricas de qualidade\n";
-    std::cout << "=====================\n";
-    std::cout << "soma dos dx              : " << metrics.sum_dx << '\n';
-    std::cout << "comprimento esperado     : " << metrics.expected_length << '\n';
-    print_scientific_value("erro de fechamento       : ", metrics.closure_error);
-    std::cout << "menor dx                 : " << metrics.min_dx
-              << "   no volume " << metrics.min_index << '\n';
-    std::cout << "maior dx                 : " << metrics.max_dx
-              << "   no volume " << metrics.max_index << '\n';
-    std::cout << "dx médio                 : " << metrics.mean_dx << '\n';
-    std::cout << "razão maior/menor dx     : " << metrics.concentration_ratio << '\n';
-    std::cout << "maior razão local        : " << metrics.max_local_ratio << '\n';
-    std::cout << "desvio relativo dos dx   : " << metrics.relative_stddev << '\n';
+    // Fonte oficial das métricas: a biblioteca.
+    const fvgrid::QualityMetrics1D metrics = fvgrid::quality_metrics_1d(axis);
 
-    std::cout << "\nInformações geométricas dos volumes\n";
-    std::cout << "===================================\n";
-    std::cout << "O bloco abaixo imprime, para cada volume finito, a face oeste,\n";
-    std::cout << "a face leste, o comprimento do volume e a razão local.\n";
-    std::cout << "A razão local compara o volume atual com o volume anterior.\n";
-    std::cout << "Para p = 0, não há volume anterior.\n\n";
+    std::cout << std::left << std::setw(label_width) << "menor dx"
+              << std::right << std::setw(value_width)
+              << metrics.min_cell_length << '\n';
 
-    std::cout << std::right
-              << std::setw(id_width) << "p"
-              << std::setw(value_width) << "face_oeste"
-              << std::setw(value_width) << "face_leste"
-              << std::setw(value_width) << "dx"
-              << std::setw(value_width) << "razão_local"
-              << '\n';
+    std::cout << std::left << std::setw(label_width) << "maior dx"
+              << std::right << std::setw(value_width)
+              << metrics.max_cell_length << '\n';
 
-    std::cout << std::string(id_width + 4 * value_width, '-') << '\n';
+    std::cout << std::left << std::setw(label_width) << "razão maior/menor dx"
+              << std::right << std::setw(value_width)
+              << metrics.cell_length_ratio << '\n';
 
-    for (fvgrid::Size p = 0; p < axis.num_cells(); ++p) {
-        std::cout << std::right
-                  << std::setw(id_width) << p
-                  << std::setw(value_width) << axis.west_face(p)
-                  << std::setw(value_width) << axis.east_face(p)
-                  << std::setw(value_width) << axis.cell_length(p);
+    std::cout << std::left << std::setw(label_width)
+              << "maior razão entre vizinhos"
+              << std::right << std::setw(value_width)
+              << metrics.max_adjacent_cell_ratio << '\n';
 
-        if (p == 0) {
-            std::cout << std::setw(value_width) << "-";
-        } else {
-            const Scalar previous =
-                axis.cell_length(p - static_cast<fvgrid::Size>(1));
-            const Scalar current = axis.cell_length(p);
+    //
+    // Conferência manual de uma única métrica.
+    //
+    // Recalculamos a razão maior/menor diretamente a partir de cell_lengths()
+    // e comparamos com o valor devolvido pela biblioteca. Os dois devem
+    // coincidir. Este passo existe só para mostrar, uma vez, que o número da
+    // biblioteca é o mesmo que a definição da métrica produz.
+    //
+    const std::span<const Scalar> dx = axis.cell_lengths();
 
-            const Scalar local_ratio = (previous > current)
-                ? previous / current
-                : current / previous;
+    Scalar manual_min = dx[0];
+    Scalar manual_max = dx[0];
 
-            std::cout << std::setw(value_width) << local_ratio;
+    for (const Scalar value : dx) {
+        if (value < manual_min) {
+            manual_min = value;
         }
 
-        std::cout << '\n';
-    }
-}
-
-[[nodiscard]] bool check_geometric_consistency(
-    const Axis& axis,
-    std::string_view label
-) {
-    const QualityMetrics metrics = compute_quality_metrics(axis);
-    const Scalar tolerance = Scalar{1.0e-12};
-
-    std::cout << "\nTeste de consistência geométrica\n";
-    std::cout << "================================\n";
-    std::cout << "O bloco abaixo verifica se a soma dos comprimentos dos volumes\n";
-    std::cout << "reproduz o comprimento total do domínio.\n\n";
-    std::cout << "malha testada    : " << label << '\n';
-    std::cout << "soma dos dx      : " << std::fixed << std::setprecision(6)
-              << metrics.sum_dx << '\n';
-    std::cout << "comprimento eixo : " << metrics.expected_length << '\n';
-    print_scientific_value("erro absoluto    : ", metrics.closure_error);
-    print_scientific_value("tolerância       : ", tolerance);
-
-    if (metrics.closure_error <= tolerance) {
-        std::cout << "resultado        : OK\n";
-        return true;
+        if (value > manual_max) {
+            manual_max = value;
+        }
     }
 
-    std::cout << "resultado        : FALHOU\n";
-    return false;
+    const Scalar manual_ratio = manual_max / manual_min;
+    const Scalar ratio_diff =
+        std::abs(manual_ratio - metrics.cell_length_ratio);
+
+    std::cout << std::left << std::setw(label_width)
+              << "conferência (manual)"
+              << std::right << std::setw(value_width) << manual_ratio << '\n';
+
+    const std::ios_base::fmtflags old_flags = std::cout.flags();
+    const std::streamsize old_precision = std::cout.precision();
+
+    std::cout << std::scientific << std::setprecision(6);
+    std::cout << std::left << std::setw(label_width)
+              << "diferença biblioteca/manual"
+              << std::right << std::setw(value_width) << ratio_diff << '\n';
+
+    std::cout.flags(old_flags);
+    std::cout.precision(old_precision);
+
+    //
+    // Desvio relativo dos comprimentos.
+    //
+    // Esta métrica não faz parte de Quality1D. Ela é composta aqui a partir dos
+    // próprios comprimentos: mede o quanto os dx se afastam, em média, do
+    // comprimento médio. Para a malha uniforme, o resultado é próximo de zero.
+    //
+    Scalar sum_dx = Scalar{0.0};
+
+    for (const Scalar value : dx) {
+        sum_dx += value;
+    }
+
+    const Scalar mean_dx =
+        sum_dx / static_cast<Scalar>(axis.num_cells());
+
+    Scalar sum_abs_dev = Scalar{0.0};
+
+    for (const Scalar value : dx) {
+        sum_abs_dev += std::abs(value - mean_dx);
+    }
+
+    const Scalar relative_deviation =
+        (mean_dx > Scalar{0.0})
+            ? (sum_abs_dev / static_cast<Scalar>(axis.num_cells())) / mean_dx
+            : Scalar{0.0};
+
+    std::cout << std::left << std::setw(label_width)
+              << "desvio relativo dos dx"
+              << std::right << std::setw(value_width)
+              << relative_deviation << '\n';
 }
 
 }  // namespace
 
 int main() {
     //
-    // Este exemplo compara métricas simples de qualidade em três malhas 1D:
+    // Este exemplo compara métricas simples de qualidade em três malhas com o
+    // mesmo domínio e o mesmo número de volumes: uniforme, Roberts e aleatória.
     //
-    // 1. malha uniforme;
-    // 2. malha de Roberts;
-    // 3. malha aleatória.
+    // As métricas vêm do módulo Quality1D da biblioteca. A intenção é dupla:
     //
-    // As métricas usadas aqui não são um veredito universal sobre a malha. Elas
-    // servem como alertas práticos:
-    //
-    // - erro de fechamento geométrico;
-    // - menor e maior comprimento de volume;
-    // - razão entre maior e menor volume;
-    // - maior razão local entre volumes vizinhos;
-    // - desvio relativo dos comprimentos dos volumes.
+    // 1. mostrar que a FVGridMaker já fornece essas medidas prontas, sem que o
+    //    usuário precise reimplementá-las;
+    // 2. lembrar que essas métricas são uma inspeção inicial. Elas ajudam a
+    //    detectar problemas grosseiros de construção, mas não decidem, sozinhas,
+    //    se uma malha é adequada para um problema numérico específico.
     //
 
     const fvgrid::Size nvol = 10;
@@ -274,38 +193,27 @@ int main() {
     const Axis random_axis =
         fvgrid::random_axis_1d<Scalar>(nvol, xinit, xfinal, seed);
 
-    print_quality_report(
-        uniform_axis,
-        "Malha uniforme",
-        "A malha uniforme é o caso de referência. Todos os volumes têm o "
-        "mesmo comprimento e as razões de qualidade devem ficar próximas de 1."
-    );
+    print_quality_report(uniform_axis, "Malha uniforme");
+    print_quality_report(roberts_axis, "Malha de Roberts");
+    print_quality_report(random_axis, "Malha aleatória");
 
-    if (!check_geometric_consistency(uniform_axis, "uniforme")) {
-        return 1;
-    }
+    //
+    // Leitura esperada dos resultados:
+    //
+    // - a malha uniforme deve ter razão maior/menor próxima de 1 e desvio
+    //   relativo próximo de zero;
+    // - a malha de Roberts deve mostrar variação controlada, com razão entre
+    //   vizinhos suave;
+    // - a malha aleatória pode apresentar a maior razão maior/menor e os saltos
+    //   locais mais fortes entre volumes vizinhos.
+    //
 
-    print_quality_report(
-        roberts_axis,
-        "Malha de Roberts",
-        "A malha de Roberts concentra volumes de maneira suave. A razão entre "
-        "maior e menor volume cresce, mas a variação local permanece controlada."
-    );
-
-    if (!check_geometric_consistency(roberts_axis, "Roberts")) {
-        return 1;
-    }
-
-    print_quality_report(
-        random_axis,
-        "Malha aleatória",
-        "A malha aleatória é útil como teste de robustez. Ela tende a produzir "
-        "saltos mais fortes entre volumes vizinhos."
-    );
-
-    if (!check_geometric_consistency(random_axis, "aleatória")) {
-        return 1;
-    }
+    std::cout << "\nObservação\n";
+    std::cout << "==========\n";
+    std::cout << "As métricas acima são alertas, não vereditos. Uma malha pode\n";
+    std::cout << "passar em todas elas e ainda assim não ser adequada para uma\n";
+    std::cout << "equação específica. Elas servem para encontrar irregularidades\n";
+    std::cout << "e erros de construção antes do uso numérico.\n";
 
     return 0;
 }
