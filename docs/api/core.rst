@@ -1,10 +1,10 @@
-Nucleo, tipos e erros
+Núcleo, tipos e erros
 =====================
 
-O nucleo da biblioteca define nomes estaveis, tipos escalares, wrappers fortes
+O núcleo da biblioteca define nomes estáveis, tipos escalares, wrappers fortes
 e erros estruturados. Esses tipos aparecem em praticamente todo exemplo e
-formam a base do contrato academico da biblioteca: unidades logicas diferentes
-nao devem ser confundidas por acidente.
+formam a base do contrato acadêmico da biblioteca: unidades lógicas diferentes
+não devem ser confundidas por acidente.
 
 Tipos fundamentais
 ------------------
@@ -12,46 +12,46 @@ Tipos fundamentais
 .. list-table::
    :header-rows: 1
 
-   * - Header
-     - Conteudo documentado
+   * - Arquivo
+     - Conteúdo documentado
    * - ``Core/Types.h``
      - aliases de inteiros, ``Size``, ``Index`` e ``Real = double``
    * - ``Core/StrongTypes.h``
      - ``NVol``, ``Seed`` e wrappers escalares como ``Length`` e ``XInit``
    * - ``Core/ID.h``
-     - identificacao estavel de modulo, classe e ``class_id``
+     - identificação estável de módulo, classe e ``class_id``
    * - ``Core/Version.h``
-     - versao semantica e metadados de build/git
+     - versão semântica e metadados de build/git
 
-A API iniciante usa ``double`` por padrao. A API avancada usa os aliases
+A API iniciante usa ``double`` por padrão. A API avançada usa os aliases
 ``Float`` e ``LongDouble`` ou as classes ``Basic*<T>`` documentadas na
-referencia completa.
+referência completa.
 
-Erros e excecoes
+Erros e exceções
 ----------------
 
 .. list-table::
    :header-rows: 1
 
-   * - Header
+   * - Arquivo
      - Papel
    * - ``ErrorHandling/ErrorDescriptor.h``
-     - codigo, mensagem e categoria estaveis
+     - código, mensagem e categoria estáveis
    * - ``ErrorHandling/ErrorContext.h``
-     - pares ``chave=valor`` para diagnostico
+     - pares ``chave=valor`` para diagnóstico
    * - ``ErrorHandling/ErrorRecord.h``
-     - registro completo com origem e localizacao
+     - registro completo com origem e localização
    * - ``ErrorHandling/FVGridException.h``
-     - excecao unica da biblioteca
+     - exceção única da biblioteca
    * - ``ErrorHandling/BuiltInErrors.h``
-     - catalogo de erros de entrada, geometria, operacao e saida
+     - catálogo de erros de entrada, geometria, operação e saída
    * - ``ErrorHandling/ThrowError.h``
-     - funcoes ``throw_error`` e ``require`` usadas nas validacoes
+     - funções ``throw_error`` e ``require`` usadas nas validações
 
-Para trabalhos academicos, os codigos de erro permitem reproduzir e citar
-falhas de validacao sem depender do texto exato de uma mensagem.
+Para trabalhos acadêmicos, os códigos de erro permitem reproduzir e citar
+falhas de validação sem depender do texto exato de uma mensagem.
 
-Ver tambem
+Ver também
 ----------
 
 * :doc:`../user_guide/errors`

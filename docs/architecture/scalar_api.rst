@@ -1,15 +1,15 @@
 Arquitetura escalar
 ===================
 
-A biblioteca usa uma convencao dupla: nomes simples para a API iniciante e
-classes ``Basic*<T>`` para controle explicito do tipo escalar. Essa escolha
+A biblioteca usa uma convenção dupla: nomes simples para a API iniciante e
+classes ``Basic*<T>`` para controle explícito do tipo escalar. Essa escolha
 preserva clareza em sala de aula e permite experimentos com ``float`` ou
-``long double`` quando o estudo numerico exigir.
+``long double`` quando o estudo numérico exigir.
 
 Camada iniciante
 ----------------
 
-Os nomes publicos sem sufixo significam ``double``:
+Os nomes públicos sem sufixo significam ``double``:
 
 .. code-block:: cpp
 
@@ -21,12 +21,12 @@ Os nomes publicos sem sufixo significam ``double``:
    fvgrid::Length
    fvgrid::XInit
 
-Essa camada e estavel: ``Axis1D`` nao muda de tipo entre instalacoes.
+Essa camada é estável: ``Axis1D`` não muda de tipo entre instalações.
 
-Camada avancada
+Camada avançada
 ---------------
 
-Para estudos de sensibilidade ou reproducao numerica, use aliases explicitos:
+Para estudos de sensibilidade ou reprodução numérica, use aliases explícitos:
 
 .. code-block:: cpp
 
@@ -35,19 +35,19 @@ Para estudos de sensibilidade ou reproducao numerica, use aliases explicitos:
    fvgrid::Uniform1DFloat
    fvgrid::StructuredGrid2DFloat
 
-ou chame diretamente a familia template:
+ou chame diretamente a família template:
 
 .. code-block:: cpp
 
    const auto axis = fvgrid::uniform_axis_1d<float>(100, 0.0f, 1.0f);
 
-Os tipos que armazenam valores escalares exposicionam ``value_type``. Isso
-facilita integracao com bibliotecas externas e testes genericos.
+Os tipos que armazenam valores escalares expõem ``value_type``. Isso facilita a
+integração com bibliotecas externas e testes genéricos.
 
-Constantes e tolerancias
+Constantes e tolerâncias
 ------------------------
 
-A implementacao template evita depender de constantes ``double`` quando o tipo
-``T`` e parte do calculo. Em logica numerica templated, a biblioteca usa
-``T{0}``, ``T{1}``, ``T{0.5}`` e tolerancias baseadas em
+A implementação template evita depender de constantes ``double`` quando o tipo
+``T`` é parte do cálculo. Em lógica numérica templated, a biblioteca usa
+``T{0}``, ``T{1}``, ``T{0.5}`` e tolerâncias baseadas em
 ``std::numeric_limits<T>``.

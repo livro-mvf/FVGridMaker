@@ -1,38 +1,38 @@
 Erros e invariantes
 ===================
 
-Entradas invalidas geram ``FVGridException`` contendo codigo estavel,
-categoria, origem e localizacao. A biblioteca prefere falhar cedo a produzir
-uma malha parcialmente valida.
+Entradas inválidas geram ``FVGridException`` contendo código estável,
+categoria, origem e localização. A biblioteca prefere falhar cedo a produzir
+uma malha parcialmente válida.
 
 Exemplos de erros validados
 ---------------------------
 
-* coordenadas nao finitas;
-* faces ou centros nao crescentes;
-* centro fora da propria celula;
-* numero incorreto de faces, centros ou distancias;
-* comprimento nao positivo;
+* coordenadas não finitas;
+* faces ou centros não crescentes;
+* centro fora da própria célula;
+* número incorreto de faces, centros ou distâncias;
+* comprimento não positivo;
 * ``NVol`` igual a zero;
-* parametro ``Beta`` invalido;
+* parâmetro ``Beta`` inválido;
 * pattern incompatível entre eixos;
-* intersecao vazia em operacao que exige area;
+* interseção vazia em operação que exige área;
 * falha de abertura ou escrita de arquivo.
 
-Formato do diagnostico
+Formato do diagnóstico
 ----------------------
 
-Cada excecao carrega um ``ErrorRecord`` com:
+Cada exceção carrega um ``ErrorRecord`` com:
 
-* ``code``: identificador estavel para testes e relatorios;
+* ``code``: identificador estável para testes e relatórios;
 * ``category``: grupo do erro;
-* ``source``: modulo, classe e ``class_id``;
-* ``context``: pares ``chave=valor`` quando disponiveis;
-* ``location``: local de origem no codigo.
+* ``source``: módulo, classe e ``class_id``;
+* ``context``: pares ``chave=valor`` quando disponíveis;
+* ``location``: local de origem no código.
 
-Uso academico
+Uso acadêmico
 -------------
 
-Em exemplos de livro ou artigos internos, prefira registrar o codigo do erro e
-a condicao geometrica que o gerou. Isso torna a validacao reproduzivel mesmo se
-a redacao da mensagem mudar no futuro.
+Em exemplos de livro ou artigos internos, prefira registrar o código do erro e
+a condição geométrica que o gerou. Isso torna a validação reproduzível mesmo se
+a redação da mensagem mudar no futuro.

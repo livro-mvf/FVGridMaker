@@ -1,4 +1,3 @@
-
 Documentação
 ============
 
@@ -115,4 +114,3 @@ documentação novamente:
 
 Se a geração terminar com ``build succeeded.``, a árvore Sphinx está
 coerente.
-

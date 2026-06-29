@@ -1,8 +1,8 @@
 Sistemas de coordenadas
 =======================
 
-O sistema de coordenadas e um trait verificado por ``CoordinateMapping2DFor``.
-Nao ha enum global nem chamada virtual. O mapeamento e aplicado na construcao e
+O sistema de coordenadas é um trait verificado por ``CoordinateMapping2DFor``.
+Não há enum global nem chamada virtual. O mapeamento é aplicado na construção e
 a malha conserva os dados prontos para consumo.
 
 Traits fornecidos
@@ -12,29 +12,29 @@ Traits fornecidos
    :header-rows: 1
 
    * - Trait
-     - Coordenadas logicas
-     - Medida fisica
+     - Coordenadas lógicas
+     - Medida física
    * - ``CartesianCoordinates2D``
      - ``x, y``
-     - area cartesiana
+     - área cartesiana
    * - ``PolarCoordinates2D``
      - ``r, theta``
-     - area polar plana
+     - área polar plana
    * - ``CylindricalAxisymmetricCoordinates2D``
      - ``r, z``
-     - volume axisimetrico cilindrico
+     - volume axisimétrico cilíndrico
    * - ``SphericalAxisymmetricCoordinates2D``
      - ``r, theta``
-     - volume axisimetrico esferico
+     - volume axisimétrico esférico
 
-Cada trait fornece nomes das coordenadas, conversao para ponto fisico, medida
-da celula e medidas das duas familias de faces.
+Cada trait fornece nomes das coordenadas, conversão para ponto físico, medida
+da célula e medidas das duas famílias de faces.
 
 Sistema personalizado
 ---------------------
 
-Para uma geometria nova, informe mapeamento, medida da celula e medidas das
-duas familias de faces:
+Para uma geometria nova, informe mapeamento, medida da célula e medidas das
+duas famílias de faces:
 
 .. code-block:: cpp
 
@@ -49,12 +49,12 @@ duas familias de faces:
        [](double, double a, double b) { return 3*(b-a); },
        [](double, double a, double b) { return 2*(b-a); });
 
-As formulas ficam no trait; ``StructuredGrid2D`` permanece fechado para
-alteracoes e aberto a novos sistemas. Essa separacao e util em trabalhos
-academicos porque a hipotese geometrica fica local e revisavel.
+As fórmulas ficam no trait; ``StructuredGrid2D`` permanece fechado para
+alterações e aberto a novos sistemas. Essa separação é útil em trabalhos
+acadêmicos porque a hipótese geométrica fica local e revisável.
 
-Precisao escalar
+Precisão escalar
 ----------------
 
-Os sistemas built-in sao templates. A API sem sufixo usa ``double``; a API
-avancada permite ``float`` e ``long double`` quando a analise numerica exigir.
+Os sistemas built-in são templates. A API sem sufixo usa ``double``; a API
+avançada permite ``float`` e ``long double`` quando a análise numérica exigir.

@@ -31,4 +31,3 @@ Decisões deliberadas
 * mapeamentos funcionais existem apenas durante a construção;
 * ``PhysicalPoint2D`` usa AoS porque seus três componentes são consumidos
   juntos na exportação VTK; medidas escalares usam SoA.
-

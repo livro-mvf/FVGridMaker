@@ -1,4 +1,3 @@
-
 import importlib.util
 import os
 from datetime import datetime
@@ -79,4 +78,3 @@ breathe_default_members = (
 suppress_warnings = [
     "duplicate_declaration.cpp",
 ]
-

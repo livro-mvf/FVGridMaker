@@ -1,13 +1,13 @@
-Referencia completa gerada
+Referência completa gerada
 ==========================
 
-Esta pagina e o unico ponto da documentacao Sphinx que expande declaracoes C++
-geradas pelo Doxygen. Ela cobre os headers publicos em
+Esta página é o único ponto da documentação Sphinx que expande declarações C++
+geradas pelo Doxygen. Ela cobre os headers públicos em
 ``FVGridMakerLib/include/FVGridMaker`` e inclui classes, structs, aliases,
-conceitos, funcoes livres, namespaces e arquivos.
+conceitos, funções livres, namespaces e arquivos.
 
-Use esta pagina como indice de consulta; use as paginas tematicas anteriores
-para entender a organizacao conceitual da biblioteca.
+Use esta página como índice de consulta; use as páginas temáticas anteriores
+para entender a organização conceitual da biblioteca.
 
 .. doxygenindex::
    :project: FVGridMaker

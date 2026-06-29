@@ -64,9 +64,14 @@ a:hover {
     font-weight: 600;
 }
 
+.navbar-brand img {
+    max-height: 46px;
+    width: auto;
+}
+
 .navbar-brand p.title {
     color: var(--fvg-blue-dark);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 /* Sidebar */
@@ -86,6 +91,37 @@ a:hover {
 /* Sumário da página */
 .bd-toc {
     border-left: 1px solid var(--fvg-border);
+}
+
+/* Logo da página inicial */
+.fvg-home-logo {
+    display: block;
+    margin: 0.5rem auto 1.25rem auto;
+    max-width: 520px;
+    width: 75%;
+}
+
+/* Link para o manual PDF na página inicial */
+.fvg-manual-download {
+    margin: 0.5rem auto 2rem auto;
+    text-align: center;
+}
+
+.fvg-manual-download a {
+    display: inline-block;
+    padding: 0.55rem 1.0rem;
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+    background-color: var(--fvg-blue-soft);
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.fvg-manual-download a:hover {
+    background-color: #e2ebf8;
+    color: var(--fvg-blue-dark);
+    text-decoration: none;
 }
 
 /* Código inline */

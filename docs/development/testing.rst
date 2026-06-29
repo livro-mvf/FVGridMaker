@@ -31,4 +31,3 @@ Comandos
 
    ctest --test-dir build-tests --output-on-failure
    cmake --build build-tests --target run_all_tests
-

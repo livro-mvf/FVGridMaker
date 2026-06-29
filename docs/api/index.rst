@@ -1,15 +1,15 @@
-Referencia da API C++
+Referência da API C++
 =====================
 
-Esta seção organiza a superficie publica de FVGridMaker em duas camadas:
+Esta seção organiza a superfície pública da FVGridMaker em duas camadas:
 
-* paginas tematicas, escritas para leitura humana e revisao academica;
-* referencia completa, gerada a partir dos headers publicos com Doxygen e
+* páginas temáticas, escritas para leitura humana e revisão acadêmica;
+* referência completa, gerada a partir dos headers públicos com Doxygen e
   Breathe.
 
-As declaracoes C++ geradas aparecem em um unico ponto, em
-:doc:`complete`. Isso evita duplicacao de simbolos no Sphinx e torna o build
-estrito util: qualquer aviso passa a indicar um problema real de documentacao.
+As declarações C++ geradas aparecem em um único ponto, em
+:doc:`complete`. Isso evita duplicação de símbolos no Sphinx e torna o build
+estrito útil: qualquer aviso passa a indicar um problema real de documentação.
 
 .. toctree::
    :maxdepth: 2

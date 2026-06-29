@@ -21,4 +21,3 @@ Para ``N1`` por ``N2`` células:
 
 Faces, centros e distâncias de cada direção são mantidos apenas no respectivo
 ``Axis1D``. A malha 2D não duplica esses vetores.
-

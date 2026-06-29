@@ -1,9 +1,9 @@
 API bidimensional
 =================
 
-A malha 2D e uma composicao tensorial de dois eixos 1D independentes. A
-biblioteca separa coordenadas logicas de medidas fisicas: ``cell_logical_area``
-e area computacional; ``cell_measure`` e medida fisica dada pelo sistema de
+A malha 2D é uma composição tensorial de dois eixos 1D independentes. A
+biblioteca separa coordenadas lógicas de medidas físicas: ``cell_logical_area``
+é área computacional; ``cell_measure`` é medida física dada pelo sistema de
 coordenadas.
 
 Malha estruturada
@@ -12,12 +12,12 @@ Malha estruturada
 .. list-table::
    :header-rows: 1
 
-   * - Header
+   * - Arquivo
      - Responsabilidade
    * - ``TwoDimensional/StructuredGrid2D/StructuredGrid2D.h``
-     - ``BasicStructuredGrid2D<T>`` e aliases publicos
+     - ``BasicStructuredGrid2D<T>`` e aliases públicos
    * - ``TwoDimensional/StructuredGrid2D/StructuredGrid2D.tpp``
-     - construcao, indexacao, pontos fisicos e medidas derivadas
+     - construção, indexação, pontos físicos e medidas derivadas
 
 Sistemas de coordenadas
 -----------------------
@@ -25,35 +25,35 @@ Sistemas de coordenadas
 .. list-table::
    :header-rows: 1
 
-   * - Header
-     - Conteudo
+   * - Arquivo
+     - Conteúdo
    * - ``CoordinateSystem2D/CoordinateSystem2D.h``
-     - pontos fisicos, celulas logicas, conceitos e sistemas cartesianos/polares
+     - pontos físicos, células lógicas, conceitos e sistemas cartesianos/polares
    * - ``CoordinateSystem2D/CoordinateMetrics2D.h``
-     - vetores, metricas auxiliares e sistema esferico axisimetrico
+     - vetores, métricas auxiliares e sistema esférico axisimétrico
    * - ``CoordinateSystem2D/CoordinateMappingFactory2D.h``
-     - fabricas para mapeamentos funcionais customizados
+     - fábricas para mapeamentos funcionais customizados
 
-Operacoes e qualidade
+Operações e qualidade
 ---------------------
 
 .. list-table::
    :header-rows: 1
 
-   * - Header
+   * - Arquivo
      - Papel
    * - ``Operations2D/LogicalBox2D.h``
-     - caixa logica formada por dois intervalos 1D
+     - caixa lógica formada por dois intervalos 1D
    * - ``Operations2D/Operations2D.h``
-     - intersecao, recorte e compatibilidade de patterns
+     - interseção, recorte e compatibilidade de patterns
    * - ``Operations2D/Operations2D.tpp``
-     - implementacao template das operacoes 2D
+     - implementação template das operações 2D
    * - ``Quality2D/Quality2D.h``
-     - relatorio de medidas e razoes de malha
+     - relatório de medidas e razões de malha
    * - ``Quality2D/Quality2D.tpp``
-     - calculos de qualidade em vetores contiguos
+     - cálculos de qualidade em vetores contíguos
 
-Ver tambem
+Ver também
 ----------
 
 * :doc:`../user_guide/grid2d`

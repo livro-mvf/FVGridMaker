@@ -1,9 +1,9 @@
-Inventario dos headers publicos
+Inventário dos headers públicos
 ===============================
 
-Esta pagina funciona como mapa de arquivos da API publica. A referencia
-completa gerada em :doc:`complete` extrai as declaracoes desses headers; os
-arquivos ``.tpp`` aparecem porque contem implementacoes template necessarias ao
+Esta página funciona como mapa de arquivos da API pública. A referência
+completa gerada em :doc:`complete` extrai as declarações desses headers; os
+arquivos ``.tpp`` aparecem porque contêm implementações template necessárias ao
 uso header-only das classes ``Basic*<T>``.
 
 Core e erros
@@ -71,7 +71,7 @@ Malhas 2D
    FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.h
    FVGridMaker/TwoDimensional/StructuredGrid2D/StructuredGrid2D.tpp
 
-Saida
+Saída
 -----
 
 .. code-block:: text

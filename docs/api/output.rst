@@ -1,9 +1,9 @@
-API de saida
+API de saída
 ============
 
-A biblioteca escreve arquivos de texto simples para inspecao, pos-processamento
-e visualizacao. Nao ha dependencia na biblioteca VTK: os writers geram o formato
-legacy diretamente.
+A biblioteca escreve arquivos de texto simples para inspeção, pós-processamento
+e visualização. Não há dependência na biblioteca VTK: os writers geram o
+formato legacy diretamente.
 
 CSV
 ---
@@ -11,12 +11,12 @@ CSV
 .. list-table::
    :header-rows: 1
 
-   * - Header
-     - Conteudo
+   * - Arquivo
+     - Conteúdo
    * - ``Output/CSV/Axis1DCSVWriter.h``
      - escrita de ``BasicAxis1D<T>`` em ``std::ostream`` ou arquivo
    * - ``Output/CSV/Axis1DCSVWriter.tpp``
-     - implementacao template e criacao de diretorios pais
+     - implementação template e criação de diretórios pais
 
 VTK legacy
 ----------
@@ -24,18 +24,18 @@ VTK legacy
 .. list-table::
    :header-rows: 1
 
-   * - Header
-     - Conteudo
+   * - Arquivo
+     - Conteúdo
    * - ``Output/VTK/LegacyVTKRectilinearGrid2DWriter.h``
-     - ``RECTILINEAR_GRID`` e funcao livre ``write_vtk``
+     - ``RECTILINEAR_GRID`` e função livre ``write_vtk``
    * - ``Output/VTK/LegacyVTKRectilinearGrid2DWriter.tpp``
-     - serializacao de coordenadas cartesianas e ``cell_measure``
+     - serialização de coordenadas cartesianas e ``cell_measure``
    * - ``Output/VTK/LegacyVTKStructuredGrid2DWriter.h``
      - ``STRUCTURED_GRID`` para malhas mapeadas
    * - ``Output/VTK/LegacyVTKStructuredGrid2DWriter.tpp``
-     - pontos fisicos e medidas de celulas
+     - pontos físicos e medidas de células
 
-Ver tambem
+Ver também
 ----------
 
 * :doc:`../user_guide/output`

@@ -1,10 +1,10 @@
 Primeiros passos
 ================
 
-FVGridMaker e uma biblioteca C++20 para construir a geometria de malhas
-estruturadas de volumes finitos. Ela nao contem solver: o foco e produzir
-faces, centros, distancias e medidas de celulas de forma validada e
-reprodutivel.
+FVGridMaker é uma biblioteca C++20 para construir a geometria de malhas
+estruturadas de volumes finitos. Ela não contém solver: o foco é produzir
+faces, centros, distâncias e medidas de células de forma validada e
+reprodutível.
 
 Requisitos
 ----------
@@ -14,10 +14,10 @@ Requisitos
 * GoogleTest somente para os testes;
 * Doxygen, Sphinx e os pacotes de ``docs/requirements.txt`` para o manual.
 
-Compilacao
+Compilação
 ----------
 
-Os modos de exemplos, capitulos, testes e documentacao sao builds separados.
+Os modos de exemplos, capítulos, testes e documentação são builds separados.
 
 .. code-block:: bash
 
@@ -35,8 +35,8 @@ Os modos de exemplos, capitulos, testes e documentacao sao builds separados.
 Primeiro eixo
 -------------
 
-A forma mais curta usa a API iniciante. O tipo escalar e ``double`` e o pattern
-padrao do gerador e ``FaceCentered1D``.
+A forma mais curta usa a API iniciante. O tipo escalar é ``double`` e o pattern
+padrão do gerador é ``FaceCentered1D``.
 
 .. code-block:: cpp
 
@@ -49,8 +49,8 @@ padrao do gerador e ``FaceCentered1D``.
    auto delta_faces = x.dx_faces();
    auto delta_centers = x.dx_centers();
 
-A API com tipos fortes continua disponivel quando a assinatura precisa deixar
-unidades e intencoes explicitas:
+A API com tipos fortes continua disponível quando a assinatura precisa deixar
+unidades e intenções explícitas:
 
 .. code-block:: cpp
 
@@ -74,11 +74,11 @@ Malha 2D
 
    fvgrid::write_vtk(grid, "malha.vtk");
 
-Tipos escalares avancados
+Tipos escalares avançados
 -------------------------
 
-Os nomes sem sufixo significam ``double``. Para estudos numericos especificos,
-use aliases ou funcoes template:
+Os nomes sem sufixo significam ``double``. Para estudos numéricos específicos,
+use aliases ou funções template:
 
 .. code-block:: cpp
 

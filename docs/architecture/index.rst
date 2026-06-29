@@ -1,9 +1,9 @@
 Arquitetura
 ===========
 
-A arquitetura de FVGridMaker foi desenhada para uso didatico e reproducao de
-experimentos numericos. As paginas abaixo explicam as decisoes que sustentam a
-API e a validacao geometrica.
+A arquitetura da FVGridMaker foi desenhada para uso didático e reprodução de
+experimentos numéricos. As páginas abaixo explicam as decisões que sustentam a
+API e a validação geométrica.
 
 .. toctree::
    :maxdepth: 2

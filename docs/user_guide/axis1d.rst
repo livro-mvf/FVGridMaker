@@ -1,11 +1,11 @@
 Eixos 1D
 ========
 
-``Axis1D`` e o proprietario dos dados geometricos de uma direcao. Ele armazena
-faces, centros, distancias face--face e distancias centro--centro em vetores
-contiguos expostos como ``std::span<const T>``.
+``Axis1D`` é o proprietário dos dados geométricos de uma direção. Ele armazena
+faces, centros, distâncias face--face e distâncias centro--centro em vetores
+contíguos expostos como ``std::span<const T>``.
 
-Convencoes geometricas
+Convenções geométricas
 ----------------------
 
 Para ``N`` volumes existem:
@@ -15,14 +15,14 @@ Para ``N`` volumes existem:
 * ``N`` valores em ``dx_faces()``;
 * ``N + 1`` valores em ``dx_centers()``.
 
-A biblioteca valida que cada centro fica dentro da sua propria celula:
+A biblioteca valida que cada centro fica dentro da sua própria célula:
 
 .. math::
 
    x_{f,p} < x_{c,p} < x_{f,p+1}.
 
-Essa validacao evita uma classe comum de erros em estudos numericos: centros
-globalmente crescentes, mas geometricamente fora da celula local.
+Essa validação evita uma classe comum de erros em estudos numéricos: centros
+globalmente crescentes, mas geometricamente fora da célula local.
 
 Geradores
 ---------
@@ -32,19 +32,19 @@ Geradores
 
    * - Gerador
      - Uso principal
-     - Padrao sem pattern explicito
+     - Padrão sem pattern explícito
    * - ``Uniform1D``
-     - espacamento uniforme
+     - espaçamento uniforme
      - ``FaceCentered1D``
    * - ``Random1D``
-     - particao pseudoaleatoria reprodutivel
+     - partição pseudoaleatória reprodutível
      - ``FaceCentered1D``
    * - ``Roberts1D``
-     - concentracao suave junto aos extremos
+     - concentração suave junto aos extremos
      - ``FaceCentered1D``
    * - ``Custom1D``
-     - coordenadas fornecidas pelo usuario
-     - pattern informado pelo usuario
+     - coordenadas fornecidas pelo usuário
+     - pattern informado pelo usuário
 
 Exemplo iniciante:
 
@@ -64,11 +64,11 @@ Exemplo com tipos fortes:
 Patterns
 --------
 
-``FaceCentered1D`` interpreta centros como coordenadas primarias e reconstrui
-faces usando o dominio. ``VolumeCentered1D`` interpreta faces como coordenadas
-primarias e reconstrui centros.
+``FaceCentered1D`` interpreta centros como coordenadas primárias e reconstrói
+faces usando o domínio. ``VolumeCentered1D`` interpreta faces como coordenadas
+primárias e reconstrói centros.
 
-Para pedir volume centrada explicitamente:
+Para pedir volume centrado explicitamente:
 
 .. code-block:: cpp
 
@@ -78,13 +78,13 @@ Para pedir volume centrada explicitamente:
        fvgrid::XInit{0.0},
        fvgrid::VolumeCentered1D{});
 
-A construcao direta ``Axis1D{{0.0, 0.5, 1.0}}`` tambem e volume centrada,
-porque o vetor passado ali e explicitamente um vetor de faces.
+A construção direta ``Axis1D{{0.0, 0.5, 1.0}}`` também é volume centrado,
+porque o vetor passado ali é explicitamente um vetor de faces.
 
 Tipos escalares
 ---------------
 
-A API sem sufixo usa ``double``. A API avancada preserva o mesmo contrato com
+A API sem sufixo usa ``double``. A API avançada preserva o mesmo contrato com
 outro tipo escalar:
 
 .. code-block:: cpp
@@ -94,16 +94,16 @@ outro tipo escalar:
 
 Todos os objetos escalares relevantes expõem ``value_type``.
 
-Operacoes
+Operações
 ---------
 
-``Operations1D`` oferece intersecao, teste de compatibilidade de patterns e
+``Operations1D`` oferece interseção, teste de compatibilidade de patterns e
 recorte de eixos. O recorte preserva ``VolumeCentered1D`` ou ``FaceCentered1D``
-quando ambos os dados de entrada permitem uma reconstrucao valida.
+quando ambos os dados de entrada permitem uma reconstrução válida.
 
 Qualidade
 ---------
 
-``Quality1D`` resume comprimentos minimos, maximos, razoes globais e razoes
-entre celulas adjacentes. Esses relatorios sao uteis para justificar a malha em
-um texto academico antes de apresentar resultados numericos.
+``Quality1D`` resume comprimentos mínimos, máximos, razões globais e razões
+entre células adjacentes. Esses relatórios são úteis para justificar a malha em
+um texto acadêmico antes de apresentar resultados numéricos.
