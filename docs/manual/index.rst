@@ -2,8 +2,8 @@ Programas do manual
 ===================
 
 Esta página reúne os programas completos usados no manual da FVGridMaker.
-Os arquivos ficam na pasta ``manual/`` e são compilados pelo CMake quando
-``BUILD_EXAMPLES=ON`` está ativo.
+Os arquivos ficam nas pastas ``manual/Grid1D/`` e ``manual/Grid2D/`` e são
+compilados pelo CMake quando ``BUILD_EXAMPLES=ON`` está ativo.
 
 Ao contrário de exemplos mínimos, estes programas são deliberadamente
 didáticos: trazem comentários extensos, verificações simples de consistência
@@ -35,8 +35,9 @@ Para executar todos os programas do manual:
 
    cmake --build build-manual --target run_all_manual_programs
 
-Cada arquivo ``manual/man_nome.cc`` gera um alvo executável ``man_nome`` e um
-alvo de execução ``run_man_nome``. Por exemplo:
+Cada arquivo ``manual/Grid1D/man_nome.cc`` ou ``manual/Grid2D/man_nome.cc``
+gera um alvo executável ``man_nome`` e um alvo de execução ``run_man_nome``.
+Por exemplo:
 
 .. code-block:: bash
 
@@ -58,61 +59,61 @@ Alvos individuais
    * - Arquivo
      - Compilar
      - Executar
-   * - ``man_alternatingWeightedCenters1D.cc``
+   * - ``Grid1D/man_alternatingWeightedCenters1D.cc``
      - ``man_alternatingWeightedCenters1D``
      - ``run_man_alternatingWeightedCenters1D``
-   * - ``man_axis1DCSV.cc``
+   * - ``Grid1D/man_axis1DCSV.cc``
      - ``man_axis1DCSV``
      - ``run_man_axis1DCSV``
-   * - ``man_axisymmetricGrid2D.cc``
+   * - ``Grid2D/man_axisymmetricGrid2D.cc``
      - ``man_axisymmetricGrid2D``
      - ``run_man_axisymmetricGrid2D``
-   * - ``man_cartesianArea2D.cc``
+   * - ``Grid2D/man_cartesianArea2D.cc``
      - ``man_cartesianArea2D``
      - ``run_man_cartesianArea2D``
-   * - ``man_clipGrid2D.cc``
+   * - ``Grid2D/man_clipGrid2D.cc``
      - ``man_clipGrid2D``
      - ``run_man_clipGrid2D``
-   * - ``man_customCoordinates1D.cc``
+   * - ``Grid1D/man_customCoordinates1D.cc``
      - ``man_customCoordinates1D``
      - ``run_man_customCoordinates1D``
-   * - ``man_ellipticGrid2D.cc``
+   * - ``Grid2D/man_ellipticGrid2D.cc``
      - ``man_ellipticGrid2D``
      - ``run_man_ellipticGrid2D``
-   * - ``man_incompleteAnnulus2D.cc``
+   * - ``Grid2D/man_incompleteAnnulus2D.cc``
      - ``man_incompleteAnnulus2D``
      - ``run_man_incompleteAnnulus2D``
-   * - ``man_linearIndex2D.cc``
+   * - ``Grid2D/man_linearIndex2D.cc``
      - ``man_linearIndex2D``
      - ``run_man_linearIndex2D``
-   * - ``man_nonUniformGrid2D.cc``
+   * - ``Grid2D/man_nonUniformGrid2D.cc``
      - ``man_nonUniformGrid2D``
      - ``run_man_nonUniformGrid2D``
-   * - ``man_polarGrid2D.cc``
+   * - ``Grid2D/man_polarGrid2D.cc``
      - ``man_polarGrid2D``
      - ``run_man_polarGrid2D``
-   * - ``man_powerLawGrid.cc``
+   * - ``Grid1D/man_powerLawGrid.cc``
      - ``man_powerLawGrid``
      - ``run_man_powerLawGrid``
-   * - ``man_quality1D.cc``
+   * - ``Grid1D/man_quality1D.cc``
      - ``man_quality1D``
      - ``run_man_quality1D``
-   * - ``man_qualityAndVTK2D.cc``
+   * - ``Grid2D/man_qualityAndVTK2D.cc``
      - ``man_qualityAndVTK2D``
      - ``run_man_qualityAndVTK2D``
-   * - ``man_randomGrid.cc``
+   * - ``Grid1D/man_randomGrid.cc``
      - ``man_randomGrid``
      - ``run_man_randomGrid``
-   * - ``man_robertsGrid.cc``
+   * - ``Grid1D/man_robertsGrid.cc``
      - ``man_robertsGrid``
      - ``run_man_robertsGrid``
-   * - ``man_scalarField2D.cc``
+   * - ``Grid2D/man_scalarField2D.cc``
      - ``man_scalarField2D``
      - ``run_man_scalarField2D``
-   * - ``man_structuredGrid2D.cc``
+   * - ``Grid2D/man_structuredGrid2D.cc``
      - ``man_structuredGrid2D``
      - ``run_man_structuredGrid2D``
-   * - ``man_uniformGrid.cc``
+   * - ``Grid1D/man_uniformGrid.cc``
      - ``man_uniformGrid``
      - ``run_man_uniformGrid``
 
@@ -126,132 +127,132 @@ Lista de programas
 man_alternatingWeightedCenters1D.cc
 -----------------------------------
 
-.. literalinclude:: ../../manual/man_alternatingWeightedCenters1D.cc
+.. literalinclude:: ../../manual/Grid1D/man_alternatingWeightedCenters1D.cc
    :language: cpp
    :linenos:
 
 man_axis1DCSV.cc
 ----------------
 
-.. literalinclude:: ../../manual/man_axis1DCSV.cc
+.. literalinclude:: ../../manual/Grid1D/man_axis1DCSV.cc
    :language: cpp
    :linenos:
 
 man_axisymmetricGrid2D.cc
 -------------------------
 
-.. literalinclude:: ../../manual/man_axisymmetricGrid2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_axisymmetricGrid2D.cc
    :language: cpp
    :linenos:
 
 man_cartesianArea2D.cc
 ----------------------
 
-.. literalinclude:: ../../manual/man_cartesianArea2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_cartesianArea2D.cc
    :language: cpp
    :linenos:
 
 man_clipGrid2D.cc
 -----------------
 
-.. literalinclude:: ../../manual/man_clipGrid2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_clipGrid2D.cc
    :language: cpp
    :linenos:
 
 man_customCoordinates1D.cc
 --------------------------
 
-.. literalinclude:: ../../manual/man_customCoordinates1D.cc
+.. literalinclude:: ../../manual/Grid1D/man_customCoordinates1D.cc
    :language: cpp
    :linenos:
 
 man_ellipticGrid2D.cc
 ---------------------
 
-.. literalinclude:: ../../manual/man_ellipticGrid2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_ellipticGrid2D.cc
    :language: cpp
    :linenos:
 
 man_incompleteAnnulus2D.cc
 --------------------------
 
-.. literalinclude:: ../../manual/man_incompleteAnnulus2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_incompleteAnnulus2D.cc
    :language: cpp
    :linenos:
 
 man_linearIndex2D.cc
 --------------------
 
-.. literalinclude:: ../../manual/man_linearIndex2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_linearIndex2D.cc
    :language: cpp
    :linenos:
 
 man_nonUniformGrid2D.cc
 -----------------------
 
-.. literalinclude:: ../../manual/man_nonUniformGrid2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_nonUniformGrid2D.cc
    :language: cpp
    :linenos:
 
 man_polarGrid2D.cc
 ------------------
 
-.. literalinclude:: ../../manual/man_polarGrid2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_polarGrid2D.cc
    :language: cpp
    :linenos:
 
 man_powerLawGrid.cc
 -------------------
 
-.. literalinclude:: ../../manual/man_powerLawGrid.cc
+.. literalinclude:: ../../manual/Grid1D/man_powerLawGrid.cc
    :language: cpp
    :linenos:
 
 man_quality1D.cc
 ----------------
 
-.. literalinclude:: ../../manual/man_quality1D.cc
+.. literalinclude:: ../../manual/Grid1D/man_quality1D.cc
    :language: cpp
    :linenos:
 
 man_qualityAndVTK2D.cc
 ----------------------
 
-.. literalinclude:: ../../manual/man_qualityAndVTK2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_qualityAndVTK2D.cc
    :language: cpp
    :linenos:
 
 man_randomGrid.cc
 -----------------
 
-.. literalinclude:: ../../manual/man_randomGrid.cc
+.. literalinclude:: ../../manual/Grid1D/man_randomGrid.cc
    :language: cpp
    :linenos:
 
 man_robertsGrid.cc
 ------------------
 
-.. literalinclude:: ../../manual/man_robertsGrid.cc
+.. literalinclude:: ../../manual/Grid1D/man_robertsGrid.cc
    :language: cpp
    :linenos:
 
 man_scalarField2D.cc
 --------------------
 
-.. literalinclude:: ../../manual/man_scalarField2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_scalarField2D.cc
    :language: cpp
    :linenos:
 
 man_structuredGrid2D.cc
 -----------------------
 
-.. literalinclude:: ../../manual/man_structuredGrid2D.cc
+.. literalinclude:: ../../manual/Grid2D/man_structuredGrid2D.cc
    :language: cpp
    :linenos:
 
 man_uniformGrid.cc
 ------------------
 
-.. literalinclude:: ../../manual/man_uniformGrid.cc
+.. literalinclude:: ../../manual/Grid1D/man_uniformGrid.cc
    :language: cpp
    :linenos:

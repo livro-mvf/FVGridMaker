@@ -2,15 +2,11 @@ include_guard()
 
 option(BUILD_TESTS "Build test targets" OFF)
 option(BUILD_EXAMPLES "Build example targets" ON)
+option(BUILD_MANUAL_PROGRAMS "Build manual program targets" ON)
 option(BUILD_BOOK "Build book/chapter targets" OFF)
 option(BUILD_MEMCHECK "Build Valgrind memory-check targets for tests" OFF)
 option(BUILD_SANITIZERS "Build targets with AddressSanitizer and UBSan" OFF)
 option(BUILD_DOCUMENTATION "Build documentation targets" OFF)
-
-option(FVG_ENABLE_IPO "Enable IPO/LTO for supported release builds" ON)
-option(FVG_ENABLE_NATIVE_OPTIMIZATION "Enable native CPU optimisation flags" ON)
-option(FVG_ENABLE_NDEBUG "Define NDEBUG explicitly for release-like builds" OFF)
-option(FVG_BUILD_SHARED "Build FVGridMaker as a shared library" OFF)
 
 set(FVG_ALLOWED_BUILD_TYPES
     Debug
