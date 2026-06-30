@@ -1,0 +1,245 @@
+/* docs/_static/custom.css */
+/* Identidade cromática FVGridMaker: sóbria, clara e próxima do manual. */
+
+:root {
+    --fvg-blue: #3f5f96;
+    --fvg-blue-dark: #2c4774;
+    --fvg-blue-soft: #eef3fb;
+    --fvg-text: #222222;
+    --fvg-muted: #666666;
+    --fvg-border: #d9dee8;
+    --fvg-sidebar: #f7f8fa;
+    --fvg-code-bg: #f3f5f8;
+    --fvg-note: #2f7d62;
+    --fvg-note-bg: #eef7f2;
+
+    --pst-color-primary: #3f5f96;
+    --pst-color-secondary: #2c4774;
+    --pst-color-link: #3f5f96;
+    --pst-color-link-hover: #2c4774;
+    --pst-color-border: #d9dee8;
+    --pst-color-inline-code: #2c4774;
+    --pst-color-inline-code-links: #2c4774;
+}
+
+/* Fundo geral e texto */
+html, body {
+    background-color: #ffffff;
+    color: var(--fvg-text);
+}
+
+/* Cabeçalhos */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+h1 {
+    border-bottom: 1px solid var(--fvg-border);
+    padding-bottom: 0.35rem;
+}
+
+h2 {
+    margin-top: 2rem;
+}
+
+/* Links */
+a {
+    color: var(--fvg-blue);
+}
+
+a:hover {
+    color: var(--fvg-blue-dark);
+}
+
+/* Barra superior */
+.bd-header {
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--fvg-border);
+    box-shadow: none;
+}
+
+.navbar-brand {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+.navbar-brand img {
+    max-height: 46px;
+    width: auto;
+}
+
+.navbar-brand p.title {
+    color: var(--fvg-blue-dark);
+    font-weight: 700;
+}
+
+/* Sidebar */
+.bd-sidebar {
+    background-color: var(--fvg-sidebar);
+    border-right: 1px solid var(--fvg-border);
+}
+
+.bd-sidebar .nav {
+    font-size: 0.92rem;
+}
+
+.bd-sidebar-primary {
+    background-color: var(--fvg-sidebar);
+}
+
+/* Sumário da página */
+.bd-toc {
+    border-left: 1px solid var(--fvg-border);
+}
+
+/* Logo da página inicial */
+.fvg-home-logo {
+    display: block;
+    margin: 0.5rem auto 1.25rem auto;
+    max-width: 520px;
+    width: 75%;
+}
+
+/* Link para o manual PDF na página inicial */
+.fvg-manual-download {
+    margin: 0.5rem auto 2rem auto;
+    text-align: center;
+}
+
+.fvg-manual-download a {
+    display: inline-block;
+    padding: 0.55rem 1.0rem;
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+    background-color: var(--fvg-blue-soft);
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.fvg-manual-download a:hover {
+    background-color: #e2ebf8;
+    color: var(--fvg-blue-dark);
+    text-decoration: none;
+}
+
+/* Código inline */
+code {
+    background-color: var(--fvg-code-bg);
+    border: 1px solid var(--fvg-border);
+    border-radius: 3px;
+    color: var(--fvg-blue-dark);
+    padding: 0.1rem 0.25rem;
+    font-size: 0.90em;
+}
+
+/* Blocos de código */
+pre {
+    background-color: var(--fvg-code-bg);
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+    padding: 1rem;
+}
+
+/* Blocos de código gerados pelo Sphinx/Pygments */
+.highlight {
+    background-color: var(--fvg-code-bg);
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+}
+
+.highlight pre {
+    border: none;
+    background-color: transparent;
+}
+
+/* Tabelas */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.2rem 0;
+}
+
+table th {
+    background-color: var(--fvg-blue-soft);
+    border: 1px solid var(--fvg-border);
+    color: var(--fvg-blue-dark);
+    padding: 0.5rem;
+    text-align: left;
+    font-weight: 600;
+}
+
+table td {
+    border: 1px solid var(--fvg-border);
+    padding: 0.5rem;
+}
+
+/* Admonitions: observações e notas */
+.admonition,
+div.admonition {
+    border: 1px solid var(--fvg-border);
+    border-left: 4px solid var(--fvg-blue);
+    background-color: #ffffff;
+    box-shadow: none;
+}
+
+.admonition-title {
+    background-color: var(--fvg-blue-soft);
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+/* Notas com cor próxima das observações do manual */
+.admonition.note,
+div.note {
+    border-left-color: var(--fvg-note);
+    background-color: var(--fvg-note-bg);
+}
+
+.admonition.note > .admonition-title,
+div.note > .admonition-title {
+    background-color: var(--fvg-note-bg);
+    color: var(--fvg-note);
+}
+
+/* Cards do sphinx-design */
+.sd-card {
+    border: 1px solid var(--fvg-border);
+    border-radius: 4px;
+    box-shadow: none;
+}
+
+.sd-card:hover {
+    box-shadow: none;
+}
+
+.sd-card-title {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+/* API Breathe/Doxygen */
+.breathe-sectiondef {
+    margin-bottom: 2rem;
+}
+
+.breathe-sectiondef h3 {
+    border-bottom: 1px solid var(--fvg-border);
+    color: var(--fvg-blue-dark);
+    padding-bottom: 0.4rem;
+}
+
+.breathe-parameter-name {
+    color: var(--fvg-blue-dark);
+    font-weight: 600;
+}
+
+/* Rodapé */
+footer {
+    border-top: 1px solid var(--fvg-border);
+    color: var(--fvg-muted);
+    margin-top: 3rem;
+    padding-top: 1rem;
+    font-size: 0.9rem;
+}

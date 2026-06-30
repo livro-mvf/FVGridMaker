@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="FVGridMaker">
+  <rect width="128" height="128" rx="18" fill="#eef3fb"/>
+
+  <g stroke="#3f5f96" stroke-width="5" stroke-linecap="round" opacity="0.88">
+    <path d="M20 20 H108 M20 49.333 H108 M20 78.667 H108 M20 108 H108"/>
+    <path d="M20 20 V108 M49.333 20 V108 M78.667 20 V108 M108 20 V108"/>
+  </g>
+
+  <circle cx="34.667" cy="34.667" r="4.8" fill="#2f7d62"/>
+  <circle cx="64.000" cy="64.000" r="4.8" fill="#c84630"/>
+  <circle cx="93.333" cy="34.667" r="4.8" fill="#d48a2c"/>
+</svg>
