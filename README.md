@@ -1,8 +1,8 @@
 # FVGridMaker
 
-FVGridMaker é uma biblioteca C++20 para construir geometria de malhas estruturadas de volumes finitos. Ela fornece eixos 1D, composição estruturada 2D, sistemas de coordenadas, medidas geométricas, validação de invariantes e saída CSV/VTK legacy.
+FVGridMaker é uma biblioteca C++20 para construir geometrias de malhas estruturadas de volumes finitos. Ela fornece eixos 1D, malhas estruturadas 2D por produto tensorial, sistemas de coordenadas cartesiano, polar e axisimétricos, medidas geométricas, validação de invariantes e saída CSV/VTK legacy.
 
-A biblioteca tem foco acadêmico: a API tenta deixar explícitas as hipóteses geométricas usadas em uma malha antes de qualquer solver, campo físico ou operador discreto entrar no problema.
+A biblioteca tem foco acadêmico. A API procura deixar explícitas as hipóteses geométricas da malha antes de qualquer solver, campo físico ou operador discreto entrar no problema.
 
 ## Escopo
 
@@ -36,174 +36,48 @@ YAML ou outros parsers de configuração no núcleo da biblioteca.
 
 ## Documentação
 
-A documentação principal é gerada com Sphinx, Doxygen e Breathe.
+As instruções de compilação, execução, testes, exemplos e programas do manual ficam na documentação Sphinx/HTML e no manual da biblioteca. Este README é apenas a porta de entrada do repositório.
 
-```bash
-cmake -S . -B build_docs -DBUILD_DOCUMENTATION=ON \
-      -DBUILD_EXAMPLES=OFF -DBUILD_TESTS=OFF
-cmake --build build_docs --target docs -j
-```
-
-Abra:
+Pontos principais:
 
 ```text
-build_docs/docs/html/index.html
+docs/index.rst                         página inicial da documentação Sphinx
+docs/getting_started.rst               início rápido e instruções de build
+docs/examples/index.rst                exemplos oficiais ex_*
+docs/manual/index.rst                  programas completos do manual man_*
+docs/user_guide/index.rst              guia de uso da API
+docs/architecture/index.rst            decisões de arquitetura
+docs/development/index.rst             testes e desenvolvimento
+docs/api/index.rst                     referência da API gerada por Doxygen
+docs/_static/pdf/Manual_do_FVGridMaker.pdf
 ```
 
-A documentação Sphinx contém guias conceituais, páginas de arquitetura, exemplos de uso e referência completa da API C++ gerada a partir dos headers públicos.
-
-## Uso rápido
-
-```cpp
-#include <FVGridMaker/FVGridMaker.h>
-
-int main() {
-    const auto x = fvgrid::uniform_axis_1d(100, 0.0, 1.0);
-    const auto y = fvgrid::uniform_axis_1d(50, -0.5, 0.5);
-
-    const fvgrid::StructuredGrid2D grid{x, y};
-
-    const double area_logica = grid.cell_logical_area(0, 0);
-    const double medida_fisica = grid.cell_measure(0, 0);
-
-    fvgrid::Axis1DCSVWriter::write(x, "axis_x.csv");
-    fvgrid::write_vtk(grid, "grid.vtk");
-
-    (void)area_logica;
-    (void)medida_fisica;
-}
-```
-
-## API escalar
-
-Os nomes simples usam `double`:
-
-```cpp
-fvgrid::Axis1D
-fvgrid::Uniform1D
-fvgrid::Random1D
-fvgrid::Roberts1D
-fvgrid::StructuredGrid2D
-fvgrid::Length
-fvgrid::XInit
-fvgrid::Beta
-```
-
-A API avançada expõe aliases explícitos e templates:
-
-```cpp
-fvgrid::Axis1DFloat
-fvgrid::Axis1DLongDouble
-fvgrid::StructuredGrid2DFloat
-fvgrid::StructuredGrid2DLongDouble
-
-const auto xf = fvgrid::uniform_axis_1d<float>(100, 0.0f, 1.0f);
-const auto xl = fvgrid::uniform_axis_1d<long double>(100, 0.0L, 1.0L);
-```
-
-Tipos que armazenam escalares expõem `value_type` para facilitar testes genéricos e integração com outras bibliotecas.
-
-## Padrão das malhas
-
-Quando o padrão não é especificado, os geradores `Uniform1D`, `Random1D` e `Roberts1D` usam `FaceCentered1D`.
-
-```cpp
-const auto axis = fvgrid::Uniform1D::make(
-    fvgrid::NVol{10},
-    fvgrid::Length{1.0},
-    fvgrid::XInit{0.0}
-);
-
-// Equivalente a passar fvgrid::FaceCentered1D{} explicitamente.
-```
-
-Para construir uma malha volume centrada, peça isso explicitamente:
-
-```cpp
-const auto axis = fvgrid::Uniform1D::make(
-    fvgrid::NVol{10},
-    fvgrid::Length{1.0},
-    fvgrid::XInit{0.0},
-    fvgrid::VolumeCentered1D{}
-);
-```
-
-A construção direta `Axis1D{{faces...}}` continua sendo volume centrada porque o vetor fornecido é interpretado como vetor de faces explícitas.
-
-## Geometria 1D
-
-Para `N` volumes finitos, um eixo possui:
+A documentação HTML já gerada fica na pasta `html/`. Para acessá-la, basta abrir:
 
 ```text
-faces      : N + 1
-centros    : N
-dx_faces   : N
-dx_centers : N + 1
-```
-
-A biblioteca valida que cada centro pertence à sua célula:
-
-```text
-faces[p] < centers[p] < faces[p + 1]
-```
-
-Essa validação é importante em contexto acadêmico: ela impede que uma lista de centros apenas globalmente crescente seja aceita como geometria localmente válida.
-
-## Geometria 2D
-
-`StructuredGrid2D` compõe dois `Axis1D` independentes. A indexação de células é row-major:
-
-```text
-k = j * num_cells_x + i
-```
-
-A API diferencia:
-
-```text
-cell_logical_area(i, j)  -> área computacional no espaço lógico;
-cell_measure(i, j)       -> medida física dada pelo sistema de coordenadas.
-```
-
-Em coordenadas cartesianas esses valores coincidem. Em polar ou axisimétrico, eles representam grandezas diferentes.
-
-## Erros
-
-Falhas de validação geram `FVGridException` com código estável, categoria, origem e local de lançamento. Isso torna os testes e relatórios reprodutíveis.
-
-## Build e testes
-
-Build padrão:
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build -j
-```
-
-Testes:
-
-```bash
-cmake -S . -B build-tests -DBUILD_TESTS=ON -DBUILD_EXAMPLES=OFF
-cmake --build build-tests -j
-ctest --test-dir build-tests --output-on-failure
-```
-
-Exemplos:
-
-```bash
-cmake -S . -B build-examples -DBUILD_EXAMPLES=ON -DBUILD_TESTS=OFF
-cmake --build build-examples -j
-cmake --build build-examples --target run_all_examples
+html/index.html
 ```
 
 ## Organização
 
 ```text
-FVGridMakerLib/   biblioteca principal
-examples/         exemplos executáveis e material didático
-tests/            testes unitários e de invariantes
-docs/             documentação Sphinx/Doxygen
-scripts/          material auxiliar e snapshots de planejamento
+FVGridMakerLib/       biblioteca principal
+examples/             exemplos curtos e oficiais, com prefixo ex_*
+manual/Grid1D/        programas 1D completos do manual, com prefixo man_*
+manual/Grid2D/        programas 2D completos do manual, com prefixo man_*
+tests/                testes unitários e de invariantes
+docs/                 fontes da documentação Sphinx/Doxygen/Breathe
+html/                 documentação HTML gerada; abra html/index.html
+cmake/                configuração modular de build
 ```
+
+## Convenções dos códigos didáticos
+
+Os exemplos em `examples/` são pequenos, independentes e usam apenas a API pública. Eles seguem o padrão `ex_*` e são material de consulta rápida.
+
+Os programas em `manual/Grid1D/` e `manual/Grid2D/` são mais completos e comentados. Eles seguem o padrão `man_*`, trazem verificações de consistência e produzem saídas textuais voltadas para o manual.
+
+Arquivos antigos fora desses padrões não devem ser usados como exemplos novos.
 
 ## Princípios de projeto
 
